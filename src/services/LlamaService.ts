@@ -65,6 +65,7 @@ export class LlamaService implements ILLMService {
             let serverStartError: Error | null = null;
             let processExited = false;
             let exitCode: number | null = null;
+            let errorMessage: string | null = null;
 
             this.serverProcess.stdout?.on('data', (data) => {
                 const output = data.toString();
@@ -82,6 +83,7 @@ export class LlamaService implements ILLMService {
                 console.error('[Llama Server Error]', errorOutput.trim());
                 // Check for common startup errors
                 if (errorOutput.includes('error') || errorOutput.includes('Error') || errorOutput.includes('failed')) {
+                    errorMessage = errorOutput.trim();
                     serverStartError = new Error(`Server startup error: ${errorOutput.trim()}`);
                 }
             });
@@ -118,9 +120,7 @@ export class LlamaService implements ILLMService {
             if (processExited) {
                 this.serverProcess = null;
                 this.loadingState = 'not-loaded';
-                const errorMsg = serverStartError 
-                    ? serverStartError.message 
-                    : `Server process exited during startup with code ${exitCode}`;
+                const errorMsg = errorMessage || `Server process exited during startup with code ${exitCode}`;
                 throw new Error(errorMsg);
             }
 
@@ -128,7 +128,8 @@ export class LlamaService implements ILLMService {
             if (serverStartError) {
                 this.serverProcess = null;
                 this.loadingState = 'not-loaded';
-                throw serverStartError;
+                const errorMsg = errorMessage || 'Server failed to start';
+                throw new Error(errorMsg);
             }
 
             // If process died immediately, throw error
