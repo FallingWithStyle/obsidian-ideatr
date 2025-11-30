@@ -117,6 +117,17 @@ export default class IdeatrPlugin extends Plugin {
         // Initialize local LLM
         this.localLLMService = new LlamaService(this.settings);
 
+        // Preload model on startup if enabled
+        if (this.settings.preloadOnStartup && 
+            this.settings.llmProvider === 'llama' && 
+            this.settings.llamaBinaryPath && 
+            this.settings.modelPath) {
+            // Start server asynchronously (don't block plugin load)
+            this.localLLMService.startServer().catch((error) => {
+                console.warn('[Ideatr Project Internal] Failed to preload model on startup:', error);
+            });
+        }
+
         // Initialize cloud LLM if configured
         let cloudLLM: ILLMService | null = null;
         if (this.settings.cloudProvider !== 'none' && this.settings.cloudApiKey.trim().length > 0) {
@@ -521,6 +532,15 @@ export default class IdeatrPlugin extends Plugin {
             this.webSearchService,
             this.nameVariantService
         ).open();
+    }
+
+    /**
+     * Manually start the local LLM server (if using llama provider)
+     */
+    async startLocalModel(): Promise<void> {
+        if (this.localLLMService && this.settings.llmProvider === 'llama') {
+            await this.localLLMService.startServer();
+        }
     }
 
     onunload() {

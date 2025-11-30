@@ -232,6 +232,33 @@ export class IdeatrSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     }));
 
+            // Manual start button
+            if (this.plugin.settings.llamaBinaryPath && this.plugin.settings.modelPath) {
+                new Setting(containerEl)
+                    .setName('Start Model')
+                    .setDesc('Manually start the AI model server now. Not needed in most cases (model auto-starts when you use AI features), but helpful if: the model stopped unexpectedly, you want to test your configuration, or you prefer to preload before using features.')
+                    .addButton(button => button
+                        .setButtonText('Start Model')
+                        .setCta()
+                        .onClick(async () => {
+                            button.setDisabled(true);
+                            button.setButtonText('Starting...');
+                            try {
+                                await this.plugin.startLocalModel();
+                                new Notice('AI model server starting...');
+                                // Reset button after a delay
+                                setTimeout(() => {
+                                    button.setDisabled(false);
+                                    button.setButtonText('Start Model');
+                                }, 2000);
+                            } catch (error) {
+                                new Notice('Failed to start model server. Check console for details.');
+                                button.setDisabled(false);
+                                button.setButtonText('Start Model');
+                            }
+                        }));
+            }
+
             // Setup AI button (if not configured)
             if (!this.plugin.settings.setupCompleted) {
                 new Setting(containerEl)
