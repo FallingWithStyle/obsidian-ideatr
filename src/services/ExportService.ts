@@ -2,9 +2,10 @@
  * ExportService - Handles exporting ideas to various formats
  */
 
-import type { Vault, TFile } from 'obsidian';
-import type { IdeaFrontmatter } from '../types/idea';
+import type { Vault } from 'obsidian';
 import { FrontmatterParser } from './FrontmatterParser';
+
+export type ExportFormat = 'json' | 'csv' | 'markdown';
 
 export interface IdeaExportItem {
     type: string;
@@ -29,8 +30,6 @@ export interface IdeaExport {
     totalIdeas: number;
     ideas: IdeaExportItem[];
 }
-
-export type ExportFormat = 'json' | 'csv' | 'markdown';
 
 export class ExportService {
     private vault: Vault;

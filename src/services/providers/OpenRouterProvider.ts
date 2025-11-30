@@ -1,5 +1,5 @@
-import type { ILLMProvider, ProviderSettings } from '../../types/llm-provider';
-import type { ClassificationResult } from '../../types/classification';
+import type { ILLMProvider } from '../../types/llm-provider';
+import type { ClassificationResult, IdeaCategory } from '../../types/classification';
 
 /**
  * OpenRouter Provider - Multiple models via OpenRouter API
@@ -122,14 +122,14 @@ Response:`;
         }
     }
 
-    private validateCategory(category: string): string {
-        const validCategories = [
+    private validateCategory(category: string): IdeaCategory {
+        const validCategories: IdeaCategory[] = [
             'game', 'saas', 'tool', 'story', 'mechanic',
             'hardware', 'ip', 'brand', 'ux', 'personal'
         ];
 
         const normalized = category?.toLowerCase().trim();
-        return validCategories.includes(normalized) ? normalized : '';
+        return (validCategories.includes(normalized as IdeaCategory)) ? (normalized as IdeaCategory) : '';
     }
 }
 

@@ -65,7 +65,7 @@ export class DomainService implements IDomainService {
      * @param text - Idea text to extract domains from
      * @param projectName - Optional project name (reserved for future use)
      */
-    async checkDomains(text: string, projectName?: string): Promise<DomainCheckResult[]> {
+    async checkDomains(text: string, _projectName?: string): Promise<DomainCheckResult[]> {
         const domains = this.extractDomains(text);
         
         if (domains.length === 0) {

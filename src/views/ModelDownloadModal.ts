@@ -11,7 +11,7 @@ export class ModelDownloadModal extends Modal {
     private cancelButton!: HTMLElement;
     private errorMessage!: HTMLElement;
     private modelInfo!: HTMLElement;
-    private retryButton!: HTMLElement | null = null;
+    private retryButton: HTMLElement | null = null;
     private isDownloading: boolean = false;
 
     constructor(app: App, modelManager: IModelManager) {

@@ -1,5 +1,5 @@
 import type { ILLMProvider } from '../../types/llm-provider';
-import type { ClassificationResult } from '../../types/classification';
+import type { ClassificationResult, IdeaCategory } from '../../types/classification';
 
 /**
  * Custom Endpoint Provider - Self-hosted (Ollama, LM Studio, etc.)
@@ -37,8 +37,6 @@ export class CustomEndpointProvider implements ILLMProvider {
 
         try {
             let requestBody: any;
-            let responsePath: string;
-
             if (this.format === 'ollama') {
                 // Ollama format
                 requestBody = {
@@ -49,7 +47,6 @@ export class CustomEndpointProvider implements ILLMProvider {
                     }],
                     stream: false
                 };
-                responsePath = 'message.content';
             } else {
                 // OpenAI-compatible format
                 requestBody = {
@@ -61,7 +58,6 @@ export class CustomEndpointProvider implements ILLMProvider {
                     max_tokens: 256,
                     temperature: 0.1
                 };
-                responsePath = 'choices[0].message.content';
             }
 
             const response = await fetch(this.endpointUrl, {
@@ -140,14 +136,14 @@ Response:`;
         }
     }
 
-    private validateCategory(category: string): string {
-        const validCategories = [
+    private validateCategory(category: string): IdeaCategory {
+        const validCategories: IdeaCategory[] = [
             'game', 'saas', 'tool', 'story', 'mechanic',
             'hardware', 'ip', 'brand', 'ux', 'personal'
         ];
 
         const normalized = category?.toLowerCase().trim();
-        return validCategories.includes(normalized) ? normalized : '';
+        return (validCategories.includes(normalized as IdeaCategory)) ? (normalized as IdeaCategory) : '';
     }
 }
 

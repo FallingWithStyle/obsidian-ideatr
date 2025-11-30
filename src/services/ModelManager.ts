@@ -119,7 +119,7 @@ export class ModelManager implements IModelManager {
         }
 
         // Create abort controller if not provided
-        const signal = abortSignal || new AbortController().signal;
+        const _signal = abortSignal || new AbortController().signal;
         if (!abortSignal) {
             this.abortController = new AbortController();
         }
@@ -187,7 +187,7 @@ export class ModelManager implements IModelManager {
 
                 // Close write stream
                 await new Promise<void>((resolve, reject) => {
-                    writeStream.end((error) => {
+                    writeStream.end((error: Error | undefined) => {
                         if (error) {
                             reject(error);
                         } else {

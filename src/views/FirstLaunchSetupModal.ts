@@ -37,7 +37,7 @@ export class FirstLaunchSetupModal extends Modal {
 
         // Option 1: Download AI Model
         const downloadOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
-        const downloadHeader = downloadOption.createEl('h3', { text: 'Download AI Model' });
+        downloadOption.createEl('h3', { text: 'Download AI Model' });
         const modelInfo = this.modelManager.getModelInfo();
         downloadOption.createEl('p', {
             text: `Download Llama 3.2 3B model (${(modelInfo.sizeMB / 1024).toFixed(2)} GB) for offline, free AI classification.`

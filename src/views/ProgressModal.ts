@@ -15,9 +15,9 @@ export interface ProgressUpdate {
 export class ProgressModal extends Modal {
     private onCancel?: () => void;
     private cancelled: boolean = false;
-    private progressContainer: HTMLElement;
-    private statusContainer: HTMLElement;
-    private errorContainer: HTMLElement;
+    private progressContainer!: HTMLElement;
+    private statusContainer!: HTMLElement;
+    private errorContainer!: HTMLElement;
     private cancelButton: HTMLElement | null = null;
 
     private title: string;

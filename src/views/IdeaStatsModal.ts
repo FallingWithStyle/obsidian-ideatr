@@ -43,22 +43,22 @@ export class IdeaStatsModal extends Modal {
         statsGrid.style.marginBottom = '20px';
 
         // Age
-        const ageCard = this.createStatCard(statsGrid, 'Age', `${this.stats.age} day${this.stats.age !== 1 ? 's' : ''}`);
+        this.createStatCard(statsGrid, 'Age', `${this.stats.age} day${this.stats.age !== 1 ? 's' : ''}`);
         
         // Status
-        const statusCard = this.createStatCard(statsGrid, 'Status', this.stats.status || 'unknown');
+        this.createStatCard(statsGrid, 'Status', this.stats.status || 'unknown');
         
         // Category
-        const categoryCard = this.createStatCard(statsGrid, 'Category', this.stats.category || 'none');
+        this.createStatCard(statsGrid, 'Category', this.stats.category || 'none');
         
         // Related notes
-        const relatedCard = this.createStatCard(statsGrid, 'Related Notes', this.stats.relatedCount.toString());
+        this.createStatCard(statsGrid, 'Related Notes', this.stats.relatedCount.toString());
         
         // Tags
-        const tagsCard = this.createStatCard(statsGrid, 'Tags', this.stats.tagsCount.toString());
+        this.createStatCard(statsGrid, 'Tags', this.stats.tagsCount.toString());
         
         // Domains
-        const domainsCard = this.createStatCard(statsGrid, 'Domains', this.stats.domainsCount.toString());
+        this.createStatCard(statsGrid, 'Domains', this.stats.domainsCount.toString());
 
         // Dates section
         const datesSection = contentEl.createDiv('ideatr-stats-dates');
@@ -104,7 +104,7 @@ export class IdeaStatsModal extends Modal {
                 tagsContainer.style.gap = '5px';
 
                 this.stats.frontmatter.tags.forEach(tag => {
-                    const tagEl = tagsContainer.createEl('span', {
+                    tagsContainer.createEl('span', {
                         text: tag,
                         attr: {
                             style: 'background: var(--background-modifier-border); padding: 2px 8px; border-radius: 12px; font-size: 12px;'

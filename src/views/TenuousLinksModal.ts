@@ -8,7 +8,7 @@ import type { TenuousLink } from '../services/TenuousLinkService';
 export class TenuousLinksModal extends Modal {
     private links: TenuousLink[];
     private onLink?: (link: TenuousLink, action: 'link' | 'combine') => void;
-    private onClose?: () => void;
+    private onCloseCallback?: () => void;
 
     constructor(
         app: any,
@@ -19,7 +19,7 @@ export class TenuousLinksModal extends Modal {
         super(app);
         this.links = links;
         this.onLink = onLink;
-        this.onClose = onClose;
+        this.onCloseCallback = onClose;
     }
 
     onOpen() {
@@ -90,8 +90,8 @@ export class TenuousLinksModal extends Modal {
             text: 'Close'
         });
         closeButton.addEventListener('click', () => {
-            if (this.onClose) {
-                this.onClose();
+            if (this.onCloseCallback) {
+                this.onCloseCallback();
             }
             this.close();
         });
@@ -100,8 +100,8 @@ export class TenuousLinksModal extends Modal {
     onClose() {
         const { contentEl } = this;
         contentEl.empty();
-        if (this.onClose) {
-            this.onClose();
+        if (this.onCloseCallback) {
+            this.onCloseCallback();
         }
     }
 }

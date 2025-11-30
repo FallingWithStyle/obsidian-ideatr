@@ -13,7 +13,7 @@ export class LlamaService implements ILLMService {
     private isServerReady: boolean = false;
     private idleTimeout: number = 15 * 60 * 1000; // 15 minutes
     private idleTimer: NodeJS.Timeout | null = null;
-    private lastUseTime: number = 0;
+    private _lastUseTime: number = 0;
     private loadingState: 'not-loaded' | 'loading' | 'ready' | 'idle' = 'not-loaded';
 
     constructor(settings: IdeatrSettings) {
@@ -67,7 +67,7 @@ export class LlamaService implements ILLMService {
                 this.serverProcess = null;
                 this.isServerReady = false;
                 this.loadingState = 'not-loaded';
-                this.lastUseTime = 0;
+                this._lastUseTime = 0;
             });
 
             // Wait a bit for startup
@@ -88,7 +88,7 @@ export class LlamaService implements ILLMService {
             this.serverProcess = null;
             this.isServerReady = false;
             this.loadingState = 'not-loaded';
-            this.lastUseTime = 0;
+            this._lastUseTime = 0;
         }
     }
 
@@ -108,7 +108,7 @@ export class LlamaService implements ILLMService {
             clearTimeout(this.idleTimer);
         }
 
-        this.lastUseTime = Date.now();
+        this._lastUseTime = Date.now();
         this.loadingState = 'ready';
 
         this.idleTimer = setTimeout(() => {

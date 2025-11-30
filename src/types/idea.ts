@@ -7,7 +7,7 @@
  */
 export interface IdeaFrontmatter {
     type: 'idea';
-    status: 'captured' | 'elevated';
+    status: 'captured' | 'elevated' | 'validated' | 'promoted' | 'archived';
     created: string; // ISO 8601 date (YYYY-MM-DD)
     category: string; // Empty string for Day 0, populated by AI later
     tags: string[];  // Empty array for Day 0, populated by AI later
