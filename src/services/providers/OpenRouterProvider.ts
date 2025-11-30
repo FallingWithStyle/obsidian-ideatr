@@ -37,7 +37,7 @@ export class OpenRouterProvider implements ILLMProvider {
                     'Authorization': `Bearer ${this.apiKey}`,
                     'Content-Type': 'application/json',
                     'HTTP-Referer': 'https://github.com/FallingWithStyle/obsidian-ideatr',
-                    'X-Title': 'Obsidian Ideatr'
+                    'X-Title': 'Ideatr'
                 },
                 body: JSON.stringify({
                     model: this.model,

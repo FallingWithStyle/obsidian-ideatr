@@ -1,14 +1,14 @@
-# Obsidian Ideatr
+# Ideatr
 
 A lightweight, Obsidian-native "idea intake + triage + transform + validate" tool. Day-1 usable. Future-expandable. No dependencies.
 
 ## Overview
 
-Obsidian Ideatr is the central intake and triage layer for all creative ideas — a small but powerful Obsidian plugin that captures ideas quickly, classifies them intelligently, clusters related ideas, deduplicates similar concepts, validates ("does this exist?", domains, names), generates variants and scaffolds, and prepares ideas for "real project" elevation.
+Ideatr is the central intake and triage layer for all creative ideas — a small but powerful Obsidian plugin that captures ideas quickly, classifies them intelligently, clusters related ideas, deduplicates similar concepts, validates ("does this exist?", domains, names), generates variants and scaffolds, and prepares ideas for "real project" elevation.
 
 **Problem**: You generate a large volume of creative, entrepreneurial, narrative, and mechanic ideas across many domains. These ideas currently live in mixed systems (chat logs, fleeting notes, Obsidian, Notion, random text files), causing fragmentation, low retrieval rate, duplicate effort, and missed connections.
 
-**Solution**: Obsidian Ideatr provides a single lightweight "front door" for ideas with intelligent auto-classification, validation tools, and seamless integration with your Obsidian vault.
+**Solution**: Ideatr provides a single lightweight "front door" for ideas with intelligent auto-classification, validation tools, and seamless integration with your Obsidian vault.
 
 ## Features
 
@@ -56,9 +56,9 @@ npm run dev
 
 ### Setup in Obsidian
 
-1. Copy the plugin files to your Obsidian vault's `.obsidian/plugins/obsidian-ideatr/` directory
+1. Copy the plugin files to your Obsidian vault's `.obsidian/plugins/ideatr/` directory
 2. Enable the plugin in Obsidian Settings → Community Plugins
-3. Configure hotkey in Obsidian Settings → Hotkeys (search for "Obsidian Ideatr: Capture Idea")
+3. Configure hotkey in Obsidian Settings → Hotkeys (search for "Ideatr: Capture Idea")
 4. Create or use existing `Ideas/` directory in your vault
 
 ## Usage
@@ -68,7 +68,7 @@ npm run dev
 1. Press your configured hotkey (default: `Cmd/Ctrl + I`)
 2. Type your idea in the modal
 3. Press Enter to save
-4. Obsidian Ideatr automatically:
+4. Ideatr automatically:
    - Creates a markdown file in Ideas/
    - Classifies the idea
    - Suggests tags
@@ -98,7 +98,7 @@ Your idea text goes here...
 
 1. Open an idea file
 2. Use the "Elevate to Project" command
-3. Obsidian Ideatr moves the file from Ideas/ to Projects/
+3. Ideatr moves the file from Ideas/ to Projects/
 4. Creates starter folder structure
 5. Prepares Devra-friendly metadata (if Devra is available)
 
@@ -179,7 +179,7 @@ Your idea text goes here...
 
 ## License
 
-[Insert license info here, e.g. MIT License]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements
 
