@@ -118,13 +118,11 @@ export default class IdeatrPlugin extends Plugin {
         this.localLLMService = new LlamaService(this.settings);
 
         // Preload model on startup if enabled
-        if (this.settings.preloadOnStartup && 
-            this.settings.llmProvider === 'llama' && 
-            this.settings.llamaBinaryPath && 
-            this.settings.modelPath) {
-            // Start server asynchronously (don't block plugin load)
-            this.localLLMService.startServer().catch((error) => {
-                console.warn('[Ideatr Project Internal] Failed to preload model on startup:', error);
+        if (this.settings.preloadOnStartup) {
+            // Ensure LLM is ready asynchronously (don't block plugin load)
+            // This works for both local and cloud providers
+            this.llmService.ensureReady?.().catch((error) => {
+                console.warn('[Ideatr Project Internal] Failed to preload LLM on startup:', error);
             });
         }
 
@@ -535,11 +533,12 @@ export default class IdeatrPlugin extends Plugin {
     }
 
     /**
-     * Manually start the local LLM server (if using llama provider)
+     * Ensure the LLM service is ready (abstracts away implementation details)
+     * This works for both local and cloud providers
      */
-    async startLocalModel(): Promise<void> {
-        if (this.localLLMService && this.settings.llmProvider === 'llama') {
-            await this.localLLMService.startServer();
+    async ensureLLMReady(): Promise<void> {
+        if (this.llmService?.ensureReady) {
+            await this.llmService.ensureReady();
         }
     }
 

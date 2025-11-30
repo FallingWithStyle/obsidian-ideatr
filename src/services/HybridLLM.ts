@@ -47,6 +47,26 @@ export class HybridLLM implements ILLMService {
     }
 
     /**
+     * Ensure the LLM service is ready - delegates to the appropriate provider
+     */
+    async ensureReady(): Promise<void> {
+        // Try to ensure cloud is ready first if preferred
+        if (this.preferCloud && this.cloudLLM?.isAvailable() && this.cloudLLM.ensureReady) {
+            try {
+                await this.cloudLLM.ensureReady();
+                return;
+            } catch (error) {
+                console.warn('[HybridLLM] Cloud provider ensureReady failed, falling back to local:', error);
+            }
+        }
+
+        // Ensure local LLM is ready
+        if (this.localLLM.ensureReady) {
+            await this.localLLM.ensureReady();
+        }
+    }
+
+    /**
      * Get the last provider that was used for classification
      */
     getLastProvider(): 'local' | 'cloud' | null {

@@ -194,41 +194,8 @@ export class LlamaService implements ILLMService {
             throw new Error('Llama provider is not enabled');
         }
 
-        // Auto-start if needed (lazy load)
-        if (!this.serverProcess) {
-            if (!this.settings.llamaBinaryPath || !this.settings.modelPath) {
-                throw new Error('Llama binary path or model path not configured. Please check your settings.');
-            }
-            console.log('[LlamaService] Auto-starting server for classification request...');
-            try {
-                await this.startServer();
-                // Give it more time to warm up if just started
-                await new Promise(resolve => setTimeout(resolve, 3000));
-            } catch (error) {
-                console.error('[LlamaService] Failed to auto-start server:', error);
-                throw new Error(`Failed to start Llama server: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
-        }
-
-        if (this.serverProcess && !this.isServerReady) {
-            console.log('[LlamaService] Waiting for server to be ready...');
-            // Wait up to 5s for readiness
-            let attempts = 0;
-            while (!this.isServerReady && attempts < 50) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            if (!this.isServerReady) {
-                console.warn('[LlamaService] Server timed out waiting for readiness. Proceeding anyway...');
-            } else {
-                console.log('[LlamaService] Server is ready!');
-            }
-        }
-
-        // Double-check server is actually running before making request
-        if (!this.serverProcess) {
-            throw new Error('Llama server failed to start. Please check your configuration and try again.');
-        }
+        // Ensure server is ready (abstracts away the implementation)
+        await this.ensureReady();
 
         // Reset idle timer on each use
         this.resetIdleTimer();
@@ -281,6 +248,54 @@ export class LlamaService implements ILLMService {
     }
 
     /**
+     * Ensure the LLM service is ready - start server if not already running
+     */
+    async ensureReady(): Promise<void> {
+        if (!this.isAvailable()) {
+            throw new Error('Llama provider is not enabled');
+        }
+
+        // If server is already running and ready, we're good
+        if (this.serverProcess && this.isServerReady) {
+            return;
+        }
+
+        // If server process exists but not ready, wait for it
+        if (this.serverProcess && !this.isServerReady) {
+            console.log('[LlamaService] Server process exists but not ready, waiting...');
+            let attempts = 0;
+            while (!this.isServerReady && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (this.isServerReady) {
+                return;
+            }
+            // If still not ready, try starting fresh
+            console.warn('[LlamaService] Server process exists but never became ready, restarting...');
+            this.stopServer();
+        }
+
+        // Start server if not running
+        if (!this.serverProcess) {
+            if (!this.settings.llamaBinaryPath || !this.settings.modelPath) {
+                throw new Error('Llama binary path or model path not configured. Please check your settings.');
+            }
+            console.log('[LlamaService] Ensuring server is ready...');
+            await this.startServer();
+            // Wait for server to be ready
+            let attempts = 0;
+            while (!this.isServerReady && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (!this.isServerReady) {
+                throw new Error('Server started but did not become ready in time');
+            }
+        }
+    }
+
+    /**
      * Generic completion method for non-classification tasks
      * @param prompt - The prompt to send to the LLM
      * @param options - Optional configuration (temperature, max tokens, stop tokens)
@@ -298,40 +313,8 @@ export class LlamaService implements ILLMService {
             throw new Error('Llama provider is not enabled');
         }
 
-        // Auto-start if needed (lazy load)
-        if (!this.serverProcess) {
-            if (!this.settings.llamaBinaryPath || !this.settings.modelPath) {
-                throw new Error('Llama binary path or model path not configured. Please check your settings.');
-            }
-            console.log('[LlamaService] Auto-starting server for completion request...');
-            try {
-                await this.startServer();
-                // Give server time to start
-                await new Promise(resolve => setTimeout(resolve, 3000));
-            } catch (error) {
-                console.error('[LlamaService] Failed to auto-start server:', error);
-                throw new Error(`Failed to start Llama server: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
-        }
-
-        if (this.serverProcess && !this.isServerReady) {
-            console.log('[LlamaService] Waiting for server to be ready...');
-            let attempts = 0;
-            while (!this.isServerReady && attempts < 50) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            if (!this.isServerReady) {
-                console.warn('[LlamaService] Server timed out waiting for readiness. Proceeding anyway...');
-            } else {
-                console.log('[LlamaService] Server is ready!');
-            }
-        }
-
-        // Double-check server is actually running before making request
-        if (!this.serverProcess) {
-            throw new Error('Llama server failed to start. Please check your configuration and try again.');
-        }
+        // Ensure server is ready (abstracts away the implementation)
+        await this.ensureReady();
 
         // Reset idle timer on each use
         this.resetIdleTimer();

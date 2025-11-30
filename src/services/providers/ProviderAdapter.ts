@@ -20,6 +20,18 @@ export class ProviderAdapter implements ILLMService {
     }
 
     /**
+     * Ensure the LLM service is ready
+     * For cloud providers, this just verifies configuration
+     */
+    async ensureReady(): Promise<void> {
+        if (!this.provider.isAvailable()) {
+            throw new Error('Provider is not available. Please check your configuration.');
+        }
+        // Cloud providers are typically always ready if configured
+        // No additional setup needed
+    }
+
+    /**
      * Generic completion method - delegates to provider if available
      * Note: Most cloud providers don't implement this yet, so this will throw for cloud providers
      * Local LLM (LlamaService) supports this

@@ -79,6 +79,13 @@ export interface ILLMService {
     isAvailable(): boolean;
 
     /**
+     * Ensure the LLM service is ready to use (e.g., start server if needed)
+     * This abstracts away implementation details - callers don't need to know
+     * if it's a local server that needs starting or a cloud API that just needs verification
+     */
+    ensureReady?(): Promise<void>;
+
+    /**
      * Generic completion method for non-classification tasks
      * @param prompt - The prompt to send to the LLM
      * @param options - Optional configuration (temperature, max tokens, stop tokens)
