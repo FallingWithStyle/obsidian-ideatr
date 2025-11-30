@@ -72,18 +72,12 @@ export class ProjectElevationService implements IProjectElevationService {
             // Remove extension from filename
             const filenameWithoutExt = ideaFile.filename.replace(/\.md$/, '');
             
-            // Try new format: [YYYY-MM-DD] Title
-            const newFormatMatch = filenameWithoutExt.match(/^\[\d{4}-\d{2}-\d{2}\]\s+(.+)$/);
-            if (newFormatMatch) {
-                name = newFormatMatch[1];
+            // Try format: YYYY-MM-DD Title
+            const formatMatch = filenameWithoutExt.match(/^\d{4}-\d{2}-\d{2}\s+(.+)$/);
+            if (formatMatch) {
+                name = formatMatch[1];
             } else {
-                // Try old format: YYYY-MM-DD-slug (for backward compatibility)
-                const oldFormatMatch = filenameWithoutExt.match(/^\d{4}-\d{2}-\d{2}-(.+)$/);
-                if (oldFormatMatch) {
-                    name = oldFormatMatch[1];
-                } else {
-                    name = filenameWithoutExt;
-                }
+                name = filenameWithoutExt;
             }
         }
 

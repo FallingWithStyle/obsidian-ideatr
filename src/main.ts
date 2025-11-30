@@ -1473,7 +1473,7 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
             const createdDate = new Date(frontmatter.created);
             const sanitizedCodename = sanitizeTitle(codename.trim());
             const dateStr = formatDate(createdDate);
-            const newFilename = `[${dateStr}] ${sanitizedCodename}.md`;
+            const newFilename = `${dateStr} ${sanitizedCodename}.md`;
 
             // Rename file if filename changed
             const currentFilename = file.name;

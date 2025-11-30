@@ -1,7 +1,7 @@
 /**
  * FilenameGenerator - Generates safe, unique filenames for idea files
  * 
- * Follows the pattern: [YYYY-MM-DD] Title.md
+ * Follows the pattern: YYYY-MM-DD Title.md
  * - Preserves original capitalization and spaces
  * - Sanitizes filesystem-unsafe characters
  * - Truncates to reasonable length
@@ -12,12 +12,12 @@ const MAX_TITLE_LENGTH = 100;
 
 /**
  * Generate a filename from idea text and timestamp
- * Format: [YYYY-MM-DD] Title.md
+ * Format: YYYY-MM-DD Title.md
  */
 export function generateFilename(ideaText: string, timestamp: Date): string {
     const datePrefix = formatDate(timestamp);
     const title = sanitizeTitle(ideaText);
-    return `[${datePrefix}] ${title}.md`;
+    return `${datePrefix} ${title}.md`;
 }
 
 /**
@@ -99,7 +99,7 @@ export function sanitizeSlug(text: string): string {
 
 /**
  * Add numeric suffix to filename to handle collisions
- * Example: [2025-11-30] Title.md -> [2025-11-30] Title-2.md -> [2025-11-30] Title-3.md
+ * Example: 2025-11-30 Title.md -> 2025-11-30 Title-2.md -> 2025-11-30 Title-3.md
  */
 export function addCollisionSuffix(filename: string, suffix: number): string {
     const withoutExtension = filename.replace(/\.md$/, '');

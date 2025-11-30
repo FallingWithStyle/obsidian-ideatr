@@ -27,12 +27,25 @@ export class LlamaService implements ILLMService {
     }
 
     async startServer(): Promise<void> {
-        if (this.serverProcess || !this.settings.llamaBinaryPath || !this.settings.modelPath) {
+        // If already running, return early
+        if (this.serverProcess) {
+            console.log('[LlamaService] Server already running');
             return;
         }
 
+        // Validate configuration
+        if (!this.settings.llamaBinaryPath) {
+            throw new Error('Llama binary path not configured. Please set it in settings.');
+        }
+        if (!this.settings.modelPath) {
+            throw new Error('Model path not configured. Please set it in settings.');
+        }
+
         this.loadingState = 'loading';
-        console.log('Starting Llama server...');
+        console.log('[LlamaService] Starting Llama server...');
+        console.log('[LlamaService] Binary:', this.settings.llamaBinaryPath);
+        console.log('[LlamaService] Model:', this.settings.modelPath);
+        console.log('[LlamaService] Port:', this.settings.llamaServerPort);
         
         // Show loading notice on first use
         if (this.loadingState === 'loading') {
@@ -48,36 +61,87 @@ export class LlamaService implements ILLMService {
                 '--parallel', String(this.settings.concurrency)
             ]);
 
+            // Track if server failed to start
+            let serverStartError: Error | null = null;
+            let processExited = false;
+            let exitCode: number | null = null;
+
             this.serverProcess.stdout?.on('data', (data) => {
                 const output = data.toString();
-                // console.log('[Llama Server]', output); // Verbose logging
+                console.log('[Llama Server]', output.trim());
                 if (output.includes('HTTP server listening')) {
                     this.isServerReady = true;
                     this.loadingState = 'ready';
-                    console.log('Llama server is ready!');
+                    console.log('[LlamaService] Server is ready!');
                     new Notice('Llama AI Server Started');
                 }
             });
 
             this.serverProcess.stderr?.on('data', (data) => {
-                console.error('[Llama Server Error]', data.toString());
+                const errorOutput = data.toString();
+                console.error('[Llama Server Error]', errorOutput.trim());
+                // Check for common startup errors
+                if (errorOutput.includes('error') || errorOutput.includes('Error') || errorOutput.includes('failed')) {
+                    serverStartError = new Error(`Server startup error: ${errorOutput.trim()}`);
+                }
             });
 
             this.serverProcess.on('close', (code) => {
-                console.log(`Llama server exited with code ${code}`);
+                console.log(`[LlamaService] Server exited with code ${code}`);
+                processExited = true;
+                exitCode = code;
                 this.serverProcess = null;
                 this.isServerReady = false;
                 this.loadingState = 'not-loaded';
                 this.lastUseTime = 0;
+                if (code !== 0 && code !== null) {
+                    console.error(`[LlamaService] Server exited with error code ${code}`);
+                    if (!serverStartError) {
+                        serverStartError = new Error(`Server process exited with code ${code}`);
+                    }
+                }
+            });
+
+            // Check for immediate spawn errors
+            this.serverProcess.on('error', (error) => {
+                console.error('[LlamaService] Failed to spawn server process:', error);
+                serverStartError = error;
+                this.serverProcess = null;
+                this.loadingState = 'not-loaded';
+                new Notice('Failed to start Llama AI Server - check binary path');
             });
 
             // Wait a bit for startup
             await new Promise(resolve => setTimeout(resolve, 2000));
 
+            // Check if process exited during startup
+            if (processExited) {
+                this.serverProcess = null;
+                this.loadingState = 'not-loaded';
+                const errorMsg = serverStartError 
+                    ? serverStartError.message 
+                    : `Server process exited during startup with code ${exitCode}`;
+                throw new Error(errorMsg);
+            }
+
+            // Check if server failed to start
+            if (serverStartError) {
+                this.serverProcess = null;
+                this.loadingState = 'not-loaded';
+                throw serverStartError;
+            }
+
+            // If process died immediately, throw error
+            if (!this.serverProcess) {
+                throw new Error('Server process failed to start');
+            }
+
         } catch (error) {
-            console.error('Failed to start Llama server:', error);
+            console.error('[LlamaService] Failed to start Llama server:', error);
             this.loadingState = 'not-loaded';
+            this.serverProcess = null;
             new Notice('Failed to start Llama AI Server');
+            throw error; // Re-throw so caller knows it failed
         }
     }
 
@@ -130,14 +194,23 @@ export class LlamaService implements ILLMService {
         }
 
         // Auto-start if needed (lazy load)
-        if (!this.serverProcess && this.settings.llamaBinaryPath) {
-            await this.startServer();
-            // Give it more time to warm up if just started
-            await new Promise(resolve => setTimeout(resolve, 3000));
+        if (!this.serverProcess) {
+            if (!this.settings.llamaBinaryPath || !this.settings.modelPath) {
+                throw new Error('Llama binary path or model path not configured. Please check your settings.');
+            }
+            console.log('[LlamaService] Auto-starting server for classification request...');
+            try {
+                await this.startServer();
+                // Give it more time to warm up if just started
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            } catch (error) {
+                console.error('[LlamaService] Failed to auto-start server:', error);
+                throw new Error(`Failed to start Llama server: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
 
         if (this.serverProcess && !this.isServerReady) {
-            console.warn('Llama server process exists but is not ready yet. Waiting...');
+            console.log('[LlamaService] Waiting for server to be ready...');
             // Wait up to 5s for readiness
             let attempts = 0;
             while (!this.isServerReady && attempts < 50) {
@@ -145,8 +218,15 @@ export class LlamaService implements ILLMService {
                 attempts++;
             }
             if (!this.isServerReady) {
-                console.warn('Llama server timed out waiting for readiness. Proceeding anyway...');
+                console.warn('[LlamaService] Server timed out waiting for readiness. Proceeding anyway...');
+            } else {
+                console.log('[LlamaService] Server is ready!');
             }
+        }
+
+        // Double-check server is actually running before making request
+        if (!this.serverProcess) {
+            throw new Error('Llama server failed to start. Please check your configuration and try again.');
         }
 
         // Reset idle timer on each use
@@ -218,20 +298,38 @@ export class LlamaService implements ILLMService {
         }
 
         // Auto-start if needed (lazy load)
-        if (!this.serverProcess && this.settings.llamaBinaryPath) {
-            await this.startServer();
-            await new Promise(resolve => setTimeout(resolve, 3000));
+        if (!this.serverProcess) {
+            if (!this.settings.llamaBinaryPath || !this.settings.modelPath) {
+                throw new Error('Llama binary path or model path not configured. Please check your settings.');
+            }
+            console.log('[LlamaService] Auto-starting server for completion request...');
+            try {
+                await this.startServer();
+                // Give server time to start
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            } catch (error) {
+                console.error('[LlamaService] Failed to auto-start server:', error);
+                throw new Error(`Failed to start Llama server: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
 
         if (this.serverProcess && !this.isServerReady) {
+            console.log('[LlamaService] Waiting for server to be ready...');
             let attempts = 0;
             while (!this.isServerReady && attempts < 50) {
                 await new Promise(resolve => setTimeout(resolve, 100));
                 attempts++;
             }
             if (!this.isServerReady) {
-                console.warn('Llama server timed out waiting for readiness. Proceeding anyway...');
+                console.warn('[LlamaService] Server timed out waiting for readiness. Proceeding anyway...');
+            } else {
+                console.log('[LlamaService] Server is ready!');
             }
+        }
+
+        // Double-check server is actually running before making request
+        if (!this.serverProcess) {
+            throw new Error('Llama server failed to start. Please check your configuration and try again.');
         }
 
         // Reset idle timer on each use
