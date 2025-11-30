@@ -1,0 +1,10 @@
+{
+    "id": "ideatr-project-internal",
+    "name": "Ideatr Project Internal",
+    "version": "0.1.0",
+    "minAppVersion": "0.15.0",
+    "description": "Fast idea capture with intelligent classification",
+    "author": "Patrick A Regan",
+    "authorUrl": "https://github.com/FallingWithStyle",
+    "isDesktopOnly": false
+}

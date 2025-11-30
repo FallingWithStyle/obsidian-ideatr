@@ -1,0 +1,131 @@
+import Groq from 'groq-sdk';
+import type { ILLMProvider } from '../../types/llm-provider';
+import type { ClassificationResult } from '../../types/classification';
+
+/**
+ * Groq Provider - Llama 3.3 70B
+ */
+export class GroqProvider implements ILLMProvider {
+    name = 'Groq';
+    private client: Groq | null = null;
+    private apiKey: string;
+
+    constructor(apiKey: string) {
+        this.apiKey = apiKey;
+    }
+
+    private getClient(): Groq {
+        if (!this.client && this.apiKey && this.apiKey.trim().length > 0) {
+            try {
+                this.client = new Groq({ apiKey: this.apiKey });
+            } catch (error) {
+                console.warn('Failed to initialize Groq client:', error);
+                throw new Error('Failed to initialize Groq client');
+            }
+        }
+        if (!this.client) {
+            throw new Error('Groq client not initialized');
+        }
+        return this.client;
+    }
+
+    async authenticate(apiKey: string): Promise<boolean> {
+        return apiKey.trim().length > 0;
+    }
+
+    isAvailable(): boolean {
+        return this.apiKey.trim().length > 0;
+    }
+
+    async classify(text: string): Promise<ClassificationResult> {
+        if (!this.isAvailable()) {
+            throw new Error('Groq provider is not available');
+        }
+
+        const prompt = this.constructPrompt(text);
+
+        try {
+            const client = this.getClient();
+            const response = await client.chat.completions.create({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{
+                    role: 'user',
+                    content: prompt
+                }],
+                max_tokens: 256,
+                temperature: 0.1
+            });
+
+            const content = response.choices[0]?.message?.content;
+            if (!content) {
+                throw new Error('No content in Groq response');
+            }
+
+            return this.parseResponse(content);
+        } catch (error: unknown) {
+            const err = error as any;
+            if (err?.status === 429 || err?.response?.status === 429) {
+                throw new Error('Rate limit exceeded. Please try again later.');
+            }
+            if (err?.status === 401 || err?.response?.status === 401) {
+                throw new Error('Invalid API key. Please check your Groq API key.');
+            }
+            if (error instanceof Error) {
+                const message = error.message || 'Unknown error';
+                throw new Error(`Groq API error: ${message}`);
+            }
+            throw new Error('Groq API error: Request failed');
+        }
+    }
+
+    private constructPrompt(text: string): string {
+        return `You are an AI assistant that classifies ideas into categories and tags.
+Valid categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal.
+
+Idea: "${text}"
+
+Respond with valid JSON only.
+Example:
+{
+  "category": "game",
+  "tags": ["rpg", "fantasy"]
+}
+
+Response:`;
+    }
+
+    private parseResponse(content: string): ClassificationResult {
+        try {
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                throw new Error('No JSON found in response');
+            }
+
+            const parsed = JSON.parse(jsonMatch[0]);
+
+            return {
+                category: this.validateCategory(parsed.category),
+                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+                confidence: parsed.confidence || 0.8
+            };
+        } catch (error) {
+            console.warn('Failed to parse Groq response:', content, error);
+            return {
+                category: '',
+                tags: [],
+                confidence: 0
+            };
+        }
+    }
+
+    private validateCategory(category: string): string {
+        const validCategories = [
+            'game', 'saas', 'tool', 'story', 'mechanic',
+            'hardware', 'ip', 'brand', 'ux', 'personal'
+        ];
+
+        const normalized = category?.toLowerCase().trim();
+        return validCategories.includes(normalized) ? normalized : '';
+    }
+}
+

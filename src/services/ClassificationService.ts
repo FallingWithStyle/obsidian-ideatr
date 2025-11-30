@@ -1,0 +1,74 @@
+import type {
+    IClassificationService,
+    ILLMService,
+    ISearchService,
+    IdeaClassification
+} from '../types/classification';
+
+/**
+ * ClassificationService - Orchestrates AI classification and related note detection
+ */
+export class ClassificationService implements IClassificationService {
+    private llmService: ILLMService;
+    private searchService: ISearchService;
+
+    constructor(llmService: ILLMService, searchService: ISearchService) {
+        this.llmService = llmService;
+        this.searchService = searchService;
+    }
+
+    /**
+     * Check if AI classification is available
+     */
+    isAvailable(): boolean {
+        return this.llmService.isAvailable();
+    }
+
+    /**
+     * Classify an idea using available services
+     */
+    async classifyIdea(text: string): Promise<IdeaClassification> {
+        // Initialize default result
+        const result: IdeaClassification = {
+            category: '',
+            tags: [],
+            related: []
+        };
+
+        // Run services in parallel for performance
+        const tasks: Promise<void>[] = [];
+
+        // 1. LLM Classification
+        if (this.llmService.isAvailable()) {
+            tasks.push(
+                this.llmService.classify(text)
+                    .then(classification => {
+                        result.category = classification.category;
+                        // Deduplicate tags
+                        result.tags = [...new Set(classification.tags)];
+                    })
+                    .catch(error => {
+                        console.warn('LLM classification failed:', error);
+                        // Keep defaults on error
+                    })
+            );
+        }
+
+        // 2. Related Note Search
+        tasks.push(
+            this.searchService.findRelatedNotes(text, 3) // Limit to top 3 related notes
+                .then(relatedNotes => {
+                    result.related = relatedNotes.map(note => note.path);
+                })
+                .catch(error => {
+                    console.warn('Related note search failed:', error);
+                    // Keep defaults on error
+                })
+        );
+
+        // Wait for all tasks to complete (or fail gracefully)
+        await Promise.all(tasks);
+
+        return result;
+    }
+}

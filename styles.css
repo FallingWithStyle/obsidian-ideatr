@@ -1,0 +1,97 @@
+/* Ideatr Project Internal Plugin Styles */
+
+.ideatr-capture-modal {
+  padding: 20px;
+}
+
+.ideatr-capture-modal h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.ideatr-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  margin-bottom: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  resize: vertical;
+}
+
+.ideatr-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+}
+
+.ideatr-error {
+  color: var(--text-error);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: rgba(255, 82, 82, 0.1);
+  border: 1px solid var(--text-error);
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ideatr-button-container {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ideatr-button-container button {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+/* Graph tooltip styles */
+.ideatr-graph-tooltip {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 12px;
+  max-width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ideatr-tooltip-header {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--text-normal);
+}
+
+.ideatr-tooltip-header strong {
+  color: var(--text-normal);
+}
+
+.ideatr-tooltip-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ideatr-tooltip-tags {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ideatr-tooltip-preview {
+  color: var(--text-normal);
+  font-size: 12px;
+  line-height: 1.4;
+  max-height: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
