@@ -40,37 +40,38 @@ export const PROMPTS = {
         const count = params.count || 8;
         const category = params.category || 'general';
         const tags = params.tags && params.tags.length > 0 ? params.tags.join(', ') : 'none';
-        const focus = params.focus ? `\n\nFocus area: ${params.focus}` : '';
+        const focus = params.focus ? `\n\nFocus: ${params.focus}` : '';
 
-        return `You are an idea generation assistant. Given an idea, generate ${count} creative variations or mutations.
+        return `Generate ${count} creative variations of this idea.
 
 Original Idea:
 ${params.ideaText}
 
 Category: ${category}
-Tags: ${tags}
+Tags: ${tags}${focus}
 
-Generate ${count} variations that explore:
-- Different angles or perspectives
+Explore variations through:
+- Different perspectives or angles
 - Alternative implementations
-- Different target audiences
+- Different audiences
 - Different business models
-- Different technologies or approaches
+- Different technologies
 
 For each variation, provide:
-1. A brief title (2-5 words)
-2. A 1-2 sentence description of how it differs from the original
-3. Key differences or innovations
+- title: Brief name (2-5 words)
+- description: How it differs (1-2 sentences)
+- differences: 2-3 key differences
 
-Return as JSON array:
+Output format (JSON array):
 [
   {
-    "title": "Variation Title",
-    "description": "How this variation differs...",
-    "differences": ["Key difference 1", "Key difference 2"]
-  },
-  ...
-]${focus}`;
+    "title": "Variation Name",
+    "description": "How this differs from original...",
+    "differences": ["Difference 1", "Difference 2"]
+  }
+]
+
+Response:`;
     },
 
     /**
@@ -81,7 +82,7 @@ Return as JSON array:
         const tags = params.tags && params.tags.length > 0 ? params.tags.join(', ') : 'none';
         const detailLevel = params.detailLevel || 'detailed';
 
-        return `You are an idea development assistant. Expand the following brief idea into a comprehensive description.
+        return `Expand this idea into a structured description.
 
 Original Idea:
 ${params.ideaText}
@@ -89,25 +90,29 @@ ${params.ideaText}
 Category: ${category}
 Tags: ${tags}
 
-Expand this idea with the following structure:
+Requirements:
+- Preserve original meaning and intent
+- Add detail without changing core concept
+- Use markdown formatting
+- Detail level: ${detailLevel}
 
+Structure:
 ## Overview
-A clear, concise summary of the idea (2-3 sentences).
+Clear summary (2-3 sentences)
 
 ## Key Features / Mechanics
-List the main features, mechanics, or core components.
+Main features, mechanics, or core components
 
 ## Goals / Objectives
-What this idea aims to achieve.
+What this idea aims to achieve
 
 ## Potential Challenges
-Identify potential obstacles or challenges.
+Potential obstacles or challenges
 
 ## Next Steps
-Suggest initial steps to explore or develop this idea.
+Initial steps to explore or develop
 
-Preserve the original meaning and intent. Add detail and structure without changing the core concept.
-Detail level: ${detailLevel}`;
+Response:`;
     },
 
     /**
@@ -118,12 +123,12 @@ Detail level: ${detailLevel}`;
         const tags = params.tags && params.tags.length > 0 ? params.tags.join(', ') : 'none';
         const targetStructure = params.targetStructure && params.targetStructure.length > 0
             ? params.targetStructure.join('\n- ')
-            : 'Organize into logical sections with clear headings';
+            : 'Logical sections with clear headings';
         const preserveSections = params.preserveSections && params.preserveSections.length > 0
             ? params.preserveSections.join('\n- ')
-            : 'None specified';
+            : 'None';
 
-        return `You are an idea organization assistant. Reorganize the following idea into a clean, well-structured format while preserving ALL information.
+        return `Reorganize this idea into a structured format.
 
 Original Idea:
 ${params.ideaText}
@@ -131,20 +136,20 @@ ${params.ideaText}
 Category: ${category}
 Tags: ${tags}
 
-CRITICAL REQUIREMENTS:
-1. Preserve ALL information - do not remove or summarize any content
-2. Organize into logical sections with clear headings
-3. Remove redundancy but keep all unique points
-4. Maintain original meaning and nuance
-5. Use markdown formatting (headings, lists, emphasis)
+Critical rules:
+1. Preserve ALL information - do not remove content
+2. Organize into logical sections
+3. Remove redundancy, keep unique points
+4. Maintain original meaning
+5. Use markdown (headings, lists, emphasis)
 
-Target Structure:
+Target structure:
 - ${targetStructure}
 
-Sections to preserve exactly (if any):
+Preserve exactly (if any):
 - ${preserveSections}
 
-Reorganize the content into a clear, structured format. Use appropriate markdown headings and formatting.`;
+Output: Reorganized content with markdown formatting`;
     },
 
     /**
@@ -156,35 +161,36 @@ Reorganize the content into a clear, structured format. Use appropriate markdown
         ).join('\n\n');
 
         const otherClusterInfo = params.otherClusterIdeas 
-            ? `\n\nOther Cluster Ideas:\n${params.otherClusterIdeas.map((idea, i) => 
+            ? `\n\nOther Cluster:\n${params.otherClusterIdeas.map((idea, i) => 
                 `${i + 1}. ${idea.title} (${idea.category || 'none'})`
             ).join('\n')}`
             : '';
 
         const similarityInfo = params.similarity !== undefined 
-            ? `\n\nSimilarity Score: ${(params.similarity * 100).toFixed(1)}%`
+            ? `\nSimilarity: ${(params.similarity * 100).toFixed(1)}%`
             : '';
 
-        return `Analyze the following cluster of ideas and identify:
-
-1. Common Themes: What unifying themes or concepts connect these ideas?
-2. Common Patterns: What patterns or structures do you notice?
-3. Relationship Explanation: Why do these ideas belong together?
-4. Potential Synergies: How could these ideas be combined or enhanced?
-${params.otherClusterIdeas ? '5. Relationship to Other Cluster: How does this cluster relate to the other cluster?' : ''}
+        return `Analyze this cluster of ideas.
 
 Cluster Ideas:
 ${ideaSummaries}${otherClusterInfo}${similarityInfo}
 
-Return JSON:
+Identify:
+1. Common themes connecting these ideas
+2. Common patterns or structures
+3. Why these ideas belong together
+4. Potential synergies or combinations${params.otherClusterIdeas ? '\n5. Relationship to other cluster' : ''}
+
+Output format (JSON):
 {
-  "commonThemes": ["Theme 1", "Theme 2", ...],
-  "commonPatterns": ["Pattern 1", "Pattern 2", ...],
-  "relationshipExplanation": "Why these ideas belong together...",
-  "synergies": ["Potential synergy 1", "Potential synergy 2", ...],
-  ${params.otherClusterIdeas ? '"relationshipToOtherCluster": "How this cluster relates to the other...",' : ''}
+  "commonThemes": ["Theme 1", "Theme 2"],
+  "commonPatterns": ["Pattern 1", "Pattern 2"],
+  "relationshipExplanation": "Why these belong together...",
+  "synergies": ["Synergy 1", "Synergy 2"],${params.otherClusterIdeas ? '\n  "relationshipToOtherCluster": "Relationship...",' : ''}
   "relevance": 0.0-1.0
-}`;
+}
+
+Response:`;
     }
 };
 

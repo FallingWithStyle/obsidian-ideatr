@@ -101,16 +101,21 @@ export class CustomEndpointProvider implements ILLMProvider {
     }
 
     private constructPrompt(text: string): string {
-        return `You are an AI assistant that classifies ideas into categories and tags.
-Valid categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal.
+        return `Classify this idea into one category and suggest 2-4 relevant tags.
 
 Idea: "${text}"
 
-Respond with valid JSON only.
-Example:
+Categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal
+
+Rules:
+- Choose the single best category
+- Tags should be specific and relevant (2-4 tags)
+- Use lowercase for category and tags
+
+Example response:
 {
   "category": "game",
-  "tags": ["rpg", "fantasy"]
+  "tags": ["rpg", "fantasy", "multiplayer"]
 }
 
 Response:`;

@@ -49,9 +49,15 @@ export async function extractIdeaNameWithLLM(
 
     try {
         // Construct prompt for name extraction
-        const prompt = `Extract the name or title from this idea. Return only the name, nothing else.
+        const prompt = `Extract the name or title from this idea.
 
 Idea: "${ideaText}"
+
+Rules:
+- Return only the name/title (2-50 characters)
+- Use the first line or main concept
+- No quotes, no explanation
+- Keep it concise and descriptive
 
 Name:`;
 

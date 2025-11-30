@@ -193,28 +193,30 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
         relatedIdeaText: string,
         similarity: number
     ): Promise<{ explanation: string; synergy?: string; relevance: number }> {
-        const prompt = `Analyze the following ideas and identify unexpected connections or synergies.
+        const prompt = `Analyze the connection between these ideas.
 
 Original Idea:
 ${ideaText}
 Category: ${ideaCategory}
 Tags: ${ideaTags.join(', ')}
 
-Potential Connection:
+Related Idea:
 ${relatedIdeaText}
 Similarity: ${similarity.toFixed(2)}
 
-Analyze:
-1. What unexpected connection exists between these ideas?
-2. How could these ideas be combined or synergized?
-3. What new possibilities emerge from this connection?
+Find:
+1. Unexpected connection between ideas
+2. How they could be combined
+3. New possibilities from this connection
 
-Return JSON:
+Output format (JSON):
 {
-  "explanation": "Brief explanation of the connection...",
-  "synergy": "How these could be combined...",
+  "explanation": "Brief connection explanation...",
+  "synergy": "How to combine...",
   "relevance": 0.0-1.0
-}`;
+}
+
+Response:`;
 
         if (!this.llmService.complete) {
             // Fallback if LLM doesn't support complete

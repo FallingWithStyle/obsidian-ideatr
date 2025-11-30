@@ -180,8 +180,8 @@ export class NameVariantService implements INameVariantService {
         if (this.llmService.complete && typeof this.llmService.complete === 'function') {
             try {
                 const response = await this.llmService.complete(prompt, {
-                    temperature: 0.7,
-                    n_predict: 256,
+                    temperature: 0.8, // Higher creativity for better variants
+                    n_predict: 512, // Increased for more variants (8-12)
                     stop: ['}']
                 });
                 
@@ -241,26 +241,32 @@ export class NameVariantService implements INameVariantService {
      * Construct prompt for LLM variant generation
      */
     private constructPrompt(ideaName: string): string {
-        return `You are a creative naming assistant. Generate name variants for the following idea name.
+        return `Generate creative name variants for: "${ideaName}"
 
-Idea Name: "${ideaName}"
+Generate 8-12 high-quality, brandable name variants. Each variant should be:
+- Memorable and easy to pronounce
+- Distinct from others
+- Creative, not generic
 
-Generate 5-10 creative name variants. Include:
-- Synonyms (words with similar meaning)
-- Short versions (abbreviated or condensed)
-- Domain hacks (creative domain name combinations)
-- Phonetic variants (similar sounding names)
-- Portmanteaus (word combinations)
-- Made-up words (invented names)
+Variant types:
+1. synonym - Words capturing the idea's essence (e.g., "notification" → "alert", "signal")
+2. short - Concise names, 2-8 chars (e.g., "notification" → "Notify", "Alertly")
+3. domain-hack - TLD completes the word (e.g., "notif.io", "read.it", "measur.app")
+4. phonetic - Similar sound, different spelling (e.g., "notify" → "Notifai", "Notifi")
+5. portmanteau - Blend two words (e.g., "net" + "flicks" → "Netflix")
+6. made-up - Invented, pronounceable words (e.g., "Zapier", "Slack")
 
-Valid types: synonym, short, domain-hack, phonetic, portmanteau, made-up
+Rules:
+- Domain hacks: TLD must complete the word naturally, not just appended
+- Short names: Must be meaningful, not random letters
+- All variants: Should feel brandable and professional
 
-Respond with valid JSON only (no markdown, no code blocks):
+Output format (JSON only, no markdown):
 {
   "variants": [
-    { "text": "VariantName1", "type": "synonym" },
-    { "text": "VariantName2", "type": "short" },
-    { "text": "VariantName3", "type": "domain-hack" }
+    { "text": "ExampleName1", "type": "synonym" },
+    { "text": "ShortName", "type": "short" },
+    { "text": "clever.io", "type": "domain-hack" }
   ]
 }
 

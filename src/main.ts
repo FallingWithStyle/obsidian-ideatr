@@ -158,7 +158,7 @@ export default class IdeatrPlugin extends Plugin {
 
         // Initialize transformation services
         this.nameVariantService = new NameVariantService(
-            this.localLLMService, // Use local LLM for name variants (faster, free)
+            this.llmService, // Uses user's primary LLM selection (respects preferCloud setting)
             this.settings,
             async () => {
                 // Load cache data
@@ -1417,7 +1417,7 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
             const file = await this.getActiveIdeaFile();
             if (!file) return;
 
-            const { frontmatter } = await this.readIdeaContent(file);
+            const { frontmatter, body } = await this.readIdeaContent(file);
             const currentCodename = frontmatter.codename;
 
             const modal = new CodenameModal(
@@ -1476,7 +1476,9 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
                         new Notice('Failed to update codename. Please try again.');
                     }
                 },
-                currentCodename
+                currentCodename,
+                body,
+                this.llmService
             );
 
             modal.open();
