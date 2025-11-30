@@ -1,6 +1,6 @@
 {
-    "id": "ideatr-project-internal",
-    "name": "Ideatr Project Internal",
+    "id": "obsidian-ideatr",
+    "name": "Obsidian Ideatr",
     "version": "0.1.0",
     "minAppVersion": "0.15.0",
     "description": "Fast idea capture with intelligent classification",

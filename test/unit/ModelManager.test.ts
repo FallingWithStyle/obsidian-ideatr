@@ -48,14 +48,14 @@ describe('ModelManager', () => {
     describe('getModelPath', () => {
         it('should return path in ~/.ideatr/models/ directory', () => {
             const modelPath = modelManager.getModelPath();
-            expect(modelPath).toBe(path.join(mockHomeDir, '.ideatr', 'models', 'llama-3.2-3b-q4_k_m.gguf'));
+            expect(modelPath).toBe(path.join(mockHomeDir, '.ideatr', 'models', 'Llama-3.2-3B-Instruct-Q4_K_M.gguf'));
         });
     });
 
     describe('getModelInfo', () => {
         it('should return model information', () => {
             const info = modelManager.getModelInfo();
-            expect(info.name).toBe('llama-3.2-3b-q4_k_m.gguf');
+            expect(info.name).toBe('Llama-3.2-3B-Instruct-Q4_K_M.gguf');
             expect(info.sizeMB).toBeGreaterThan(0);
             expect(info.downloadUrl).toContain('huggingface.co');
         });
@@ -101,7 +101,7 @@ describe('ModelManager', () => {
             const mockResponse = {
                 ok: true,
                 headers: new Headers({
-                    'content-length': '2416640000'
+                    'content-length': '2164260864'
                 }),
                 body: {
                     getReader: () => ({

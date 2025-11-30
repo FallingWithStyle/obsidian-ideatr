@@ -1,14 +1,14 @@
-# Ideatr Project Internal
+# Obsidian Ideatr
 
 A lightweight, Obsidian-native "idea intake + triage + transform + validate" tool. Day-1 usable. Future-expandable. No dependencies.
 
 ## Overview
 
-Ideatr Project Internal is the central intake and triage layer for all creative ideas — a small but powerful Obsidian plugin that captures ideas quickly, classifies them intelligently, clusters related ideas, deduplicates similar concepts, validates ("does this exist?", domains, names), generates variants and scaffolds, and prepares ideas for "real project" elevation.
+Obsidian Ideatr is the central intake and triage layer for all creative ideas — a small but powerful Obsidian plugin that captures ideas quickly, classifies them intelligently, clusters related ideas, deduplicates similar concepts, validates ("does this exist?", domains, names), generates variants and scaffolds, and prepares ideas for "real project" elevation.
 
 **Problem**: You generate a large volume of creative, entrepreneurial, narrative, and mechanic ideas across many domains. These ideas currently live in mixed systems (chat logs, fleeting notes, Obsidian, Notion, random text files), causing fragmentation, low retrieval rate, duplicate effort, and missed connections.
 
-**Solution**: Ideatr Project Internal provides a single lightweight "front door" for ideas with intelligent auto-classification, validation tools, and seamless integration with your Obsidian vault.
+**Solution**: Obsidian Ideatr provides a single lightweight "front door" for ideas with intelligent auto-classification, validation tools, and seamless integration with your Obsidian vault.
 
 ## Features
 
@@ -41,8 +41,8 @@ Ideatr Project Internal is the central intake and triage layer for all creative 
 
 ```bash
 # Clone the repository
-git clone https://github.com/FallingWithStyle/ideatr-project-internal.git
-cd ideatr-project-internal
+git clone https://github.com/FallingWithStyle/obsidian-ideatr.git
+cd obsidian-ideatr
 
 # Install dependencies
 npm install
@@ -56,9 +56,9 @@ npm run dev
 
 ### Setup in Obsidian
 
-1. Copy the plugin files to your Obsidian vault's `.obsidian/plugins/ideatr-project-internal/` directory
+1. Copy the plugin files to your Obsidian vault's `.obsidian/plugins/obsidian-ideatr/` directory
 2. Enable the plugin in Obsidian Settings → Community Plugins
-3. Configure hotkey in Obsidian Settings → Hotkeys (search for "Ideatr Project Internal: Capture Idea")
+3. Configure hotkey in Obsidian Settings → Hotkeys (search for "Obsidian Ideatr: Capture Idea")
 4. Create or use existing `Ideas/` directory in your vault
 
 ## Usage
@@ -68,7 +68,7 @@ npm run dev
 1. Press your configured hotkey (default: `Cmd/Ctrl + I`)
 2. Type your idea in the modal
 3. Press Enter to save
-4. Ideatr Project Internal automatically:
+4. Obsidian Ideatr automatically:
    - Creates a markdown file in Ideas/
    - Classifies the idea
    - Suggests tags
@@ -98,14 +98,14 @@ Your idea text goes here...
 
 1. Open an idea file
 2. Use the "Elevate to Project" command
-3. Ideatr Project Internal moves the file from Ideas/ to Projects/
+3. Obsidian Ideatr moves the file from Ideas/ to Projects/
 4. Creates starter folder structure
 5. Prepares Devra-friendly metadata (if Devra is available)
 
 ## Project Structure
 
 ```
-/ideatr-project-internal
+/obsidian-ideatr
   ├── src/              # TypeScript source code
   │   ├── main.ts       # Plugin entry point
   │   ├── capture/      # Capture modal components

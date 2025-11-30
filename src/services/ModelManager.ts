@@ -60,7 +60,7 @@ export interface IModelManager {
  */
 export class ModelManager implements IModelManager {
     // Model name matches the actual filename in the download URL
-    private readonly modelName = 'llama-3.2-3b-q4_k_m.gguf';
+    private readonly modelName = 'Llama-3.2-3B-Instruct-Q4_K_M.gguf';
     private readonly modelDir: string;
     private readonly modelPath: string;
     private readonly modelInfo: ModelInfo;
@@ -72,16 +72,16 @@ export class ModelManager implements IModelManager {
         this.modelDir = path.join(homeDir, '.ideatr', 'models');
         this.modelPath = path.join(this.modelDir, this.modelName);
         
-        // Model information - Llama 3.2 3B Q4
+        // Model information - Llama 3.2 3B Q4_K_M
         // Note: These values should match the actual Hugging Face model
-        // SHA-256 checksum for llama-3.2-3b-q4_k_m.gguf (will be verified after download)
+        // SHA-256 checksum for Llama-3.2-3B-Instruct-Q4_K_M.gguf (will be verified after download)
         // For now, checksum is empty - will be calculated or fetched from Hugging Face
         this.modelInfo = {
             name: this.modelName,
-            sizeBytes: 2416640000, // ~2.3GB in bytes
-            sizeMB: 2306, // ~2.3GB
+            sizeBytes: 2164260864, // ~2.02GB in bytes (2.02 * 1024 * 1024 * 1024)
+            sizeMB: 2064, // ~2.02GB
             checksum: '', // SHA-256 checksum - will be calculated or fetched from Hugging Face
-            downloadUrl: `https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/llama-3.2-3b-q4_k_m.gguf`
+            downloadUrl: `https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf`
         };
     }
 
