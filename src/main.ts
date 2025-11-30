@@ -1,6 +1,7 @@
 import { Plugin } from 'obsidian';
 import { CaptureModal } from './capture/CaptureModal';
 import { FileManager } from './storage/FileManager';
+import { generateFilename } from './storage/FilenameGenerator';
 import { LlamaService } from './services/LlamaService';
 import { SearchService } from './services/SearchService';
 import { ClassificationService } from './services/ClassificationService';
@@ -1132,7 +1133,7 @@ ${mutation.description}
 ## Key Differences
 ${mutation.differences.map(d => `- ${d}`).join('\n')}
 `;
-                            const newPath = `Ideas/${new Date().toISOString().split('T')[0]}-${mutation.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+                            const newPath = `Ideas/${generateFilename(mutation.title, new Date())}`;
                             await this.app.vault.create(newPath, newContent);
                         }
                         new Notice(`Created ${selected.length} new idea${selected.length > 1 ? 's' : ''} from mutations.`);

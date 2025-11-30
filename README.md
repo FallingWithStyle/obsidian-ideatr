@@ -177,6 +177,11 @@ Your idea text goes here...
   - Background enrichment
   - Voice capture
 
+## Support
+
+- **GitHub Issues**: Report bugs, request features, or ask questions at [https://github.com/FallingWithStyle/obsidian-ideatr/issues](https://github.com/FallingWithStyle/obsidian-ideatr/issues)
+- **Author**: Patrick A Regan ([@FallingWithStyle](https://github.com/FallingWithStyle))
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

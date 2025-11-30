@@ -1,22 +1,23 @@
 /**
  * FilenameGenerator - Generates safe, unique filenames for idea files
  * 
- * Follows the pattern: YYYY-MM-DD-slug.md
- * - Sanitizes text to create URL-safe slugs
+ * Follows the pattern: [YYYY-MM-DD] Title.md
+ * - Preserves original capitalization and spaces
+ * - Sanitizes filesystem-unsafe characters
  * - Truncates to reasonable length
  * - Handles collisions with numeric suffixes
  */
 
-const MAX_SLUG_LENGTH = 50;
+const MAX_TITLE_LENGTH = 100;
 
 /**
  * Generate a filename from idea text and timestamp
- * Format: YYYY-MM-DD-slug.md
+ * Format: [YYYY-MM-DD] Title.md
  */
 export function generateFilename(ideaText: string, timestamp: Date): string {
     const datePrefix = formatDate(timestamp);
-    const slug = sanitizeSlug(ideaText);
-    return `${datePrefix}-${slug}.md`;
+    const title = sanitizeTitle(ideaText);
+    return `[${datePrefix}] ${title}.md`;
 }
 
 /**
@@ -30,11 +31,41 @@ export function formatDate(date: Date): string {
 }
 
 /**
- * Sanitize text to create a URL-safe slug
+ * Sanitize text to create a filesystem-safe title
+ * - Preserves original capitalization and spaces
+ * - Removes filesystem-unsafe characters (:, *, ?, ", <, >, |, /, \)
+ * - Truncates to MAX_TITLE_LENGTH
+ * - Trims whitespace
+ */
+export function sanitizeTitle(text: string): string {
+    let title = text
+        .trim()
+        // Remove filesystem-unsafe characters
+        .replace(/[:*?"<>|/\\]/g, '')
+        // Collapse multiple spaces into single space
+        .replace(/\s+/g, ' ')
+        // Remove leading/trailing spaces
+        .trim();
+
+    // Truncate to max length
+    if (title.length > MAX_TITLE_LENGTH) {
+        title = title.substring(0, MAX_TITLE_LENGTH).trim();
+    }
+
+    // Fallback if title is empty
+    if (title.length === 0) {
+        title = 'Untitled';
+    }
+
+    return title;
+}
+
+/**
+ * Sanitize text to create a URL-safe slug (kept for backward compatibility)
  * - Convert to lowercase
  * - Remove special characters
  * - Replace spaces with hyphens
- * - Truncate to MAX_SLUG_LENGTH
+ * - Truncate to reasonable length
  * - Remove leading/trailing hyphens
  */
 export function sanitizeSlug(text: string): string {
@@ -50,7 +81,8 @@ export function sanitizeSlug(text: string): string {
         // Remove leading/trailing hyphens
         .replace(/^-+|-+$/g, '');
 
-    // Truncate to max length
+    // Truncate to max length (using old MAX_SLUG_LENGTH for backward compatibility)
+    const MAX_SLUG_LENGTH = 50;
     if (slug.length > MAX_SLUG_LENGTH) {
         slug = slug.substring(0, MAX_SLUG_LENGTH);
         // Remove trailing hyphen if truncation created one
@@ -67,7 +99,7 @@ export function sanitizeSlug(text: string): string {
 
 /**
  * Add numeric suffix to filename to handle collisions
- * Example: idea.md -> idea-2.md -> idea-3.md
+ * Example: [2025-11-30] Title.md -> [2025-11-30] Title-2.md -> [2025-11-30] Title-3.md
  */
 export function addCollisionSuffix(filename: string, suffix: number): string {
     const withoutExtension = filename.replace(/\.md$/, '');

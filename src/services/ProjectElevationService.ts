@@ -69,13 +69,21 @@ export class ProjectElevationService implements IProjectElevationService {
 
         // If body extraction failed, try filename
         if (!name || name.trim().length === 0) {
-            // Remove date prefix and extension from filename
+            // Remove extension from filename
             const filenameWithoutExt = ideaFile.filename.replace(/\.md$/, '');
-            const datePrefixMatch = filenameWithoutExt.match(/^\d{4}-\d{2}-\d{2}-(.+)$/);
-            if (datePrefixMatch) {
-                name = datePrefixMatch[1];
+            
+            // Try new format: [YYYY-MM-DD] Title
+            const newFormatMatch = filenameWithoutExt.match(/^\[\d{4}-\d{2}-\d{2}\]\s+(.+)$/);
+            if (newFormatMatch) {
+                name = newFormatMatch[1];
             } else {
-                name = filenameWithoutExt;
+                // Try old format: YYYY-MM-DD-slug (for backward compatibility)
+                const oldFormatMatch = filenameWithoutExt.match(/^\d{4}-\d{2}-\d{2}-(.+)$/);
+                if (oldFormatMatch) {
+                    name = oldFormatMatch[1];
+                } else {
+                    name = filenameWithoutExt;
+                }
             }
         }
 

@@ -5,7 +5,8 @@
 import type { Vault, TFile } from 'obsidian';
 import type { IdeaFrontmatter } from '../types/idea';
 import { FrontmatterParser } from './FrontmatterParser';
-import { FrontmatterBuilder } from '../metadata/FrontmatterBuilder';
+import { buildFrontmatter } from '../metadata/FrontmatterBuilder';
+import { generateFilename } from '../storage/FilenameGenerator';
 
 export interface ImportResult {
     total: number;
@@ -81,7 +82,7 @@ export class ImportService {
 
     private async importIdea(item: Partial<IdeaFrontmatter> & { title: string; body: string }): Promise<void> {
         // Build frontmatter
-        const frontmatter = FrontmatterBuilder.buildFrontmatter({
+        const frontmatter = buildFrontmatter({
             text: item.body,
             timestamp: item.created ? new Date(item.created) : new Date()
         });
@@ -100,9 +101,9 @@ export class ImportService {
             'existence-check': item['existence-check'] || []
         };
 
-        // Generate filename
-        const date = merged.created.replace(/-/g, '');
-        const filename = `${date}-${item.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+        // Generate filename using the standard format
+        const createdDate = item.created ? new Date(item.created) : new Date();
+        const filename = generateFilename(item.title || item.body, createdDate);
 
         // Build content
         const yaml = this.frontmatterParser.build(merged, item.body);

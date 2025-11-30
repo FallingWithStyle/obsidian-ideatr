@@ -56,7 +56,7 @@ describe('FileManager', () => {
             await fileManager.createIdeaFile(idea);
 
             expect(vault.create).toHaveBeenCalledWith(
-                'Ideas/2025-11-28-test-idea.md',
+                'Ideas/[2025-11-28] Test idea.md',
                 expect.any(String)
             );
         });
@@ -99,7 +99,7 @@ describe('FileManager', () => {
             const file = await fileManager.createIdeaFile(idea);
 
             expect(file).toBeDefined();
-            expect(file.path).toBe('Ideas/2025-11-28-test-idea.md');
+            expect(file.path).toBe('Ideas/[2025-11-28] Test idea.md');
         });
 
         it('should handle filename collisions with suffix', async () => {
@@ -111,13 +111,13 @@ describe('FileManager', () => {
             // Simulate existing file
             vi.mocked(vault.getAbstractFileByPath)
                 .mockReturnValueOnce(null) // Directory check
-                .mockReturnValueOnce({ path: 'Ideas/2025-11-28-test-idea.md' } as any) // First collision check
+                .mockReturnValueOnce({ path: 'Ideas/[2025-11-28] Test idea.md' } as any) // First collision check
                 .mockReturnValueOnce(null); // Second collision check (no collision)
 
             await fileManager.createIdeaFile(idea);
 
             expect(vault.create).toHaveBeenCalledWith(
-                'Ideas/2025-11-28-test-idea-2.md',
+                'Ideas/[2025-11-28] Test idea-2.md',
                 expect.any(String)
             );
         });
@@ -131,15 +131,15 @@ describe('FileManager', () => {
             // Simulate multiple existing files
             vi.mocked(vault.getAbstractFileByPath)
                 .mockReturnValueOnce(null) // Directory check
-                .mockReturnValueOnce({ path: 'Ideas/2025-11-28-test-idea.md' } as any)
-                .mockReturnValueOnce({ path: 'Ideas/2025-11-28-test-idea-2.md' } as any)
-                .mockReturnValueOnce({ path: 'Ideas/2025-11-28-test-idea-3.md' } as any)
+                .mockReturnValueOnce({ path: 'Ideas/[2025-11-28] Test idea.md' } as any)
+                .mockReturnValueOnce({ path: 'Ideas/[2025-11-28] Test idea-2.md' } as any)
+                .mockReturnValueOnce({ path: 'Ideas/[2025-11-28] Test idea-3.md' } as any)
                 .mockReturnValueOnce(null);
 
             await fileManager.createIdeaFile(idea);
 
             expect(vault.create).toHaveBeenCalledWith(
-                'Ideas/2025-11-28-test-idea-4.md',
+                'Ideas/[2025-11-28] Test idea-4.md',
                 expect.any(String)
             );
         });
