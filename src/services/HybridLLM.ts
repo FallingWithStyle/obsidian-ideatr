@@ -50,7 +50,7 @@ export class HybridLLM implements ILLMService {
      * Ensure the LLM service is ready - delegates to the appropriate provider
      */
     async ensureReady(): Promise<void> {
-        // Try to ensure cloud is ready first if preferred
+        // Try to ensure cloud is ready first if preferred and available
         if (this.preferCloud && this.cloudLLM?.isAvailable() && this.cloudLLM.ensureReady) {
             try {
                 await this.cloudLLM.ensureReady();
@@ -60,8 +60,8 @@ export class HybridLLM implements ILLMService {
             }
         }
 
-        // Ensure local LLM is ready
-        if (this.localLLM.ensureReady) {
+        // Ensure local LLM is ready (only if available)
+        if (this.localLLM.isAvailable() && this.localLLM.ensureReady) {
             await this.localLLM.ensureReady();
         }
     }

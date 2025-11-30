@@ -145,7 +145,7 @@ export default class IdeatrPlugin extends Plugin {
         );
 
         // Preload model on startup if enabled
-        if (this.settings.preloadOnStartup) {
+        if (this.settings.preloadOnStartup && this.llmService.isAvailable()) {
             // Ensure LLM is ready asynchronously (don't block plugin load)
             // This works for both local and cloud providers
             this.llmService.ensureReady?.().catch((error) => {

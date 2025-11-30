@@ -252,7 +252,14 @@ export class LlamaService implements ILLMService {
      */
     async ensureReady(): Promise<void> {
         if (!this.isAvailable()) {
-            throw new Error('Llama provider is not enabled');
+            // Provider not enabled, nothing to do
+            return;
+        }
+
+        // If paths aren't configured, can't start server - return gracefully
+        if (!this.settings.llamaBinaryPath || !this.settings.modelPath) {
+            console.log('[LlamaService] Binary or model path not configured, skipping ensureReady');
+            return;
         }
 
         // If server is already running and ready, we're good
@@ -278,9 +285,6 @@ export class LlamaService implements ILLMService {
 
         // Start server if not running
         if (!this.serverProcess) {
-            if (!this.settings.llamaBinaryPath || !this.settings.modelPath) {
-                throw new Error('Llama binary path or model path not configured. Please check your settings.');
-            }
             console.log('[LlamaService] Ensuring server is ready...');
             await this.startServer();
             // Wait for server to be ready
