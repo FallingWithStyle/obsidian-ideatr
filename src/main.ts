@@ -789,7 +789,11 @@ export default class IdeatrPlugin extends Plugin {
     private checkDomainServiceAvailability(): boolean {
         const prospectrService = (this.domainService as any).prospectrService;
         if (!prospectrService || !prospectrService.isAvailable()) {
-            new Notice('Domain checking is not configured. Please set up Prospectr in settings.');
+            if (this.settings.enableProspectr) {
+                new Notice('Domain checking is not configured. Please set up Prospectr in settings.');
+            } else {
+                new Notice('Domain checking is not available.');
+            }
             return false;
         }
         return true;

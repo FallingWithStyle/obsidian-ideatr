@@ -74,11 +74,11 @@ export class DomainService implements IDomainService {
 
         // Use ProspectrService to check availability (optional integration)
         if (!this.prospectrService.isAvailable()) {
-            // Return results indicating Prospectr is not available
+            // Return results indicating domain checking is not available
             return domains.map(domain => ({
                 domain,
                 available: false,
-                error: 'Prospectr service is not yet available',
+                error: 'Domain checking service is not available',
                 checkedAt: new Date().toISOString()
             }));
         }

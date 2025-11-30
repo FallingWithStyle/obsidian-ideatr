@@ -41,7 +41,7 @@ export class ProspectrService implements IProspectrService {
             return {
                 domain,
                 available: false,
-                error: 'Prospectr service is not yet available',
+                error: 'Domain checking service is not available',
                 checkedAt: new Date().toISOString()
             };
         }
@@ -88,7 +88,7 @@ export class ProspectrService implements IProspectrService {
         return {
             domain,
             available: false,
-            error: 'Prospectr service is not yet implemented',
+            error: 'Domain checking service is not yet implemented',
             checkedAt: new Date().toISOString()
         };
     }

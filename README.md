@@ -34,7 +34,6 @@ Ideatr is the central intake and triage layer for all creative ideas — a small
 - Obsidian installed and running
 - TypeScript development environment (for development)
 - Optional: Local LLM or API access for AI classification
-- Optional: Prospectr (for enhanced domain validation)
 - Optional: Devra (for project elevation integration)
 
 ### Installation
@@ -127,7 +126,6 @@ Your idea text goes here...
 - **Storage**: Obsidian vault is the database. All data = markdown + frontmatter.
 - **Plugin Architecture**: TypeScript, Obsidian Plugin API. No backend required.
 - **Integration Points**: 
-  - Prospectr (optional): Domain checks, name availability, competitor existence
   - Devra (optional): Project elevation and metadata
 - **Local-First**: Works offline (except validation APIs). No lock-in.
 
@@ -194,7 +192,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Related Projects
 
-- **Prospectr**: Outward-facing validation tool (domains, search, competitors)
 - **Devra**: Downstream project management and execution tool
 
 ---

@@ -18,6 +18,7 @@ export interface IdeatrSettings {
     // Domain checking settings
     enableDomainCheck: boolean;
     autoCheckDomains: boolean;
+    enableProspectr: boolean; // Feature flag to show/hide Prospectr references
     prospectrUrl: string;
     domainCheckTimeout: number; // milliseconds
 
@@ -100,6 +101,7 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
     // Domain checking
     enableDomainCheck: true,
     autoCheckDomains: false, // Manual by default (user can enable auto)
+    enableProspectr: false, // Hidden by default until Prospectr is live
     prospectrUrl: 'http://localhost:3000',
     domainCheckTimeout: 10000, // 10 seconds
 
@@ -636,16 +638,19 @@ export class IdeatrSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(containerEl)
-            .setName('Prospectr URL')
-            .setDesc('URL of the Prospectr service for domain checking')
-            .addText(text => text
-                .setPlaceholder('http://localhost:3000')
-                .setValue(this.plugin.settings.prospectrUrl)
-                .onChange(async (value) => {
-                    this.plugin.settings.prospectrUrl = value;
-                    await this.plugin.saveSettings();
-                }));
+        // Only show Prospectr settings if feature flag is enabled
+        if (this.plugin.settings.enableProspectr) {
+            new Setting(containerEl)
+                .setName('Prospectr URL')
+                .setDesc('URL of the Prospectr service for domain checking')
+                .addText(text => text
+                    .setPlaceholder('http://localhost:3000')
+                    .setValue(this.plugin.settings.prospectrUrl)
+                    .onChange(async (value) => {
+                        this.plugin.settings.prospectrUrl = value;
+                        await this.plugin.saveSettings();
+                    }));
+        }
 
         new Setting(containerEl)
             .setName('Domain check timeout (ms)')
