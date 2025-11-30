@@ -30,6 +30,7 @@ import type { ILLMService } from './types/classification';
 import { FirstLaunchSetupModal, isFirstLaunch } from './views/FirstLaunchSetupModal';
 import { ModelManager } from './services/ModelManager';
 import { UserFacingError } from './utils/errors';
+import { ClassificationError, NetworkError, APITimeoutError } from './types/classification';
 import type { DomainCheckResult } from './types/domain';
 import type { SearchResult } from './types/search';
 import type { DuplicateCheckResult } from './types/classification';
@@ -1465,10 +1466,36 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
             new Notice(`Codename "${codename}" generated successfully.`);
         } catch (error) {
             console.error('Failed to generate codename:', error);
+            
+            // Check for specific error types
             if (error instanceof UserFacingError) {
                 new Notice(error.userMessage);
+            } else if (error instanceof NetworkError || error instanceof ClassificationError) {
+                // Check the underlying cause for connection errors
+                const cause = (error as ClassificationError).cause;
+                if (cause && (cause.message.includes('CONNECTION_REFUSED') || 
+                             cause.message.includes('Failed to fetch'))) {
+                    new Notice('LLM service is not running. Please start your local LLM server or configure a cloud provider.');
+                } else if (error instanceof APITimeoutError) {
+                    new Notice('LLM request timed out. Please try again.');
+                } else if (error instanceof NetworkError) {
+                    new Notice('Network error connecting to LLM service. Please check your connection and try again.');
+                } else {
+                    new Notice('Failed to generate codename. Please check that your LLM service is running.');
+                }
+            } else if (error instanceof Error) {
+                // Check for connection errors in message
+                if (error.message.includes('CONNECTION_REFUSED') || 
+                    error.message.includes('Failed to fetch') ||
+                    error.name === 'TypeError') {
+                    new Notice('LLM service is not running. Please start your local LLM server or configure a cloud provider.');
+                } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+                    new Notice('LLM request timed out. Please try again.');
+                } else {
+                    new Notice(`Failed to generate codename: ${error.message}`);
+                }
             } else {
-                new Notice('Failed to generate codename. Please try again or check console for details.');
+                new Notice('Failed to generate codename. Please check that your LLM service is running.');
             }
         }
     }
@@ -1526,7 +1553,8 @@ Return only the codename. No quotes, no explanation, just the name:`;
             return codename;
         } catch (error) {
             console.error('Codename generation failed:', error);
-            return null;
+            // Re-throw to be handled by caller with better error messages
+            throw error;
         }
     }
 
