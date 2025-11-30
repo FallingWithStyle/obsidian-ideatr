@@ -144,6 +144,12 @@ export class ModelManager implements IModelManager {
             const contentLength = response.headers.get('content-length');
             const totalBytes = contentLength ? parseInt(contentLength, 10) : this.modelInfo.sizeBytes;
             const totalMB = totalBytes / (1024 * 1024);
+            
+            // Update modelInfo with actual size from server if available
+            if (contentLength) {
+                this.modelInfo.sizeBytes = totalBytes;
+                this.modelInfo.sizeMB = totalMB;
+            }
 
             const reader = response.body?.getReader();
             if (!reader) {
@@ -197,6 +203,11 @@ export class ModelManager implements IModelManager {
                         }
                     });
                 });
+                
+                // Verify downloaded size matches expected size
+                if (downloadedBytes !== totalBytes) {
+                    throw new Error(`Download incomplete: expected ${totalBytes} bytes, got ${downloadedBytes} bytes`);
+                }
             } catch (error) {
                 writeStream.destroy();
                 // Clean up partial download
@@ -239,13 +250,17 @@ export class ModelManager implements IModelManager {
 
             // First, check file size matches expected size (quick check)
             const stats = await fs.stat(this.modelPath);
-            const sizeMB = stats.size / (1024 * 1024);
+            const actualSizeBytes = stats.size;
+            const actualSizeMB = actualSizeBytes / (1024 * 1024);
             
-            // Allow 5% tolerance for file size differences
+            // Allow 1% tolerance for file size differences (more strict than before)
+            const expectedSizeBytes = this.modelInfo.sizeBytes;
             const expectedSizeMB = this.modelInfo.sizeMB;
-            const tolerance = expectedSizeMB * 0.05;
+            const toleranceBytes = expectedSizeBytes * 0.01;
+            const toleranceMB = expectedSizeMB * 0.01;
             
-            const sizeMatches = Math.abs(sizeMB - expectedSizeMB) <= tolerance;
+            const sizeDifference = Math.abs(actualSizeBytes - expectedSizeBytes);
+            const sizeMatches = sizeDifference <= toleranceBytes;
             
             // If checksum is provided, verify SHA-256 checksum
             if (this.modelInfo.checksum && this.modelInfo.checksum.trim().length > 0) {
@@ -256,12 +271,34 @@ export class ModelManager implements IModelManager {
                 const calculatedChecksum = hash.digest('hex');
                 
                 // Compare checksums (case-insensitive)
-                return sizeMatches && calculatedChecksum.toLowerCase() === this.modelInfo.checksum.toLowerCase();
+                const checksumMatches = calculatedChecksum.toLowerCase() === this.modelInfo.checksum.toLowerCase();
+                
+                if (!sizeMatches || !checksumMatches) {
+                    console.warn('Model integrity check failed:', {
+                        expectedSizeBytes,
+                        actualSizeBytes,
+                        sizeDifference,
+                        sizeMatches,
+                        checksumMatches
+                    });
+                }
+                
+                return sizeMatches && checksumMatches;
             }
             
             // If no checksum provided, fall back to size check only
+            if (!sizeMatches) {
+                console.warn('Model integrity check failed - size mismatch:', {
+                    expectedSizeMB: expectedSizeMB.toFixed(2),
+                    actualSizeMB: actualSizeMB.toFixed(2),
+                    differenceMB: (actualSizeMB - expectedSizeMB).toFixed(2),
+                    toleranceMB: toleranceMB.toFixed(2)
+                });
+            }
+            
             return sizeMatches;
-        } catch {
+        } catch (error) {
+            console.error('Model integrity check error:', error);
             return false;
         }
     }

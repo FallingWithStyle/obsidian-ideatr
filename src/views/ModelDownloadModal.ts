@@ -13,6 +13,7 @@ export class ModelDownloadModal extends Modal {
     private modelInfo!: HTMLElement;
     private retryButton: HTMLElement | null = null;
     private isDownloading: boolean = false;
+    private downloadStartTime: number = 0;
 
     constructor(app: App, modelManager: IModelManager) {
         super(app);
@@ -80,6 +81,7 @@ export class ModelDownloadModal extends Modal {
         }
 
         this.isDownloading = true;
+        this.downloadStartTime = Date.now();
         this.cancelButton.textContent = 'Cancel';
         this.errorMessage.style.display = 'none';
         this.progressText.textContent = 'Starting download...';
@@ -136,13 +138,21 @@ export class ModelDownloadModal extends Modal {
         
         // Calculate ETA (rough estimate)
         const remainingMB = totalMB - downloadedMB;
-        const speedMBps = downloadedMB > 0 ? downloadedMB / (Date.now() / 1000) : 0; // Rough estimate
+        const elapsedSeconds = this.downloadStartTime > 0 ? (Date.now() - this.downloadStartTime) / 1000 : 0;
+        const speedMBps = downloadedMB > 0 && elapsedSeconds > 0 ? downloadedMB / elapsedSeconds : 0;
         const etaSeconds = speedMBps > 0 ? remainingMB / speedMBps : 0;
         const etaMinutes = Math.ceil(etaSeconds / 60);
         
         let etaText = '';
-        if (etaMinutes > 0 && progress > 0 && progress < 100) {
-            etaText = ` • ETA: ~${etaMinutes} minute${etaMinutes !== 1 ? 's' : ''}`;
+        if (etaMinutes > 0 && progress > 0 && progress < 100 && etaMinutes < 100000) {
+            // Only show ETA if it's reasonable (less than 100k minutes)
+            if (etaMinutes < 60) {
+                etaText = ` • ETA: ~${etaMinutes} minute${etaMinutes !== 1 ? 's' : ''}`;
+            } else {
+                const etaHours = Math.floor(etaMinutes / 60);
+                const remainingMins = etaMinutes % 60;
+                etaText = ` • ETA: ~${etaHours} hour${etaHours !== 1 ? 's' : ''}${remainingMins > 0 ? ` ${remainingMins} minute${remainingMins !== 1 ? 's' : ''}` : ''}`;
+            }
         }
 
         this.progressText.textContent = 
