@@ -2,8 +2,7 @@
  * ExportService - Handles exporting ideas to various formats
  */
 
-import type { Vault, TFile } from 'obsidian';
-import type { IdeaFrontmatter } from '../types/idea';
+import type { Vault } from 'obsidian';
 import { FrontmatterParser } from './FrontmatterParser';
 
 export interface IdeaExportItem {

@@ -1,4 +1,4 @@
-import type { ILLMProvider, ProviderSettings } from '../../types/llm-provider';
+import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
 
 /**
@@ -108,7 +108,7 @@ Response:`;
             const parsed = JSON.parse(jsonMatch[0]);
 
             return {
-                category: this.validateCategory(parsed.category),
+                category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,
                 tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
                 confidence: parsed.confidence || 0.8
             };

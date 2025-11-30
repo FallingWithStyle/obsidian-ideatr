@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "deploy": "npm run build && cp main.js manifest.json styles.css ~/Documents/Vault/.obsidian/plugins/ideatr/",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -21,7 +22,7 @@
     "capture",
     "productivity"
   ],
-  "author": "Patrick A Regan",
+  "author": "Patrick A Regan <ideatr@paraphlabs.com>",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.10.0",

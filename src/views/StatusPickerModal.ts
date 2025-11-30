@@ -46,10 +46,10 @@ export class StatusPickerModal extends Modal {
             
             const radio = item.createEl('input', {
                 type: 'radio',
-                name: 'status',
-                value: status.value,
                 attr: { 
-                    checked: this.currentStatus === status.value ? 'true' : undefined
+                    name: 'status',
+                    value: status.value,
+                    checked: this.currentStatus === status.value ? 'true' : null
                 }
             });
 

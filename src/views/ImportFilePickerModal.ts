@@ -70,7 +70,7 @@ export class ImportFilePickerModal extends SuggestModal<TFile> {
         }
     }
 
-    onChooseSuggestion(file: TFile, evt: MouseEvent | KeyboardEvent) {
+    onChooseSuggestion(file: TFile, _evt: MouseEvent | KeyboardEvent) {
         this.onSelect(file);
     }
 }

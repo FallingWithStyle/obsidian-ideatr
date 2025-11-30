@@ -180,7 +180,7 @@ Your idea text goes here...
 ## Support
 
 - **GitHub Issues**: Report bugs, request features, or ask questions at [https://github.com/FallingWithStyle/obsidian-ideatr/issues](https://github.com/FallingWithStyle/obsidian-ideatr/issues)
-- **Author**: Patrick A Regan ([@FallingWithStyle](https://github.com/FallingWithStyle))
+- **Author**: Patrick A Regan <ideatr@paraphlabs.com> ([@FallingWithStyle](https://github.com/FallingWithStyle))
 
 ## License
 

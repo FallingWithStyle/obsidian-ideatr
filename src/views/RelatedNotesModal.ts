@@ -42,7 +42,7 @@ export class RelatedNotesModal extends Modal {
             const checkbox = item.createEl('input', {
                 type: 'checkbox',
                 attr: { 
-                    checked: this.existingRelated.includes(note.path) ? 'true' : undefined
+                    checked: this.existingRelated.includes(note.path) ? 'true' : null
                 }
             });
             

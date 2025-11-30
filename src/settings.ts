@@ -322,14 +322,15 @@ export class IdeatrSettingTab extends PluginSettingTab {
                     new Setting(containerEl)
                         .setName('API Key')
                         .setDesc(`Enter your ${providerNames[this.plugin.settings.cloudProvider] || 'provider'} API key`)
-                        .addText(text => text
-                            .setPlaceholder('sk-...')
-                            .setValue(this.plugin.settings.cloudApiKey)
-                            .inputEl.setAttribute('type', 'password')
-                            .onChange(async (value) => {
+                        .addText(text => {
+                            text.setPlaceholder('sk-...')
+                                .setValue(this.plugin.settings.cloudApiKey);
+                            text.inputEl.setAttribute('type', 'password');
+                            text.onChange(async (value: string) => {
                                 this.plugin.settings.cloudApiKey = value;
                                 await this.plugin.saveSettings();
-                            }));
+                            });
+                        });
 
                     // Help text with link to API key registration
                     const helpText = containerEl.createDiv('setting-item-description');

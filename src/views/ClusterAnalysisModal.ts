@@ -99,7 +99,7 @@ export class ClusterAnalysisModal extends Modal {
             tagsContainer.style.gap = '5px';
 
             this.cluster.commonTags.forEach(tag => {
-                const tagEl = tagsContainer.createEl('span', {
+                tagsContainer.createEl('span', {
                     text: tag,
                     attr: {
                         style: 'background: var(--background-modifier-border); padding: 2px 8px; border-radius: 12px; font-size: 12px;'
@@ -159,11 +159,12 @@ export class ClusterAnalysisModal extends Modal {
 
             memberItem.addEventListener('click', () => {
                 if (this.onOpenIdea) {
-                    this.onOpenIdea(idea.path);
+                    // IdeaFile has filename, construct path from it
+                    this.onOpenIdea(`Ideas/${idea.filename}`);
                 }
             });
 
-            memberItem.createEl('strong', { text: idea.name || idea.path });
+            memberItem.createEl('strong', { text: idea.filename });
             if (idea.frontmatter?.category) {
                 memberItem.createEl('div', {
                     text: `Category: ${idea.frontmatter.category}`,

@@ -1,4 +1,4 @@
-import { Modal, App, Notice } from 'obsidian';
+import { Modal, App } from 'obsidian';
 import type { ClassificationResult } from '../types/classification';
 
 /**
@@ -91,7 +91,7 @@ export class ClassificationResultsModal extends Modal {
             const confidenceContainer = contentEl.createEl('div', { cls: 'ideatr-setting-item' });
             confidenceContainer.createEl('label', { text: 'Confidence:' });
             const confidenceBar = confidenceContainer.createEl('div', { cls: 'ideatr-confidence-bar' });
-            const confidenceFill = confidenceBar.createEl('div', {
+            confidenceBar.createEl('div', {
                 cls: 'ideatr-confidence-fill',
                 attr: {
                     style: `width: ${(this.results.confidence * 100).toFixed(0)}%`

@@ -118,8 +118,10 @@ export class ModelManager implements IModelManager {
             throw new Error('Model already downloaded');
         }
 
-        // Create abort controller if not provided
-        const signal = abortSignal || new AbortController().signal;
+        // Use provided abort signal
+        if (abortSignal) {
+            // Signal is available for cancellation if needed
+        }
         if (!abortSignal) {
             this.abortController = new AbortController();
         }
@@ -187,7 +189,7 @@ export class ModelManager implements IModelManager {
 
                 // Close write stream
                 await new Promise<void>((resolve, reject) => {
-                    writeStream.end((error) => {
+                    writeStream.end((error: Error | null) => {
                         if (error) {
                             reject(error);
                         } else {

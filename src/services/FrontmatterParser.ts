@@ -51,7 +51,7 @@ export class FrontmatterParser implements IFrontmatterParser {
         }
 
         frontmatter.type = type as 'idea';
-        frontmatter.status = status as 'captured' | 'elevated';
+        frontmatter.status = status as 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted';
         frontmatter.created = created;
         frontmatter.category = category;
 
@@ -218,7 +218,8 @@ export class FrontmatterParser implements IFrontmatterParser {
             return false;
         }
 
-        if (!frontmatter.status || (frontmatter.status !== 'captured' && frontmatter.status !== 'elevated')) {
+        const validStatuses = ['captured', 'elevated', 'archived', 'validated', 'promoted'];
+        if (!frontmatter.status || !validStatuses.includes(frontmatter.status)) {
             return false;
         }
 

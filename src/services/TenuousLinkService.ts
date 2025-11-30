@@ -5,7 +5,6 @@
 import type { EmbeddingService } from './EmbeddingService';
 import type { ILLMService } from '../types/classification';
 import type { Vault, TFile } from 'obsidian';
-import { PROMPTS } from './prompts';
 
 export interface TenuousLink {
     idea: {

@@ -29,17 +29,17 @@ import { ProviderAdapter } from './services/providers/ProviderAdapter';
 import type { ILLMService } from './types/classification';
 import { FirstLaunchSetupModal, isFirstLaunch } from './views/FirstLaunchSetupModal';
 import { ModelManager } from './services/ModelManager';
-import { UserFacingError, ServiceUnavailableError, NoActiveFileError } from './utils/errors';
+import { UserFacingError } from './utils/errors';
 import type { DomainCheckResult } from './types/domain';
 import type { SearchResult } from './types/search';
-import type { RelatedNote, DuplicateCheckResult } from './types/classification';
+import type { DuplicateCheckResult } from './types/classification';
 import { DuplicateResultsModal } from './views/DuplicateResultsModal';
 import { DuplicatePairsModal, type DuplicatePair, type BulkAction } from './views/DuplicatePairsModal';
 import { RelatedNotesModal } from './views/RelatedNotesModal';
 import { MutationSelectionModal } from './views/MutationSelectionModal';
 import { ExpansionPreviewModal } from './views/ExpansionPreviewModal';
 import { ReorganizationPreviewModal } from './views/ReorganizationPreviewModal';
-import type { Mutation, ExpansionResult, ReorganizationResult } from './types/transformation';
+// Mutation, ExpansionResult, ReorganizationResult types available but not directly used in main.ts
 import { FileOrganizer } from './utils/fileOrganization';
 import { StatusPickerModal, type IdeaStatus } from './views/StatusPickerModal';
 import { ProgressModal } from './views/ProgressModal';
@@ -49,9 +49,8 @@ import { IdeaStatsModal, type IdeaStats } from './views/IdeaStatsModal';
 import { ImportFilePickerModal } from './views/ImportFilePickerModal';
 import { CodenameModal } from './views/CodenameModal';
 import { TenuousLinkServiceImpl } from './services/TenuousLinkService';
-import type { TenuousLink } from './services/TenuousLinkService';
 import { ExportService, type ExportFormat } from './services/ExportService';
-import { ImportService, type ImportFormat } from './services/ImportService';
+import { ImportService } from './services/ImportService';
 import { PROMPTS } from './services/prompts';
 import { formatDate, sanitizeTitle } from './storage/FilenameGenerator';
 import { extractIdeaNameRuleBased } from './utils/ideaNameExtractor';
@@ -1315,19 +1314,23 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
             if (!file) return;
 
             const { frontmatter } = await this.readIdeaContent(file);
-            const currentStatus = frontmatter.status || 'captured';
+            const currentStatusStr = (frontmatter.status as string) || 'captured';
 
             // Show status picker modal
             new StatusPickerModal(
                 this.app,
-                currentStatus,
+                currentStatusStr,
                 async (newStatus: IdeaStatus) => {
                     await this.updateIdeaFrontmatter(file, { status: newStatus });
 
                     // Handle file movement based on status
-                    if (newStatus === 'archived') {
+                    // Check if previous status was archived (cast to any to avoid type narrowing)
+                    const prevStatus: any = frontmatter.status;
+                    const wasArchived = prevStatus === 'archived';
+                    const isNowArchived = (newStatus as string) === 'archived';
+                    if (isNowArchived) {
                         await this.fileOrganizer.moveToArchive(file);
-                    } else if (currentStatus === 'archived' && newStatus !== 'archived') {
+                    } else if (wasArchived && !isNowArchived) {
                         await this.fileOrganizer.moveFromArchive(file);
                     }
 
@@ -1533,7 +1536,7 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
                 });
 
                 try {
-                    const { body, frontmatter } = await this.readIdeaContent(file);
+                    const { body } = await this.readIdeaContent(file);
                     const ideaText = body.trim();
 
                     if (ideaText.length === 0) {
@@ -1784,7 +1787,7 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
                 });
 
                 try {
-                    const { body, frontmatter } = await this.readIdeaContent(file);
+                    const { body } = await this.readIdeaContent(file);
                     const ideaText = body.trim();
 
                     if (ideaText.length === 0) {
@@ -2206,7 +2209,7 @@ ${link.synergy || 'Potential combination of these ideas'}
 
             new Notice('Refreshing idea...');
 
-            const { body, frontmatter } = await this.readIdeaContent(file);
+            const { body } = await this.readIdeaContent(file);
             const ideaText = body.trim();
 
             if (!ideaText || ideaText.length === 0) {

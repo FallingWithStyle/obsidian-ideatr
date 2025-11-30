@@ -148,7 +148,7 @@ export class DuplicatePairsModal extends Modal {
             attr: { style: 'margin-bottom: 10px;' }
         });
 
-        const bulkDescription = bulkSection.createEl('p', {
+        bulkSection.createEl('p', {
             text: `Apply action to ${this.selected.size} selected pair${this.selected.size > 1 ? 's' : ''}:`,
             attr: { style: 'font-size: 12px; color: var(--text-muted); margin-bottom: 10px;' }
         });

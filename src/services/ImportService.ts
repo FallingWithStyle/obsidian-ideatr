@@ -2,7 +2,7 @@
  * ImportService - Handles importing ideas from various formats
  */
 
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
 import type { IdeaFrontmatter } from '../types/idea';
 import { FrontmatterParser } from './FrontmatterParser';
 import { buildFrontmatter } from '../metadata/FrontmatterBuilder';
@@ -128,7 +128,8 @@ export class ImportService {
             throw new Error('Invalid CSV: no data rows');
         }
 
-        const headers = lines[0].split(',');
+        // Skip header row
+        lines[0].split(',');
         const items: Array<Partial<IdeaFrontmatter> & { title: string; body: string }> = [];
 
         for (let i = 1; i < lines.length; i++) {
@@ -210,7 +211,7 @@ export class ImportService {
                 created: metadata.created || new Date().toISOString().split('T')[0],
                 category: metadata.category || '',
                 status: metadata.status || 'captured',
-                tags: metadata.tags ? metadata.tags.split(',').map(t => t.trim()) : []
+                tags: metadata.tags ? metadata.tags.split(',').map((t: string) => t.trim()) : []
             });
         }
 

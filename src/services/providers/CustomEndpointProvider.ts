@@ -79,9 +79,9 @@ export class CustomEndpointProvider implements ILLMProvider {
 
             const data = await response.json();
             
-            // Extract content based on format
+            // Extract content based on format (responsePath was determined earlier)
             let content: string;
-            if (this.format === 'ollama') {
+            if (responsePath === 'message.content') {
                 content = data.message?.content || '';
             } else {
                 content = data.choices?.[0]?.message?.content || '';
@@ -126,7 +126,7 @@ Response:`;
             const parsed = JSON.parse(jsonMatch[0]);
 
             return {
-                category: this.validateCategory(parsed.category),
+                category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,
                 tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
                 confidence: parsed.confidence || 0.8
             };
