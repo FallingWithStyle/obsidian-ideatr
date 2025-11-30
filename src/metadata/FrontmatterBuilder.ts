@@ -43,6 +43,9 @@ export function frontmatterToYAML(frontmatter: IdeaFrontmatter): string {
     if (frontmatter.projectPath) {
         lines.push(`projectPath: ${frontmatter.projectPath}`);
     }
+    if (frontmatter.codename) {
+        lines.push(`codename: ${frontmatter.codename}`);
+    }
 
     lines.push('---');
     return lines.join('\n');

@@ -64,11 +64,15 @@ export class FrontmatterParser implements IFrontmatterParser {
         // Parse optional fields (for elevation)
         const elevatedMatch = frontmatterBlock.match(/^elevated:\s*(.+)$/m);
         const projectPathMatch = frontmatterBlock.match(/^projectPath:\s*(.+)$/m);
+        const codenameMatch = frontmatterBlock.match(/^codename:\s*(.+)$/m);
         if (elevatedMatch) {
             frontmatter.elevated = elevatedMatch[1].trim();
         }
         if (projectPathMatch) {
             frontmatter.projectPath = projectPathMatch[1].trim();
+        }
+        if (codenameMatch) {
+            frontmatter.codename = codenameMatch[1].trim();
         }
 
         // Parse optional fields (for resurfacing)

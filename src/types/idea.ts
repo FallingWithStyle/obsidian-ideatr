@@ -16,6 +16,7 @@ export interface IdeaFrontmatter {
     'existence-check': string[]; // Empty array for Day 0, populated later
     elevated?: string; // ISO 8601 date (YYYY-MM-DD) - elevation date
     projectPath?: string; // Path to project folder (e.g., "Projects/my-project")
+    codename?: string; // Optional codename for the idea
 }
 
 /**

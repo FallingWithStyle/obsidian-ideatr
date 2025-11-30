@@ -47,11 +47,14 @@ import { TenuousLinksModal } from './views/TenuousLinksModal';
 import { ClusterAnalysisModal, type ClusterInfo } from './views/ClusterAnalysisModal';
 import { IdeaStatsModal, type IdeaStats } from './views/IdeaStatsModal';
 import { ImportFilePickerModal } from './views/ImportFilePickerModal';
+import { CodenameModal } from './views/CodenameModal';
 import { TenuousLinkServiceImpl } from './services/TenuousLinkService';
 import type { TenuousLink } from './services/TenuousLinkService';
 import { ExportService, type ExportFormat } from './services/ExportService';
 import { ImportService, type ImportFormat } from './services/ImportService';
 import { PROMPTS } from './services/prompts';
+import { formatDate, sanitizeTitle } from './storage/FilenameGenerator';
+import { extractIdeaNameRuleBased } from './utils/ideaNameExtractor';
 
 /**
  * Ideatr Project Internal Plugin - Fast idea capture with intelligent classification
@@ -401,6 +404,14 @@ export default class IdeatrPlugin extends Plugin {
                 name: 'Unarchive Idea',
                 callback: () => {
                     this.unarchiveIdea();
+                }
+            });
+
+            this.addCommand({
+                id: 'add-codename',
+                name: 'Generate Codename',
+                callback: () => {
+                    this.addCodename();
                 }
             });
 
@@ -1386,6 +1397,88 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
                 new Notice(error.userMessage);
             } else {
                 new Notice('Failed to unarchive idea. Please try again or check console for details.');
+            }
+        }
+    }
+
+    /**
+     * Command: add-codename
+     * Generate or update codename for the current idea
+     */
+    private async addCodename(): Promise<void> {
+        try {
+            const file = await this.getActiveIdeaFile();
+            if (!file) return;
+
+            const { frontmatter } = await this.readIdeaContent(file);
+            const currentCodename = frontmatter.codename;
+
+            const modal = new CodenameModal(
+                this.app,
+                async (codename: string) => {
+                    try {
+                        // Read current content to get body and frontmatter
+                        const { frontmatter, body } = await this.readIdeaContent(file);
+                        const updates: Partial<any> = {};
+                        const trimmedCodename = codename.trim();
+                        
+                        // Update frontmatter
+                        if (trimmedCodename.length > 0) {
+                            updates.codename = trimmedCodename;
+                        } else {
+                            // To remove codename, set it to undefined
+                            // FrontmatterBuilder will omit undefined optional fields
+                            updates.codename = undefined;
+                        }
+
+                        await this.updateIdeaFrontmatter(file, updates);
+
+                        // Update filename
+                        const createdDate = new Date(frontmatter.created);
+                        let newFilename: string;
+
+                        if (trimmedCodename.length > 0) {
+                            // Use codename in filename: [YYYY-MM-DD] Codename.md
+                            const sanitizedCodename = sanitizeTitle(trimmedCodename);
+                            const dateStr = formatDate(createdDate);
+                            newFilename = `[${dateStr}] ${sanitizedCodename}.md`;
+                        } else {
+                            // Regenerate filename from body text: [YYYY-MM-DD] Title.md
+                            const ideaName = extractIdeaNameRuleBased(body);
+                            const sanitizedTitle = sanitizeTitle(ideaName || 'Untitled');
+                            const dateStr = formatDate(createdDate);
+                            newFilename = `[${dateStr}] ${sanitizedTitle}.md`;
+                        }
+
+                        // Rename file if filename changed
+                        const currentFilename = file.name;
+                        if (currentFilename !== newFilename) {
+                            // Preserve directory path
+                            const directory = file.path.substring(0, file.path.lastIndexOf('/') + 1);
+                            const newPath = directory + newFilename;
+                            await this.app.vault.rename(file, newPath);
+                        }
+
+                        if (trimmedCodename.length > 0) {
+                            new Notice(`Codename "${trimmedCodename}" generated successfully.`);
+                        } else {
+                            new Notice('Codename cleared successfully.');
+                        }
+                    } catch (error) {
+                        console.error('Failed to update codename:', error);
+                        new Notice('Failed to update codename. Please try again.');
+                    }
+                },
+                currentCodename
+            );
+
+            modal.open();
+        } catch (error) {
+            console.error('Failed to add codename:', error);
+            if (error instanceof UserFacingError) {
+                new Notice(error.userMessage);
+            } else {
+                new Notice('Failed to add codename. Please try again or check console for details.');
             }
         }
     }
