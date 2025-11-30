@@ -117,15 +117,6 @@ export default class IdeatrPlugin extends Plugin {
         // Initialize local LLM
         this.localLLMService = new LlamaService(this.settings);
 
-        // Preload model on startup if enabled
-        if (this.settings.preloadOnStartup) {
-            // Ensure LLM is ready asynchronously (don't block plugin load)
-            // This works for both local and cloud providers
-            this.llmService.ensureReady?.().catch((error) => {
-                console.warn('[Ideatr Project Internal] Failed to preload LLM on startup:', error);
-            });
-        }
-
         // Initialize cloud LLM if configured
         let cloudLLM: ILLMService | null = null;
         if (this.settings.cloudProvider !== 'none' && this.settings.cloudApiKey.trim().length > 0) {
@@ -152,6 +143,15 @@ export default class IdeatrPlugin extends Plugin {
             cloudLLM,
             this.settings.preferCloud
         );
+
+        // Preload model on startup if enabled
+        if (this.settings.preloadOnStartup) {
+            // Ensure LLM is ready asynchronously (don't block plugin load)
+            // This works for both local and cloud providers
+            this.llmService.ensureReady?.().catch((error) => {
+                console.warn('[Ideatr Project Internal] Failed to preload LLM on startup:', error);
+            });
+        }
 
         this.searchService = new SearchService(this.app.vault);
         this.classificationService = new ClassificationService(this.llmService, this.searchService);
