@@ -51,7 +51,7 @@ import { ImportService } from './services/ImportService';
 import { PROMPTS } from './services/prompts';
 
 /**
- * Ideatr Project Internal Plugin - Fast idea capture with intelligent classification
+ * Ideatr Plugin - Fast idea capture with intelligent classification
  */
 export default class IdeatrPlugin extends Plugin {
     settings!: IdeatrSettings;
@@ -79,7 +79,7 @@ export default class IdeatrPlugin extends Plugin {
     private importService!: ImportService;
 
     async onload() {
-        console.log('Loading Ideatr Project Internal plugin');
+        console.log('Loading Ideatr plugin');
 
         await this.loadSettings();
 
@@ -125,9 +125,9 @@ export default class IdeatrPlugin extends Plugin {
                     }
                 );
                 cloudLLM = new ProviderAdapter(provider);
-                console.log(`[Ideatr Project Internal] Cloud AI provider initialized: ${provider.name}`);
+                console.log(`[Ideatr] Cloud AI provider initialized: ${provider.name}`);
             } catch (error) {
-                console.warn('[Ideatr Project Internal] Failed to initialize cloud provider:', error);
+                console.warn('[Ideatr] Failed to initialize cloud provider:', error);
                 new Notice('Failed to initialize cloud AI provider. Using local AI only.');
             }
         }
@@ -224,10 +224,10 @@ export default class IdeatrPlugin extends Plugin {
         this.addSettingTab(new IdeatrSettingTab(this.app, this));
 
         // Register all commands
-        console.log('Ideatr Project Internal: Starting command registration...');
+        console.log('Ideatr: Starting command registration...');
         try {
             // Register command to open capture modal
-            console.log('Ideatr Project Internal: Registering capture-idea command...');
+            console.log('Ideatr: Registering capture-idea command...');
             this.addCommand({
             id: 'capture-idea',
             name: 'Capture Idea',
@@ -237,7 +237,7 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register name variant generation command
-            console.log('Ideatr Project Internal: Registering generate-name-variants command...');
+            console.log('Ideatr: Registering generate-name-variants command...');
             this.addCommand({
             id: 'generate-name-variants',
             name: 'Generate Name Variants',
@@ -247,7 +247,7 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register scaffold generation command
-            console.log('Ideatr Project Internal: Registering generate-scaffold command...');
+            console.log('Ideatr: Registering generate-scaffold command...');
             this.addCommand({
             id: 'generate-scaffold',
             name: 'Generate Scaffold',
@@ -257,7 +257,7 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register dashboard command
-            console.log('Ideatr Project Internal: Registering open-dashboard command...');
+            console.log('Ideatr: Registering open-dashboard command...');
             this.addCommand({
             id: 'open-dashboard',
             name: 'Open Dashboard',
@@ -267,7 +267,7 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register graph view command
-            console.log('Ideatr Project Internal: Registering open-graph command...');
+            console.log('Ideatr: Registering open-graph command...');
             this.addCommand({
             id: 'open-graph',
             name: 'Open Graph View',
@@ -277,7 +277,7 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register digest command
-            console.log('Ideatr Project Internal: Registering generate-digest command...');
+            console.log('Ideatr: Registering generate-digest command...');
             this.addCommand({
             id: 'generate-digest',
             name: 'Generate Weekly Digest',
@@ -287,7 +287,7 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register elevation command
-            console.log('Ideatr Project Internal: Registering elevate-to-project command...');
+            console.log('Ideatr: Registering elevate-to-project command...');
             this.addCommand({
             id: 'elevate-to-project',
             name: 'Elevate to Project',
@@ -305,7 +305,7 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Manual Validation Commands
-            console.log('Ideatr Project Internal: Registering validation commands...');
+            console.log('Ideatr: Registering validation commands...');
             
             this.addCommand({
                 id: 'check-domains',
@@ -348,7 +348,7 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Idea Transformation Commands
-            console.log('Ideatr Project Internal: Registering transformation commands...');
+            console.log('Ideatr: Registering transformation commands...');
             
             this.addCommand({
                 id: 'generate-mutations',
@@ -375,7 +375,7 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Status & Lifecycle Commands
-            console.log('Ideatr Project Internal: Registering status commands...');
+            console.log('Ideatr: Registering status commands...');
             
             this.addCommand({
                 id: 'change-status',
@@ -402,7 +402,7 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Batch Operations Commands
-            console.log('Ideatr Project Internal: Registering batch operation commands...');
+            console.log('Ideatr: Registering batch operation commands...');
             
             this.addCommand({
                 id: 'reclassify-all-ideas',
@@ -429,7 +429,7 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Analysis & Insights Commands
-            console.log('Ideatr Project Internal: Registering analysis commands...');
+            console.log('Ideatr: Registering analysis commands...');
             
             this.addCommand({
                 id: 'find-tenuous-links',
@@ -456,7 +456,7 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Quick Actions Commands
-            console.log('Ideatr Project Internal: Registering quick action commands...');
+            console.log('Ideatr: Registering quick action commands...');
             
             this.addCommand({
                 id: 'refresh-idea',
@@ -467,7 +467,7 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Export & Import Commands
-            console.log('Ideatr Project Internal: Registering export/import commands...');
+            console.log('Ideatr: Registering export/import commands...');
             
             this.addCommand({
                 id: 'export-ideas',
@@ -490,10 +490,10 @@ export default class IdeatrPlugin extends Plugin {
                 this.openCaptureModal();
             });
 
-            console.log('Ideatr Project Internal: All commands registered successfully');
+            console.log('Ideatr: All commands registered successfully');
         } catch (error) {
-            console.error('Ideatr Project Internal: Error registering commands:', error);
-            console.error('Ideatr Project Internal: Error details:', error instanceof Error ? error.stack : error);
+            console.error('Ideatr: Error registering commands:', error);
+            console.error('Ideatr: Error details:', error instanceof Error ? error.stack : error);
         }
     }
 
@@ -511,7 +511,7 @@ export default class IdeatrPlugin extends Plugin {
     }
 
     onunload() {
-        console.log('Unloading Ideatr Project Internal plugin');
+        console.log('Unloading Ideatr plugin');
         if (this.localLLMService) {
             this.localLLMService.stopServer();
         }
