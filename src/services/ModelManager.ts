@@ -119,7 +119,6 @@ export class ModelManager implements IModelManager {
         }
 
         // Create abort controller if not provided
-        const _signal = abortSignal || new AbortController().signal;
         if (!abortSignal) {
             this.abortController = new AbortController();
         }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { FrontmatterParser } from '../../src/services/FrontmatterParser';
-import schema from '../../shared/frontmatter-schema.json';
+import schema from '../../../shared/frontmatter-schema.json';
 
 describe('Compatibility: Frontmatter Schema Validation', () => {
     const parser = new FrontmatterParser();

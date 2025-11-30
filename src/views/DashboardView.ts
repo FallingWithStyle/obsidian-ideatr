@@ -47,7 +47,7 @@ export class DashboardView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'Ideatr Project Internal Dashboard';
+        return 'Ideatr Dashboard';
     }
 
     getIcon(): string {
@@ -65,7 +65,7 @@ export class DashboardView extends ItemView {
 
         // Create header
         const header = container.createDiv('dashboard-header');
-        header.createEl('h2', { text: 'Ideatr Project Internal Dashboard' });
+        header.createEl('h2', { text: 'Ideatr Dashboard' });
 
         const toolbar = header.createDiv('dashboard-toolbar');
         const refreshBtn = toolbar.createEl('button', { text: 'Refresh' });

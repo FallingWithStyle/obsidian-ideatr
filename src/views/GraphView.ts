@@ -36,7 +36,7 @@ export class GraphView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'Ideatr Project Internal Graph';
+        return 'Ideatr Graph';
     }
 
     getIcon(): string {

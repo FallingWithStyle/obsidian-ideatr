@@ -182,7 +182,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Ideatr Project Internal Settings' });
+        containerEl.createEl('h2', { text: 'Ideatr Settings' });
 
         // AI Configuration Section
         containerEl.createEl('h2', { text: 'AI Configuration' });

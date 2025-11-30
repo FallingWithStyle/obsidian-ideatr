@@ -1314,7 +1314,7 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
                     // Handle file movement based on status
                     if (newStatus === 'archived') {
                         await this.fileOrganizer.moveToArchive(file);
-                    } else if (isCurrentlyArchived && newStatus !== 'archived') {
+                    } else if (isCurrentlyArchived) {
                         await this.fileOrganizer.moveFromArchive(file);
                     }
 

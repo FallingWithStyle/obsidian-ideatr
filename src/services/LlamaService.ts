@@ -13,6 +13,7 @@ export class LlamaService implements ILLMService {
     private isServerReady: boolean = false;
     private idleTimeout: number = 15 * 60 * 1000; // 15 minutes
     private idleTimer: NodeJS.Timeout | null = null;
+    // @ts-ignore - Reserved for future use
     private _lastUseTime: number = 0;
     private loadingState: 'not-loaded' | 'loading' | 'ready' | 'idle' = 'not-loaded';
 
