@@ -47,7 +47,6 @@ import { TenuousLinksModal } from './views/TenuousLinksModal';
 import { ClusterAnalysisModal, type ClusterInfo } from './views/ClusterAnalysisModal';
 import { IdeaStatsModal, type IdeaStats } from './views/IdeaStatsModal';
 import { ImportFilePickerModal } from './views/ImportFilePickerModal';
-import { CodenameModal } from './views/CodenameModal';
 import { TenuousLinkServiceImpl } from './services/TenuousLinkService';
 import { ExportService, type ExportFormat } from './services/ExportService';
 import { ImportService } from './services/ImportService';
@@ -1415,80 +1414,119 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
     private async addCodename(): Promise<void> {
         try {
             const file = await this.getActiveIdeaFile();
-            if (!file) return;
+            if (!file) {
+                new Notice('No active idea file. Please open an idea file.');
+                return;
+            }
 
             const { frontmatter, body } = await this.readIdeaContent(file);
-            const currentCodename = frontmatter.codename;
+            
+            // Check if LLM is available
+            if (!this.llmService?.isAvailable() || !this.llmService.complete) {
+                new Notice('LLM service is not available. Cannot generate codename.');
+                return;
+            }
 
-            const modal = new CodenameModal(
-                this.app,
-                async (codename: string) => {
-                    try {
-                        // Read current content to get body and frontmatter
-                        const { frontmatter, body } = await this.readIdeaContent(file);
-                        const updates: Partial<any> = {};
-                        const trimmedCodename = codename.trim();
-                        
-                        // Update frontmatter
-                        if (trimmedCodename.length > 0) {
-                            updates.codename = trimmedCodename;
-                        } else {
-                            // To remove codename, set it to undefined
-                            // FrontmatterBuilder will omit undefined optional fields
-                            updates.codename = undefined;
-                        }
+            // Extract idea name/title for context
+            const ideaName = extractIdeaNameRuleBased(body);
+            const ideaText = ideaName ? `${ideaName}\n\n${body}` : body;
 
-                        await this.updateIdeaFrontmatter(file, updates);
+            // Generate codename automatically
+            new Notice('Generating codename...');
+            
+            const codename = await this.generateCodename(ideaText);
+            
+            if (!codename) {
+                new Notice('Failed to generate codename. Please try again.');
+                return;
+            }
 
-                        // Update filename
-                        const createdDate = new Date(frontmatter.created);
-                        let newFilename: string;
+            // Update frontmatter with generated codename
+            const updates: Partial<any> = {
+                codename: codename.trim()
+            };
 
-                        if (trimmedCodename.length > 0) {
-                            // Use codename in filename: [YYYY-MM-DD] Codename.md
-                            const sanitizedCodename = sanitizeTitle(trimmedCodename);
-                            const dateStr = formatDate(createdDate);
-                            newFilename = `[${dateStr}] ${sanitizedCodename}.md`;
-                        } else {
-                            // Regenerate filename from body text: [YYYY-MM-DD] Title.md
-                            const ideaName = extractIdeaNameRuleBased(body);
-                            const sanitizedTitle = sanitizeTitle(ideaName || 'Untitled');
-                            const dateStr = formatDate(createdDate);
-                            newFilename = `[${dateStr}] ${sanitizedTitle}.md`;
-                        }
+            await this.updateIdeaFrontmatter(file, updates);
 
-                        // Rename file if filename changed
-                        const currentFilename = file.name;
-                        if (currentFilename !== newFilename) {
-                            // Preserve directory path
-                            const directory = file.path.substring(0, file.path.lastIndexOf('/') + 1);
-                            const newPath = directory + newFilename;
-                            await this.app.vault.rename(file, newPath);
-                        }
+            // Update filename
+            const createdDate = new Date(frontmatter.created);
+            const sanitizedCodename = sanitizeTitle(codename.trim());
+            const dateStr = formatDate(createdDate);
+            const newFilename = `[${dateStr}] ${sanitizedCodename}.md`;
 
-                        if (trimmedCodename.length > 0) {
-                            new Notice(`Codename "${trimmedCodename}" generated successfully.`);
-                        } else {
-                            new Notice('Codename cleared successfully.');
-                        }
-                    } catch (error) {
-                        console.error('Failed to update codename:', error);
-                        new Notice('Failed to update codename. Please try again.');
-                    }
-                },
-                currentCodename,
-                body,
-                this.llmService
-            );
+            // Rename file if filename changed
+            const currentFilename = file.name;
+            if (currentFilename !== newFilename) {
+                const directory = file.path.substring(0, file.path.lastIndexOf('/') + 1);
+                const newPath = directory + newFilename;
+                await this.app.vault.rename(file, newPath);
+            }
 
-            modal.open();
+            new Notice(`Codename "${codename}" generated successfully.`);
         } catch (error) {
-            console.error('Failed to add codename:', error);
+            console.error('Failed to generate codename:', error);
             if (error instanceof UserFacingError) {
                 new Notice(error.userMessage);
             } else {
-                new Notice('Failed to add codename. Please try again or check console for details.');
+                new Notice('Failed to generate codename. Please try again or check console for details.');
             }
+        }
+    }
+
+    /**
+     * Generate a codename using LLM
+     */
+    private async generateCodename(ideaText: string): Promise<string | null> {
+        if (!this.llmService?.complete) {
+            return null;
+        }
+
+        const prompt = `Generate a codename for this idea.
+
+Idea: "${ideaText.substring(0, 500)}"
+
+Requirements:
+- 1-3 words maximum
+- Easy to remember and pronounce
+- Captures the idea's core concept
+- Professional but creative
+- Suitable for filenames
+
+Examples:
+- "bracelet that measures room volume" → "VolumeBand" or "SoundSense"
+- "AI writing assistant" → "WriteBot" or "TextCraft"
+- "social network for developers" → "DevNet" or "CodeConnect"
+
+Return only the codename. No quotes, no explanation, just the name:`;
+
+        try {
+            const response = await this.llmService.complete(prompt, {
+                temperature: 0.8,
+                n_predict: 50,
+                stop: ['\n', '.', '!', '?', '"', "'"]
+            });
+
+            // Clean and validate the response
+            let codename = response.trim();
+            
+            // Remove quotes if present
+            codename = codename.replace(/^["']|["']$/g, '');
+            
+            // Truncate to 30 characters (reasonable for codenames)
+            codename = codename.substring(0, 30).trim();
+            
+            // Remove special characters (keep alphanumeric, spaces, hyphens)
+            codename = codename.replace(/[^a-zA-Z0-9\s-]/g, '');
+            
+            // Validate: must be at least 2 characters
+            if (codename.length < 2) {
+                return null;
+            }
+            
+            return codename;
+        } catch (error) {
+            console.error('Codename generation failed:', error);
+            return null;
         }
     }
 
