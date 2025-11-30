@@ -10,10 +10,12 @@ const mocks = vi.hoisted(() => {
             create: mockMessagesCreate
         }
     };
-    const MockAnthropic = vi.fn((config: any) => {
-        // Return the mock instance when called
-        return mockAnthropicInstance;
-    });
+    // Use a class-based mock for proper constructor support
+    class MockAnthropic {
+        constructor(config: any) {
+            return mockAnthropicInstance;
+        }
+    }
     return {
         Anthropic: MockAnthropic,
         mockAnthropicInstance,

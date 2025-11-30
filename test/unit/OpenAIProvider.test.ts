@@ -12,9 +12,12 @@ const mocks = vi.hoisted(() => {
             }
         }
     };
-    const MockOpenAI = vi.fn((config: any) => {
-        return mockOpenAIInstance;
-    });
+    // Use a class-based mock for proper constructor support
+    class MockOpenAI {
+        constructor(config: any) {
+            return mockOpenAIInstance;
+        }
+    }
     return {
         default: MockOpenAI,
         mockOpenAIInstance,
