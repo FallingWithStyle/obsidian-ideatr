@@ -5,6 +5,7 @@ import type { IdeaFile } from '../types/idea';
 import { ManagementError, getManagementErrorMessage } from '../types/management';
 import { renderGraphLayout } from './GraphRenderer';
 import { Logger } from '../utils/logger';
+import { createHelpIcon } from '../utils/HelpIcon';
 
 /**
  * GraphView - Displays idea clusters as an interactive graph
@@ -50,7 +51,10 @@ export class GraphView extends ItemView {
 
         // Create header
         const header = container.createDiv('graph-header');
-        header.createEl('h2', { text: 'Idea Clusters' });
+        const headerTitle = header.createDiv({ cls: 'graph-title-container' });
+        headerTitle.createEl('h2', { text: 'Idea Clusters' });
+        const graphHelpIcon = createHelpIcon(this.app, 'graph-view', 'Learn about Graph View');
+        headerTitle.appendChild(graphHelpIcon);
 
         const toolbar = header.createDiv('graph-toolbar');
         const refreshBtn = toolbar.createEl('button', { text: 'Refresh' });

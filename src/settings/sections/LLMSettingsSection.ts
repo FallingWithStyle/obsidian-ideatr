@@ -2,10 +2,14 @@ import { Setting, Notice } from 'obsidian';
 import { BaseSettingsSection } from '../components/SettingsSection';
 import { FirstLaunchSetupModal } from '../../views/FirstLaunchSetupModal';
 import { ModelManager } from '../../services/ModelManager';
+import { createHelpIcon } from '../../utils/HelpIcon';
 
 export class LLMSettingsSection extends BaseSettingsSection {
     display(containerEl: HTMLElement): void {
-        containerEl.createEl('h2', { text: 'AI Configuration' });
+        const titleContainer = containerEl.createDiv({ cls: 'settings-section-title' });
+        titleContainer.createEl('h2', { text: 'AI Configuration' });
+        const helpIcon = createHelpIcon(this.app, 'getting-started', 'Learn about AI Configuration');
+        titleContainer.appendChild(helpIcon);
 
         // Local AI settings
         new Setting(containerEl)

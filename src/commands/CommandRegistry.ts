@@ -16,6 +16,7 @@ import { ArchiveCommand } from './lifecycle/ArchiveCommand';
 import { CodenameCommand } from './lifecycle/CodenameCommand';
 import { DashboardCommand } from './views/DashboardCommand';
 import { GraphViewCommand } from './views/GraphViewCommand';
+import { OpenTutorialsCommand } from './views/OpenTutorialsCommand';
 import { ClassifyCurrentNoteCommand } from './management/ClassifyCurrentNoteCommand';
 import { RefreshIdeaCommand } from './management/RefreshIdeaCommand';
 import { ExportCommand } from './management/ExportCommand';
@@ -143,6 +144,12 @@ export class CommandRegistry {
             id: 'open-graph',
             name: 'Open Graph View',
             callback: () => new GraphViewCommand(context).execute()
+        });
+
+        plugin.addCommand({
+            id: 'open-tutorials',
+            name: 'Open Tutorials',
+            callback: () => new OpenTutorialsCommand(context).execute()
         });
 
         // Management commands

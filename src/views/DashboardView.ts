@@ -6,6 +6,7 @@ import { ManagementError, getManagementErrorMessage } from '../types/management'
 import { paginate, parseTagsInput, parseDateRange } from './dashboardUtils';
 import { renderGraphLayout } from './GraphRenderer';
 import { Logger } from '../utils/logger';
+import { createHelpIcon } from '../utils/HelpIcon';
 
 /**
  * DashboardView - Displays a table view of all ideas with filtering and search
@@ -66,7 +67,10 @@ export class DashboardView extends ItemView {
 
         // Create header
         const header = container.createDiv('dashboard-header');
-        header.createEl('h2', { text: 'Ideatr Dashboard' });
+        const headerTitle = header.createDiv({ cls: 'dashboard-title-container' });
+        headerTitle.createEl('h2', { text: 'Ideatr Dashboard' });
+        const dashboardHelpIcon = createHelpIcon(this.app, 'dashboard', 'Learn about the Dashboard');
+        headerTitle.appendChild(dashboardHelpIcon);
 
         const toolbar = header.createDiv('dashboard-toolbar');
         const refreshBtn = toolbar.createEl('button', { text: 'Refresh' });
@@ -74,6 +78,10 @@ export class DashboardView extends ItemView {
 
         // Create filter panel
         const filterPanel = container.createDiv('dashboard-filters');
+        const filterTitle = filterPanel.createDiv({ cls: 'dashboard-filters-title' });
+        filterTitle.createEl('h3', { text: 'Filters' });
+        const filterHelpIcon = createHelpIcon(this.app, 'filters', 'Learn about Dashboard Filters');
+        filterTitle.appendChild(filterHelpIcon);
         this.createFilterUI(filterPanel);
 
         // Create side panels
@@ -82,20 +90,29 @@ export class DashboardView extends ItemView {
         // Clusters mini-graph
         if (this.clusteringService) {
             const clustersPanel = sidePanels.createDiv('dashboard-panel clusters-panel');
-            clustersPanel.createEl('h3', { text: 'Clusters' });
+            const clustersTitle = clustersPanel.createDiv({ cls: 'dashboard-panel-title' });
+            clustersTitle.createEl('h3', { text: 'Clusters' });
+            const clustersHelpIcon = createHelpIcon(this.app, 'clusters', 'Learn about Clusters');
+            clustersTitle.appendChild(clustersHelpIcon);
             this.renderClustersMiniGraph(clustersPanel);
         }
 
         // Resurfacing panel
         if (this.resurfacingService) {
             const resurfacingPanel = sidePanels.createDiv('dashboard-panel resurfacing-panel');
-            resurfacingPanel.createEl('h3', { text: 'Old Ideas' });
+            const resurfacingTitle = resurfacingPanel.createDiv({ cls: 'dashboard-panel-title' });
+            resurfacingTitle.createEl('h3', { text: 'Old Ideas' });
+            const resurfacingHelpIcon = createHelpIcon(this.app, 'resurfacing', 'Learn about Resurfacing');
+            resurfacingTitle.appendChild(resurfacingHelpIcon);
             this.renderResurfacingPanel(resurfacingPanel);
         }
 
         // Triage inbox
         const triagePanel = sidePanels.createDiv('dashboard-panel triage-panel');
-        triagePanel.createEl('h3', { text: 'Triage Inbox' });
+        const triageTitle = triagePanel.createDiv({ cls: 'dashboard-panel-title' });
+        triageTitle.createEl('h3', { text: 'Triage Inbox' });
+        const triageHelpIcon = createHelpIcon(this.app, 'triage-inbox', 'Learn about Triage Inbox');
+        triageTitle.appendChild(triageHelpIcon);
         this.renderTriageInbox(triagePanel);
 
         // Create table container
