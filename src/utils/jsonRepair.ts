@@ -236,19 +236,29 @@ export function extractAndRepairJSON(content: string, isArray: boolean = false):
     if (isArray && arrayStart !== -1) {
         startIndex = arrayStart;
     } else if (!isArray && objectStart !== -1) {
+        // For objects, prefer the opening brace
         startIndex = objectStart;
     } else if (arrayStart !== -1 && objectStart !== -1) {
         // Both found, use the one that comes first
         startIndex = Math.min(arrayStart, objectStart);
+    } else if (!isArray && objectStart === -1) {
+        // For objects, if no opening brace found, don't extract from array start
+        // We'll add the opening brace to the whole content later
+        startIndex = -1;
     } else if (arrayStart !== -1) {
         startIndex = arrayStart;
     } else if (objectStart !== -1) {
         startIndex = objectStart;
     }
     
-    if (startIndex !== -1) {
+    // If we found a start index, extract from there
+    // For objects without opening braces, we keep the whole string and add '{' later
+    if (startIndex !== -1 && startIndex > 0) {
         jsonStr = jsonStr.substring(startIndex);
     }
+    
+    // Trim again after substring operation to remove any leading whitespace
+    jsonStr = jsonStr.trim();
     
     // Ensure content starts with brace or bracket
     if (isArray && !jsonStr.startsWith('[')) {
@@ -259,6 +269,9 @@ export function extractAndRepairJSON(content: string, isArray: boolean = false):
             jsonStr = `[${jsonStr}`;
         }
     } else if (!isArray && !jsonStr.startsWith('{')) {
+        // If we're expecting an object but it doesn't start with '{',
+        // add the opening brace. This handles cases where the LLM response
+        // is missing the opening brace but has valid object properties.
         jsonStr = `{${jsonStr}`;
     }
     
