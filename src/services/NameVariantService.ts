@@ -61,7 +61,7 @@ export class NameVariantService implements INameVariantService {
         );
         this.loadCacheData = loadCacheData;
         this.saveCacheData = saveCacheData;
-        
+
         // Load cache from disk if persistence is enabled
         if (settings.variantCachePersist && loadCacheData) {
             this.loadCache().catch(err => {
@@ -75,7 +75,7 @@ export class NameVariantService implements INameVariantService {
      */
     async loadCache(): Promise<void> {
         if (!this.loadCacheData) return;
-        
+
         try {
             const data = await this.loadCacheData();
             if (data && typeof data === 'object') {
@@ -91,7 +91,7 @@ export class NameVariantService implements INameVariantService {
      */
     async saveCache(): Promise<void> {
         if (!this.settings.variantCachePersist || !this.saveCacheData) return;
-        
+
         try {
             const data = this.cache.toData();
             await this.saveCacheData(data);
@@ -124,7 +124,7 @@ export class NameVariantService implements INameVariantService {
             this.llmService,
             this.settings.useLLMForNameExtraction || false
         );
-        
+
         if (!name || name.trim().length === 0) {
             return [];
         }
@@ -177,7 +177,7 @@ export class NameVariantService implements INameVariantService {
      */
     private async generateVariantsWithLLM(ideaName: string): Promise<NameVariant[]> {
         const prompt = this.constructPrompt(ideaName);
-        
+
         // Check if LlamaService has a complete method (for generic completions)
         if (this.llmService.complete && typeof this.llmService.complete === 'function') {
             try {
@@ -186,7 +186,7 @@ export class NameVariantService implements INameVariantService {
                     n_predict: 512, // Increased for more variants (8-12)
                     stop: ['}']
                 });
-                
+
                 const variants = this.parseVariantResponse(response);
                 if (variants.length > 0) {
                     return variants;
@@ -196,7 +196,7 @@ export class NameVariantService implements INameVariantService {
                 // Fall through to fallback generation
             }
         }
-        
+
         // Fallback if complete method not available or failed
         return [];
     }
@@ -209,7 +209,7 @@ export class NameVariantService implements INameVariantService {
             // Extract and repair JSON from response
             const repaired = extractAndRepairJSON(content, false);
             const parsed = JSON.parse(repaired);
-            
+
             if (!parsed.variants || !Array.isArray(parsed.variants)) {
                 return [];
             }
@@ -260,17 +260,43 @@ Rules:
 - Short names: Must be meaningful, not random letters
 - All variants: Should feel brandable and professional
 
-Output format (JSON only, no markdown):
-{
+Examples:
+
+Input: "notification app"
+Output: {
   "variants": [
-    { "text": "ExampleName1", "type": "synonym" },
-    { "text": "ShortName", "type": "short" },
-    { "text": "clever.io", "type": "domain-hack" }
+    {"text": "Alert", "type": "synonym"},
+    {"text": "Ping", "type": "short"},
+    {"text": "notif.io", "type": "domain-hack"},
+    {"text": "Notifai", "type": "phonetic"},
+    {"text": "Alertify", "type": "made-up"}
   ]
 }
 
-Response:
-{`;
+Input: "meditation tracker"
+Output: {
+  "variants": [
+    {"text": "Mindful", "type": "synonym"},
+    {"text": "Zen", "type": "short"},
+    {"text": "meditat.io", "type": "domain-hack"},
+    {"text": "Mindspace", "type": "portmanteau"},
+    {"text": "Breathly", "type": "made-up"}
+  ]
+}
+
+Input: "task manager"
+Output: {
+  "variants": [
+    {"text": "Organize", "type": "synonym"},
+    {"text": "Tasker", "type": "short"},
+    {"text": "get.done", "type": "domain-hack"},
+    {"text": "Taskly", "type": "phonetic"},
+    {"text": "Doable", "type": "made-up"}
+  ]
+}
+
+Input: "${ideaName}"
+Output: {`;
     }
 
     /**
@@ -286,7 +312,7 @@ Response:
      */
     private calculateVariantQuality(text: string, type: NameVariantType): number {
         let score = 0.5; // Base score
-        
+
         // Length factor: optimal length is 3-15 characters
         if (text.length >= 3 && text.length <= 15) {
             score += 0.2;
@@ -295,7 +321,7 @@ Response:
         } else if (text.length < 3 || text.length > 30) {
             score -= 0.2;
         }
-        
+
         // Type factor: some types are generally better
         const typeScores: Record<NameVariantType, number> = {
             'synonym': 0.15,
@@ -306,7 +332,7 @@ Response:
             'made-up': 0.0
         };
         score += typeScores[type] || 0;
-        
+
         // Readability factor: check for common patterns
         if (/^[a-z]+$/i.test(text)) {
             score += 0.1; // All letters, no numbers/special chars
@@ -314,7 +340,7 @@ Response:
         if (text.split(/\s+/).length <= 2) {
             score += 0.05; // 1-2 words is better
         }
-        
+
         // Clamp to 0-1 range
         return Math.max(0, Math.min(1, score));
     }
@@ -324,7 +350,7 @@ Response:
      */
     private calculateAverageQuality(variants: NameVariant[], isLLM: boolean = true): number {
         if (variants.length === 0) return 0;
-        
+
         // Calculate individual quality scores if not present
         const scores = variants.map(v => {
             if (v.quality !== undefined) {
@@ -332,9 +358,9 @@ Response:
             }
             return this.calculateVariantQuality(v.text, v.type);
         });
-        
+
         const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
-        
+
         // LLM variants get a boost (they're generally better)
         return isLLM ? Math.min(1, avg + 0.1) : avg;
     }
@@ -346,7 +372,7 @@ Response:
         const variants: NameVariant[] = [];
         const words = ideaName.split(/\s+/).filter(w => w.length > 0);
         const cleanName = ideaName.replace(/\s+/g, '').toLowerCase();
-        
+
         // Short version - first word or first 5 chars
         if (words.length > 0) {
             const firstWord = words[0];
@@ -356,19 +382,19 @@ Response:
                 variants.push({ text: firstWord, type: 'short' });
             }
         }
-        
+
         // Domain hacks
         if (cleanName.length > 0) {
             variants.push({ text: `${cleanName}.io`, type: 'domain-hack' });
             variants.push({ text: `${cleanName}.app`, type: 'domain-hack' });
             variants.push({ text: `${cleanName}.dev`, type: 'domain-hack' });
         }
-        
+
         // Basic short version from clean name
         if (cleanName.length > 5) {
             variants.push({ text: cleanName.substring(0, 5), type: 'short' });
         }
-        
+
         // Acronym if multiple words
         if (words.length > 1) {
             const acronym = words.map(w => w[0]?.toUpperCase() || '').join('');
@@ -376,7 +402,7 @@ Response:
                 variants.push({ text: acronym, type: 'short' });
             }
         }
-        
+
         // Add quality scores to fallback variants
         const variantsWithQuality = variants
             .map(v => ({
@@ -384,7 +410,7 @@ Response:
                 quality: this.calculateVariantQuality(v.text, v.type)
             }))
             .slice(0, this.settings.maxVariants || 8);
-        
+
         return variantsWithQuality;
     }
 }
