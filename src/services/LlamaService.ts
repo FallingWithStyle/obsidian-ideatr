@@ -2,7 +2,7 @@ import type { ILLMService, ClassificationResult, IdeaCategory } from '../types/c
 import type { IdeatrSettings } from '../settings';
 import { APITimeoutError, NetworkError, ClassificationError } from '../types/classification';
 import { spawn, ChildProcess, execSync } from 'child_process';
-import { Notice } from 'obsidian';
+import { Notice, requestUrl } from 'obsidian';
 // @ts-ignore - MODELS will be used for chat template support
 import { ModelManager, MODELS } from './ModelManager';
 import * as path from 'path';
@@ -515,26 +515,42 @@ export class LlamaService implements ILLMService {
                     }
                 }
 
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), this.settings.llmTimeout);
-
-                const response = await fetch(`${this.settings.llamaServerUrl}/completion`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        n_predict: 128,
-                        temperature: 0.1,
-                        stop: ['}'], // Stop generation after JSON object closes
-                    }),
-                    signal: controller.signal
+                // Use requestUrl instead of fetch to bypass CORS restrictions in Electron
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    setTimeout(() => reject(new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`)), this.settings.llmTimeout);
                 });
 
-                clearTimeout(timeoutId);
+                let response;
+                try {
+                    response = await Promise.race([
+                        requestUrl({
+                            url: `${this.settings.llamaServerUrl}/completion`,
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                prompt: prompt,
+                                n_predict: 128,
+                                temperature: 0.1,
+                                stop: ['}'], // Stop generation after JSON object closes
+                            }),
+                        }),
+                        timeoutPromise
+                    ]);
+                } catch (requestError: unknown) {
+                    // requestUrl throws errors for network issues, convert to NetworkError
+                    if (requestError instanceof APITimeoutError) {
+                        throw requestError;
+                    }
+                    const errorMsg = requestError instanceof Error ? requestError.message : String(requestError);
+                    if (errorMsg.includes('ECONNREFUSED') || errorMsg.includes('network') || errorMsg.includes('connection')) {
+                        throw new NetworkError(`Connection failed: ${errorMsg}`);
+                    }
+                    throw new NetworkError(`Request failed: ${errorMsg}`);
+                }
 
-                if (!response.ok) {
+                if (response.status < 200 || response.status >= 300) {
                     // Handle 503 Service Unavailable - server might have crashed or be loading
                     if (response.status === 503) {
                         const isServerRunning = this.serverProcess !== null && 
@@ -579,16 +595,21 @@ export class LlamaService implements ILLMService {
                         
                         throw new NetworkError(errorMsg);
                     }
-                    throw new NetworkError(`Llama.cpp server error: ${response.status} ${response.statusText}`);
+                        throw new NetworkError(`Llama.cpp server error: ${response.status}`);
                 }
 
-                const data = await response.json();
+                // requestUrl returns json as a property, not a method
+                const data = typeof response.json === 'function' ? await response.json() : response.json;
+                if (!data || typeof data !== 'object') {
+                    throw new ClassificationError('Invalid response format from server');
+                }
                 return this.parseResponse(data.content);
 
             } catch (error: unknown) {
                 if (error instanceof Error) {
-                    if (error.name === 'AbortError' || error.message.includes('aborted')) {
-                        throw new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`);
+                    // Check for timeout errors (from Promise.race timeout)
+                    if (error instanceof APITimeoutError || error.message.includes('timed out')) {
+                        throw error;
                     }
                     if (error instanceof NetworkError) {
                         lastError = error;
@@ -602,9 +623,10 @@ export class LlamaService implements ILLMService {
                     lastError = error;
                     // If not the last attempt and it's a connection error, retry
                     if (attempt < maxRetries && (
-                        error.message.includes('fetch') || 
+                        error.message.includes('ECONNREFUSED') ||
                         error.message.includes('network') ||
-                        error.message.includes('ECONNREFUSED')
+                        error.message.includes('connection') ||
+                        error.message.includes('failed to fetch')
                     )) {
                         Logger.warn(`Connection error on attempt ${attempt + 1}, will retry...`);
                         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -786,26 +808,42 @@ export class LlamaService implements ILLMService {
                     }
                 }
 
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), this.settings.llmTimeout);
-
-                const response = await fetch(`${this.settings.llamaServerUrl}/completion`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        n_predict: options?.n_predict || 256,
-                        temperature: options?.temperature ?? 0.7,
-                        stop: options?.stop || ['}'],
-                    }),
-                    signal: controller.signal
+                // Use requestUrl instead of fetch to bypass CORS restrictions in Electron
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    setTimeout(() => reject(new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`)), this.settings.llmTimeout);
                 });
 
-                clearTimeout(timeoutId);
+                let response;
+                try {
+                    response = await Promise.race([
+                        requestUrl({
+                            url: `${this.settings.llamaServerUrl}/completion`,
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                prompt: prompt,
+                                n_predict: options?.n_predict || 256,
+                                temperature: options?.temperature ?? 0.7,
+                                stop: options?.stop || ['}'],
+                            }),
+                        }),
+                        timeoutPromise
+                    ]);
+                } catch (requestError: unknown) {
+                    // requestUrl throws errors for network issues, convert to NetworkError
+                    if (requestError instanceof APITimeoutError) {
+                        throw requestError;
+                    }
+                    const errorMsg = requestError instanceof Error ? requestError.message : String(requestError);
+                    if (errorMsg.includes('ECONNREFUSED') || errorMsg.includes('network') || errorMsg.includes('connection')) {
+                        throw new NetworkError(`Connection failed: ${errorMsg}`);
+                    }
+                    throw new NetworkError(`Request failed: ${errorMsg}`);
+                }
 
-                if (!response.ok) {
+                if (response.status < 200 || response.status >= 300) {
                     // Handle 503 Service Unavailable - server might have crashed or be loading
                     if (response.status === 503) {
                         const isServerRunning = this.serverProcess !== null && 
@@ -850,16 +888,21 @@ export class LlamaService implements ILLMService {
                         
                         throw new NetworkError(errorMsg);
                     }
-                    throw new NetworkError(`Llama.cpp server error: ${response.status} ${response.statusText}`);
+                        throw new NetworkError(`Llama.cpp server error: ${response.status}`);
                 }
 
-                const data = await response.json();
+                // requestUrl returns json as a property, not a method
+                const data = typeof response.json === 'function' ? await response.json() : response.json;
+                if (!data || typeof data !== 'object') {
+                    throw new ClassificationError('Invalid response format from server');
+                }
                 return data.content || '';
 
             } catch (error: unknown) {
                 if (error instanceof Error) {
-                    if (error.name === 'AbortError' || error.message.includes('aborted')) {
-                        throw new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`);
+                    // Check for timeout errors (from Promise.race timeout)
+                    if (error instanceof APITimeoutError || error.message.includes('timed out')) {
+                        throw error;
                     }
                     if (error instanceof NetworkError) {
                         lastError = error;
@@ -873,9 +916,10 @@ export class LlamaService implements ILLMService {
                     lastError = error;
                     // If not the last attempt and it's a connection error, retry
                     if (attempt < maxRetries && (
-                        error.message.includes('fetch') || 
+                        error.message.includes('ECONNREFUSED') ||
                         error.message.includes('network') ||
-                        error.message.includes('ECONNREFUSED')
+                        error.message.includes('connection') ||
+                        error.message.includes('failed to fetch')
                     )) {
                         Logger.warn(`Connection error on attempt ${attempt + 1}, will retry...`);
                         await new Promise(resolve => setTimeout(resolve, 1000));
