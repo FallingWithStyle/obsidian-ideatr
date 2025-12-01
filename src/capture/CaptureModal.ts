@@ -8,13 +8,81 @@ import { formatDomainResultsForFrontmatter } from '../services/DomainFormatter';
 import { WebSearchService } from '../services/WebSearchService';
 import { SearchQueryGenerator } from '../services/SearchQueryGenerator';
 import { formatSearchResultsForFrontmatter } from '../services/SearchResultFormatter';
-import { extractIdeaNameRuleBased } from '../utils/ideaNameExtractor';
+import { extractIdeaNameRuleBased, extractIdeaNameWithLLM } from '../utils/ideaNameExtractor';
 import type { INameVariantService } from '../types/transformation';
 import type { IdeatrSettings } from '../settings';
 import type { IdeaClassification, ClassificationResult } from '../types/classification';
 import type { IdeaCategory } from '../types/classification';
+import type { ILLMService } from '../types/classification';
 import { ClassificationResultsModal } from '../views/ClassificationResultsModal';
 import { Logger } from '../utils/logger';
+import { PROMPTS } from '../services/prompts';
+import { createHelpIcon } from '../utils/HelpIcon';
+
+/**
+ * Format keyboard shortcut for display (e.g., "cmd+enter" -> "⌘ Enter")
+ */
+function formatShortcut(shortcut: string): string {
+    return shortcut
+        .split('+')
+        .map(part => {
+            const trimmed = part.trim().toLowerCase();
+            if (trimmed === 'cmd' || trimmed === 'meta') return '⌘';
+            if (trimmed === 'ctrl') return '⌃';
+            if (trimmed === 'alt') return '⌥';
+            if (trimmed === 'shift') return '⇧';
+            // Capitalize first letter for keys
+            return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+        })
+        .join(' ');
+}
+
+/**
+ * Check if a keyboard event matches a shortcut string
+ */
+function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
+    const parts = shortcut.toLowerCase().split('+').map(p => p.trim());
+    const key = e.key.toLowerCase();
+    
+    // Check modifiers
+    const hasCmd = parts.includes('cmd') || parts.includes('meta');
+    const hasCtrl = parts.includes('ctrl');
+    const hasAlt = parts.includes('alt');
+    const hasShift = parts.includes('shift');
+    
+    // Check if modifiers match
+    if (hasCmd && !e.metaKey) return false;
+    if (hasCtrl && !e.ctrlKey) return false;
+    if (hasAlt && !e.altKey) return false;
+    if (hasShift && !e.shiftKey) return false;
+    
+    // Check that no other modifiers are pressed (unless they're part of the shortcut)
+    if (!hasCmd && e.metaKey) return false;
+    if (!hasCtrl && e.ctrlKey) return false;
+    if (!hasAlt && e.altKey) return false;
+    if (!hasShift && e.shiftKey) return false;
+    
+    // Check the key
+    const keyPart = parts.find(p => !['cmd', 'meta', 'ctrl', 'alt', 'shift'].includes(p));
+    if (keyPart) {
+        // Handle special keys
+        if (keyPart === 'enter' && key !== 'enter') return false;
+        if (keyPart === 'space' && key !== ' ') return false;
+        if (keyPart === 'escape' && key !== 'escape') return false;
+        // For other keys, check if the key matches (case-insensitive)
+        if (keyPart !== 'enter' && keyPart !== 'space' && keyPart !== 'escape') {
+            // Normalize key comparison - handle both lowercase and original case
+            const normalizedKey = key.toLowerCase();
+            const normalizedKeyPart = keyPart.toLowerCase();
+            if (normalizedKey !== normalizedKeyPart) return false;
+        }
+    } else {
+        // No key specified in shortcut, so it's invalid
+        return false;
+    }
+    
+    return true;
+}
 
 /**
  * CaptureModal - Modal UI for capturing ideas
@@ -24,6 +92,7 @@ export class CaptureModal extends Modal {
     private errorEl!: HTMLDivElement;
     private classificationEl!: HTMLDivElement;
     private saveButton!: HTMLButtonElement;
+    private ideateButton!: HTMLButtonElement;
     private fileManager: FileManager;
     private classificationService: ClassificationService;
     private duplicateDetector: DuplicateDetector;
@@ -31,6 +100,7 @@ export class CaptureModal extends Modal {
     private webSearchService: WebSearchService;
     private searchQueryGenerator: SearchQueryGenerator;
     private nameVariantService?: INameVariantService;
+    private llmService?: ILLMService;
     private settings: IdeatrSettings;
     private onSuccess?: () => void;
     private isWarningShown: boolean = false;
@@ -47,6 +117,7 @@ export class CaptureModal extends Modal {
         domainService: DomainService,
         webSearchService: WebSearchService,
         nameVariantService?: INameVariantService,
+        llmService?: ILLMService,
         onSuccess?: () => void
     ) {
         super(app);
@@ -57,6 +128,7 @@ export class CaptureModal extends Modal {
         this.webSearchService = webSearchService;
         this.searchQueryGenerator = new SearchQueryGenerator();
         this.nameVariantService = nameVariantService;
+        this.llmService = llmService;
         this.settings = settings;
         this.onSuccess = onSuccess;
     }
@@ -124,12 +196,35 @@ export class CaptureModal extends Modal {
             classifyButton.addEventListener('click', () => this.handleClassifyNow());
         }
 
+        // Ideate button (only show if LLM is available)
+        if (this.llmService?.isAvailable()) {
+            const ideateContainer = buttonGroup.createDiv({ cls: 'ideatr-button-with-help' });
+            this.ideateButton = ideateContainer.createEl('button', {
+                text: 'Ideate',
+                cls: 'mod-cta ideatr-ideate-button'
+            });
+            const ideateShortcut = formatShortcut(this.settings.captureIdeateShortcut || 'ctrl+enter');
+            this.ideateButton.setAttribute('title', `Ideate (${ideateShortcut})`);
+            this.ideateButton.addEventListener('click', () => this.handleIdeate());
+            
+            // Add help icon
+            const ideateHelpIcon = createHelpIcon(this.app, 'ideate-button', 'Learn about the Ideate button');
+            ideateContainer.appendChild(ideateHelpIcon);
+        }
+
         // Save button
-        this.saveButton = buttonGroup.createEl('button', {
+        const saveContainer = buttonGroup.createDiv({ cls: 'ideatr-button-with-help' });
+        this.saveButton = saveContainer.createEl('button', {
             text: 'Save',
             cls: 'mod-cta'
         });
+        const saveShortcut = formatShortcut(this.settings.captureSaveShortcut || 'cmd+enter');
+        this.saveButton.setAttribute('title', `Save (${saveShortcut})`);
         this.saveButton.addEventListener('click', () => this.handleSubmit());
+        
+        // Add help icon
+        const saveHelpIcon = createHelpIcon(this.app, 'save-button', 'Learn about the Save button');
+        saveContainer.appendChild(saveHelpIcon);
 
         // Cancel button
         const cancelButton = buttonGroup.createEl('button', {
@@ -140,17 +235,34 @@ export class CaptureModal extends Modal {
         // Focus input
         this.inputEl.focus();
 
-        // Handle Enter key (with Cmd/Ctrl modifier to submit)
+        // Handle keyboard shortcuts
         this.inputEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+            // Check Ideate shortcut
+            const ideateShortcut = this.settings.captureIdeateShortcut || 'ctrl+enter';
+            if (matchesShortcut(e, ideateShortcut)) {
+                e.preventDefault();
+                if (this.llmService?.isAvailable() && this.ideateButton) {
+                    this.handleIdeate();
+                }
+                return;
+            }
+            
+            // Check Save shortcut
+            const saveShortcut = this.settings.captureSaveShortcut || 'cmd+enter';
+            if (matchesShortcut(e, saveShortcut)) {
                 e.preventDefault();
                 this.handleSubmit();
+                return;
             }
+            
             // Reset warning on typing
             if (this.isWarningShown) {
                 this.hideError();
                 this.isWarningShown = false;
                 this.saveButton.setText('Save');
+                if (this.ideateButton) {
+                    this.ideateButton.textContent = 'Ideate';
+                }
             }
         });
     }
@@ -300,6 +412,191 @@ export class CaptureModal extends Modal {
         } catch (error) {
             this.showError('Failed to save idea. Please try again.');
             console.error('Error creating idea file:', error);
+        }
+    }
+
+    async handleIdeate() {
+        const text = this.inputEl.value;
+
+        // Validate input
+        const validation = validateIdeaText(text);
+        if (!validation.valid) {
+            this.showError(validation.error || 'Invalid input');
+            return;
+        }
+
+        // Check if LLM service is available
+        if (!this.llmService?.isAvailable()) {
+            this.showError('AI service is not available. Please configure AI in settings.');
+            return;
+        }
+
+        // Check for duplicates if not already warned
+        if (!this.isWarningShown) {
+            try {
+                const duplicateResult = await this.duplicateDetector.checkDuplicate(text);
+                if (duplicateResult.isDuplicate) {
+                    const count = duplicateResult.duplicates.length;
+                    const msg = `Found ${count} similar idea${count > 1 ? 's' : ''}. Press Ideate again to confirm.`;
+                    this.showError(msg, true); // Show as warning
+                    this.isWarningShown = true;
+                    this.duplicatePaths = duplicateResult.duplicates.map(d => d.path);
+                    if (this.ideateButton) {
+                        this.ideateButton.textContent = 'Ideate Anyway';
+                    }
+                    return;
+                }
+            } catch (error) {
+                Logger.warn('Duplicate check failed:', error);
+                // Proceed if check fails
+            }
+        }
+
+        try {
+            // Show processing message
+            this.showClassificationInProgress(true);
+            this.classificationAbortController = new AbortController();
+
+            // Step 1: Create idea file with raw text
+            const idea = {
+                text: validation.sanitizedText || text,
+                timestamp: new Date()
+            };
+
+            const file = await this.fileManager.createIdeaFile(idea);
+
+            // Step 2: Classify the idea
+            const classification = await this.classificationService.classifyIdea(idea.text);
+            if (this.classificationAbortController?.signal.aborted) {
+                return;
+            }
+
+            // Step 3: Generate simple title/subject
+            let title = '';
+            if (this.llmService.complete) {
+                try {
+                    const titlePrompt = `Generate a simple, concise title or subject line for this idea. Keep it brief (2-8 words), descriptive, and not too creative.
+
+Idea: "${idea.text}"
+
+Title:`;
+                    const titleResponse = await this.llmService.complete(titlePrompt, {
+                        temperature: 0.3,
+                        n_predict: 50,
+                        stop: ['\n', '.', '!', '?']
+                    });
+                    title = titleResponse.trim().replace(/^["']|["']$/g, '').substring(0, 100);
+                } catch (error) {
+                    Logger.warn('Title generation failed, using fallback:', error);
+                    title = extractIdeaNameRuleBased(idea.text);
+                }
+            } else {
+                title = extractIdeaNameRuleBased(idea.text);
+            }
+
+            // Step 4: Generate ideas and questions expansion
+            let expansionText = '';
+            if (this.llmService.expandIdea) {
+                try {
+                    // Use a simpler expansion focused on ideas and questions
+                    const expansionPrompt = `Based on this idea, generate related ideas and questions to explore. Keep it concise and practical.
+
+Original Idea:
+${idea.text}
+
+Category: ${classification.category || 'general'}
+Tags: ${classification.tags.join(', ') || 'none'}
+
+Generate:
+- 2-3 related ideas or variations
+- 3-4 key questions to explore
+- 1-2 potential next steps
+
+Format as markdown with clear sections. Keep it brief and actionable.
+
+Response:`;
+
+                    if (this.llmService.complete) {
+                        expansionText = await this.llmService.complete(expansionPrompt, {
+                            temperature: 0.7,
+                            n_predict: 800
+                        });
+                    }
+                } catch (error) {
+                    Logger.warn('Expansion generation failed:', error);
+                    expansionText = '';
+                }
+            }
+
+            if (this.classificationAbortController?.signal.aborted) {
+                return;
+            }
+
+            // Step 5: Update file with title, classification, and expansion
+            // First, update frontmatter with classification
+            const allRelated = [...new Set([...classification.related, ...this.duplicatePaths])];
+            await this.fileManager.updateIdeaFrontmatter(file, {
+                category: classification.category,
+                tags: classification.tags,
+                related: allRelated
+            });
+
+            // Then, update the body: add title as heading, keep original text, add expansion
+            await this.app.vault.process(file, (content) => {
+                // Extract body (everything after frontmatter)
+                const frontmatterRegex = /^---\n[\s\S]*?\n---(\n\n?|\n?)/;
+                const bodyMatch = content.match(frontmatterRegex);
+                const body = bodyMatch ? content.substring(bodyMatch[0].length) : content;
+
+                // Build new body: title heading + original text + expansion
+                let newBody = '';
+                if (title) {
+                    newBody += `# ${title}\n\n`;
+                }
+                newBody += body.trim();
+                if (expansionText) {
+                    newBody += '\n\n---\n\n## Ideas & Questions\n\n' + expansionText.trim();
+                }
+
+                // Reconstruct full content
+                const frontmatter = bodyMatch ? content.substring(0, bodyMatch[0].length) : '';
+                return frontmatter + newBody;
+            });
+
+            // Step 6: Trigger validation in background (non-blocking)
+            this.triggerValidation(file, idea.text, classification.category);
+
+            // Success notification
+            new Notice('Idea processed with AI!');
+
+            // Close modal
+            this.close();
+            if (this.onSuccess) {
+                this.onSuccess();
+            }
+        } catch (error) {
+            if (this.classificationAbortController?.signal.aborted) {
+                return;
+            }
+            this.showError('Failed to process idea. Please try again.');
+            console.error('Error processing idea:', error);
+            // Show manual mode option
+            this.classificationEl.empty();
+            this.classificationEl.style.display = 'block';
+            this.classificationEl.createEl('p', {
+                text: 'Processing failed. Idea may have been saved without AI processing.',
+                cls: 'ideatr-classification-error'
+            });
+            const continueButton = this.classificationEl.createEl('button', {
+                text: 'Continue',
+                cls: 'mod-cta'
+            });
+            continueButton.addEventListener('click', () => {
+                this.close();
+                if (this.onSuccess) {
+                    this.onSuccess();
+                }
+            });
         }
     }
 

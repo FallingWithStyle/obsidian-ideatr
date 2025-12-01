@@ -9,6 +9,9 @@ import { ScaffoldSettingsSection } from './settings/sections/ScaffoldSettingsSec
 import { ProjectElevationSettingsSection } from './settings/sections/ProjectElevationSettingsSection';
 import { ErrorLoggingSettingsSection } from './settings/sections/ErrorLoggingSettingsSection';
 import { FeedbackSettingsSection } from './settings/sections/FeedbackSettingsSection';
+import { CaptureModalSettingsSection } from './settings/sections/CaptureModalSettingsSection';
+import { TutorialSettingsSection } from './settings/sections/TutorialSettingsSection';
+import { createHelpIcon } from './utils/HelpIcon';
 
 export interface IdeatrSettings {
     llmProvider: 'llama' | 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter' | 'custom' | 'none';
@@ -99,6 +102,10 @@ export interface IdeatrSettings {
 
     // Debug Mode (for developers)
     debugMode: boolean; // Enable debug logging (gates console.log/info/warn)
+
+    // Capture Modal Keyboard Shortcuts
+    captureSaveShortcut: string; // Keyboard shortcut for Save button (e.g., "cmd+enter" or "ctrl+enter")
+    captureIdeateShortcut: string; // Keyboard shortcut for Ideate button (e.g., "ctrl+enter" or "alt+enter")
 }
 
 export const DEFAULT_SETTINGS: IdeatrSettings = {
@@ -189,7 +196,11 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
     errorLogRetentionDays: 7, // Default: 7 days
 
     // Debug Mode (for developers)
-    debugMode: false // Default: false (only enabled for developer vaults)
+    debugMode: false, // Default: false (only enabled for developer vaults)
+
+    // Capture Modal Keyboard Shortcuts
+    captureSaveShortcut: 'cmd+enter', // Default: Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) - users can customize
+    captureIdeateShortcut: 'alt+enter' // Default: Alt+Enter (works on both Mac and Windows/Linux)
 };
 
 export class IdeatrSettingTab extends PluginSettingTab {
@@ -217,6 +228,8 @@ export class IdeatrSettingTab extends PluginSettingTab {
         const projectElevationSection = new ProjectElevationSettingsSection(this.app, this.plugin, this);
         const errorLoggingSection = new ErrorLoggingSettingsSection(this.app, this.plugin, this);
         const feedbackSection = new FeedbackSettingsSection(this.app, this.plugin, this);
+        const captureModalSection = new CaptureModalSettingsSection(this.app, this.plugin, this);
+        const tutorialSection = new TutorialSettingsSection(this.app, this.plugin, this);
 
         // Display sections
         llmSection.display(containerEl);
@@ -309,12 +322,18 @@ export class IdeatrSettingTab extends PluginSettingTab {
                 }));
 
         // Validation Tools Section
-        containerEl.createEl('h2', { text: 'Validation Tools' });
+        const validationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
+        validationTitle.createEl('h2', { text: 'Validation Tools' });
+        const validationHelpIcon = createHelpIcon(this.app, 'validation', 'Learn about Validation Tools');
+        validationTitle.appendChild(validationHelpIcon);
         domainSection.display(containerEl);
         webSearchSection.display(containerEl);
 
         // Transformation Tools Section
-        containerEl.createEl('h2', { text: 'Transformation Tools' });
+        const transformationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
+        transformationTitle.createEl('h2', { text: 'Transformation Tools' });
+        const transformationHelpIcon = createHelpIcon(this.app, 'transformation', 'Learn about Transformation Tools');
+        transformationTitle.appendChild(transformationHelpIcon);
         nameVariantSection.display(containerEl);
         scaffoldSection.display(containerEl);
 
@@ -322,11 +341,22 @@ export class IdeatrSettingTab extends PluginSettingTab {
         projectElevationSection.display(containerEl);
 
         // Feedback Section
-        containerEl.createEl('h2', { text: 'Feedback & Support' });
+        const feedbackTitle = containerEl.createDiv({ cls: 'settings-section-title' });
+        feedbackTitle.createEl('h2', { text: 'Feedback & Support' });
         feedbackSection.display(containerEl);
 
         // Error Logging Settings
         containerEl.createEl('h3', { text: 'Error Logging' });
         errorLoggingSection.display(containerEl);
+
+        // Capture Modal Settings
+        const captureTitle = containerEl.createDiv({ cls: 'settings-section-title' });
+        captureTitle.createEl('h2', { text: 'Capture Modal' });
+        const captureHelpIcon = createHelpIcon(this.app, 'capture-workflows', 'Learn about Capture Modal');
+        captureTitle.appendChild(captureHelpIcon);
+        captureModalSection.display(containerEl);
+
+        // Tutorial Settings
+        tutorialSection.display(containerEl);
     }
 }

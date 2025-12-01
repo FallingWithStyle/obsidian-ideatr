@@ -70,6 +70,23 @@
   cursor: pointer;
 }
 
+.ideatr-ideate-button {
+  background-color: #d4af37;
+  color: #1a1a1a;
+  border-color: #b8941f;
+  font-weight: 600;
+}
+
+.ideatr-ideate-button:hover {
+  background-color: #c9a52a;
+  border-color: #a0821a;
+}
+
+.ideatr-ideate-button:active {
+  background-color: #b8941f;
+  border-color: #8a6f16;
+}
+
 /* Graph tooltip styles */
 .ideatr-graph-tooltip {
   background-color: var(--background-primary);
@@ -114,4 +131,64 @@
   max-height: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Help icon styles */
+.ideatr-help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 4px;
+  vertical-align: middle;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.ideatr-help-icon:hover {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.ideatr-button-with-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Settings section title with help icon */
+.settings-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-section-title h2 {
+  margin: 0;
+  display: inline-block;
+}
+
+/* Dashboard title and panel titles */
+.dashboard-title-container,
+.dashboard-panel-title,
+.dashboard-filters-title,
+.graph-title-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-title-container h2,
+.dashboard-panel-title h3,
+.dashboard-filters-title h3,
+.graph-title-container h2 {
+  margin: 0;
+  display: inline-block;
 }

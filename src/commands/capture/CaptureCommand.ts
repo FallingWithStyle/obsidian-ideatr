@@ -21,7 +21,8 @@ export class CaptureCommand extends BaseCommand {
                 this.context.settings,
                 this.context.domainService,
                 this.context.webSearchService,
-                this.context.nameVariantService
+                this.context.nameVariantService,
+                this.context.llmService
             ).open();
         } catch (error) {
             this.handleError(error, 'open capture modal', 'capture-idea');
