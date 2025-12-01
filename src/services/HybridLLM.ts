@@ -80,6 +80,20 @@ export class HybridLLM implements ILLMService {
     }
 
     /**
+     * Get the underlying local LLM service (for status checking)
+     */
+    getLocalLLM(): ILLMService {
+        return this.localLLM;
+    }
+
+    /**
+     * Get the underlying cloud LLM service (for status checking)
+     */
+    getCloudLLM(): ILLMService | null {
+        return this.cloudLLM;
+    }
+
+    /**
      * Update cloud LLM provider (for runtime switching)
      */
     setCloudLLM(cloudLLM: ILLMService | null): void {

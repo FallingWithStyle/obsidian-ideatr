@@ -102,17 +102,25 @@ export const MODELS: Record<string, ModelConfig> = {
     'llama-3.3-70b': {
         key: 'llama-3.3-70b',
         name: 'Llama 3.3 70B',
-        badge: 'PREMIUM',
+        badge: 'MAXIMUM',
         fileName: 'Llama-3.3-70B-Instruct-Q4_K_M.gguf',
         url: 'https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF/resolve/main/Llama-3.3-70B-Instruct-Q4_K_M.gguf',
-        sizeBytes: 43_000_000_000,
-        sizeMB: 43000,
+        sizeBytes: 42_500_000_000, // Q4_K_M quantization is approximately 42.5GB
+        sizeMB: 42500,
         ram: '48GB+',
         quality: 5,
         speed: 1,
-        description: 'Top-tier performance with near-GPT-4 quality. Requires a high-end desktop workstation.',
-        pros: ['Best possible quality', 'Near-perfect accuracy', 'Understands complex nuance'],
-        cons: ['Huge download (43GB)', 'Requires 64GB+ RAM', 'Very slow on most hardware'],
+        description: 'Top-tier performance with near-GPT-4 quality. Requires a high-end desktop workstation or powerful laptop with substantial RAM.',
+        pros: [
+            'Best possible quality',
+            'Near-perfect accuracy',
+            'Understands complex nuance'
+        ],
+        cons: [
+            'Huge download (~42.5GB)',
+            'Requires 48GB+ RAM',
+            'Very slow on most hardware'
+        ],
         bestFor: 'Desktop workstations with 64GB+ RAM',
         chatTemplate: 'llama-3.1'
     }

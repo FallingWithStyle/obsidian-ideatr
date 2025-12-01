@@ -10,6 +10,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import { extractAndRepairJSON } from '../utils/jsonRepair';
 import { Logger } from '../utils/logger';
+import { checkModelCompatibility, getSystemInfoString } from '../utils/systemCapabilities';
 
 /**
  * LlamaService - Integrates with local Llama.cpp server
@@ -214,7 +215,7 @@ export class LlamaService implements ILLMService {
             let serverStartError: Error | null = null;
             let processExited = false;
             let exitCode: number | null = null;
-            let errorMessage: string | null = null;
+            let errorMessage: string = '';
 
             this.serverProcess.stdout?.on('data', (data) => {
                 const output = data.toString();
@@ -273,7 +274,40 @@ export class LlamaService implements ILLMService {
                 // Check for common startup errors (but not info messages)
                 if (isError) {
                     errorMessage = errorOutput.trim();
-                    serverStartError = new Error(`Server startup error: ${errorOutput.trim()}`);
+                    
+                    // Check for RAM/VRAM-related errors
+                    const lowerOutput = errorOutput.toLowerCase();
+                    const isRAMError = lowerOutput.includes('failed to load model') ||
+                        lowerOutput.includes('out of memory') ||
+                        lowerOutput.includes('insufficient memory') ||
+                        lowerOutput.includes('vram') ||
+                        lowerOutput.includes('reduce') && lowerOutput.includes('gpu-layers');
+                    
+                    if (isRAMError) {
+                        // Get model info and system capabilities
+                        const modelConfig = this.modelManager.getModelConfig();
+                        const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
+                        const systemInfo = getSystemInfoString();
+                        
+                        // Create a more helpful error message
+                        let enhancedError = `Model failed to load - likely insufficient RAM/VRAM.\n\n`;
+                        enhancedError += `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n`;
+                        enhancedError += `${systemInfo}\n\n`;
+                        
+                        if (!compatibility.isCompatible) {
+                            enhancedError += `This model requires more RAM than your system has. `;
+                        } else {
+                            enhancedError += `Your system may not have enough free RAM to load this model. `;
+                        }
+                        
+                        enhancedError += `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.\n\n`;
+                        enhancedError += `Original error: ${errorOutput.trim()}`;
+                        
+                        errorMessage = enhancedError;
+                        serverStartError = new Error(enhancedError);
+                    } else {
+                        serverStartError = new Error(`Server startup error: ${errorOutput.trim()}`);
+                    }
                 }
             });
 
@@ -315,13 +349,34 @@ export class LlamaService implements ILLMService {
                     // Use the actual paths that were used (from variables in scope)
                     const errorBinaryPath = binaryPath || 'not configured';
                     const errorModelPath = modelPath || 'not configured';
-                    errorMsg = errorMessage || 
-                        'Server process was terminated during startup. This may indicate:\n' +
-                        '  • Binary or model file is corrupted\n' +
-                        '  • Insufficient system resources (memory/disk)\n' +
-                        '  • Permission issues\n' +
-                        '  • Binary architecture mismatch\n' +
-                        `Check the console for more details. Binary: ${errorBinaryPath}, Model: ${errorModelPath}`;
+                    
+                    // Check if we already have a RAM-related error message
+                    if (errorMessage && (errorMessage.includes('insufficient RAM') || errorMessage.includes('requires more RAM'))) {
+                        errorMsg = errorMessage;
+                    } else {
+                        // Check if this might be a RAM issue based on model size
+                        const modelConfig = this.modelManager.getModelConfig();
+                        const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
+                        const systemInfo = getSystemInfoString();
+                        
+                        const errorMsgLower = errorMessage.toLowerCase();
+                        if (!compatibility.isCompatible || errorMsgLower.includes('failed to load model')) {
+                            errorMsg = `Model failed to load - likely insufficient RAM/VRAM.\n\n` +
+                                `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n` +
+                                `${systemInfo}\n\n` +
+                                `This model requires more RAM than your system has or there isn't enough free RAM. ` +
+                                `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.\n\n` +
+                                `Check the console for more details. Binary: ${errorBinaryPath}, Model: ${errorModelPath}`;
+                        } else {
+                            errorMsg = errorMessage || 
+                                'Server process was terminated during startup. This may indicate:\n' +
+                                '  • Binary or model file is corrupted\n' +
+                                '  • Insufficient system resources (memory/disk)\n' +
+                                '  • Permission issues\n' +
+                                '  • Binary architecture mismatch\n' +
+                                `Check the console for more details. Binary: ${errorBinaryPath}, Model: ${errorModelPath}`;
+                        }
+                    }
                 } else {
                     errorMsg = errorMessage || `Server process exited during startup with code ${exitCode}`;
                 }
@@ -345,7 +400,15 @@ export class LlamaService implements ILLMService {
             console.error('[LlamaService] Failed to start Llama server:', error);
             this.loadingState = 'not-loaded';
             this.serverProcess = null;
-            new Notice('Failed to start Llama AI Server');
+            
+            // Show a more helpful notice if it's a RAM-related error
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('insufficient RAM') || errorMessage.includes('requires more RAM') || 
+                errorMessage.includes('failed to load model')) {
+                new Notice('Model too large for system RAM. Consider switching to a smaller model in Settings.', 10000);
+            } else {
+                new Notice('Failed to start Llama AI Server');
+            }
             throw error; // Re-throw so caller knows it failed
         }
     }
@@ -423,49 +486,163 @@ export class LlamaService implements ILLMService {
 
         const prompt = this.constructPrompt(text);
 
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), this.settings.llmTimeout);
+        // Retry logic for transient errors (503, connection issues)
+        const maxRetries = 2;
+        let lastError: Error | null = null;
 
-            const response = await fetch(`${this.settings.llamaServerUrl}/completion`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    prompt: prompt,
-                    n_predict: 128,
-                    temperature: 0.1,
-                    stop: ['}'], // Stop generation after JSON object closes
-                }),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                throw new NetworkError(`Llama.cpp server error: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            return this.parseResponse(data.content);
-
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                if (error.name === 'AbortError' || error.message.includes('aborted')) {
-                    throw new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`);
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                // Check if server process is still running before each retry
+                if (attempt > 0) {
+                    const isServerRunning = this.serverProcess !== null && 
+                        this.serverProcess.exitCode === null;
+                    
+                    if (!isServerRunning || this.serverProcess === null) {
+                        Logger.warn('Server process not running, attempting restart...');
+                        this.isServerReady = false;
+                        this.serverProcess = null;
+                        await this.ensureReady();
+                        // Wait a bit for server to be ready
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    } else if (!this.isServerReady) {
+                        // Server process exists but not ready, wait for it
+                        Logger.warn('Server process exists but not ready, waiting...');
+                        let waitAttempts = 0;
+                        while (!this.isServerReady && waitAttempts < 20) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                            waitAttempts++;
+                        }
+                    }
                 }
-                if (error instanceof NetworkError) {
-                    throw error;
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), this.settings.llmTimeout);
+
+                const response = await fetch(`${this.settings.llamaServerUrl}/completion`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        n_predict: 128,
+                        temperature: 0.1,
+                        stop: ['}'], // Stop generation after JSON object closes
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    // Handle 503 Service Unavailable - server might have crashed or be loading
+                    if (response.status === 503) {
+                        const isServerRunning = this.serverProcess !== null && 
+                            this.serverProcess.exitCode === null;
+                        
+                        if (!isServerRunning || this.serverProcess === null) {
+                            Logger.warn('Server returned 503 and process is not running, will restart and retry');
+                            this.isServerReady = false;
+                            this.serverProcess = null;
+                            
+                            // If this is not the last attempt, restart and retry
+                            if (attempt < maxRetries) {
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                                continue;
+                            }
+                        } else {
+                            // Server process is running but returned 503 - might be overloaded or still loading
+                            Logger.warn(`Server returned 503 (attempt ${attempt + 1}/${maxRetries + 1})`);
+                            if (attempt < maxRetries) {
+                                // Wait a bit and retry
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                                continue;
+                            }
+                        }
+                        
+                        // If we've exhausted retries, provide helpful error message
+                        const modelConfig = this.modelManager.getModelConfig();
+                        const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
+                        const systemInfo = getSystemInfoString();
+                        
+                        let errorMsg = `Model failed to load (503 Service Unavailable after ${maxRetries + 1} attempts).\n\n`;
+                        errorMsg += `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n`;
+                        errorMsg += `${systemInfo}\n\n`;
+                        
+                        if (!compatibility.isCompatible) {
+                            errorMsg += `This model requires more RAM than your system has. `;
+                        } else {
+                            errorMsg += `Your system may not have enough free RAM to load this model. `;
+                        }
+                        
+                        errorMsg += `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.`;
+                        
+                        throw new NetworkError(errorMsg);
+                    }
+                    throw new NetworkError(`Llama.cpp server error: ${response.status} ${response.statusText}`);
                 }
-                throw new ClassificationError('Failed to classify idea', error);
+
+                const data = await response.json();
+                return this.parseResponse(data.content);
+
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    if (error.name === 'AbortError' || error.message.includes('aborted')) {
+                        throw new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`);
+                    }
+                    if (error instanceof NetworkError) {
+                        lastError = error;
+                        // If it's a 503 network error and we have retries left, continue
+                        if (attempt < maxRetries && error.message.includes('503')) {
+                            Logger.warn(`Network error on attempt ${attempt + 1}, will retry...`);
+                            continue;
+                        }
+                        throw error;
+                    }
+                    lastError = error;
+                    // If not the last attempt and it's a connection error, retry
+                    if (attempt < maxRetries && (
+                        error.message.includes('fetch') || 
+                        error.message.includes('network') ||
+                        error.message.includes('ECONNREFUSED')
+                    )) {
+                        Logger.warn(`Connection error on attempt ${attempt + 1}, will retry...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        continue;
+                    }
+                    throw new ClassificationError('Failed to classify idea', error);
+                }
+                lastError = new Error('Unknown error occurred');
             }
-            throw new ClassificationError('Unknown error occurred');
         }
+
+        // If we exhausted all retries, throw the last error
+        throw lastError || new ClassificationError('Failed to classify idea after retries');
     }
 
     isAvailable(): boolean {
         return this.settings.llmProvider === 'llama';
+    }
+
+    /**
+     * Get the current loading state
+     */
+    getLoadingState(): 'not-loaded' | 'loading' | 'ready' | 'idle' {
+        return this.loadingState;
+    }
+
+    /**
+     * Check if the server is ready
+     */
+    getIsServerReady(): boolean {
+        return this.isServerReady;
+    }
+
+    /**
+     * Check if server process exists
+     */
+    hasServerProcess(): boolean {
+        return this.serverProcess !== null;
     }
 
     /**
@@ -580,45 +757,138 @@ export class LlamaService implements ILLMService {
         // Reset idle timer on each use
         this.resetIdleTimer();
 
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), this.settings.llmTimeout);
+        // Retry logic for transient errors (503, connection issues)
+        const maxRetries = 2;
+        let lastError: Error | null = null;
 
-            const response = await fetch(`${this.settings.llamaServerUrl}/completion`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    prompt: prompt,
-                    n_predict: options?.n_predict || 256,
-                    temperature: options?.temperature ?? 0.7,
-                    stop: options?.stop || ['}'],
-                }),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                throw new NetworkError(`Llama.cpp server error: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            return data.content || '';
-
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                if (error.name === 'AbortError' || error.message.includes('aborted')) {
-                    throw new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`);
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                // Check if server process is still running before each retry
+                if (attempt > 0) {
+                    const isServerRunning = this.serverProcess !== null && 
+                        this.serverProcess.exitCode === null;
+                    
+                    if (!isServerRunning || this.serverProcess === null) {
+                        Logger.warn('Server process not running, attempting restart...');
+                        this.isServerReady = false;
+                        this.serverProcess = null;
+                        await this.ensureReady();
+                        // Wait a bit for server to be ready
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    } else if (!this.isServerReady) {
+                        // Server process exists but not ready, wait for it
+                        Logger.warn('Server process exists but not ready, waiting...');
+                        let waitAttempts = 0;
+                        while (!this.isServerReady && waitAttempts < 20) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                            waitAttempts++;
+                        }
+                    }
                 }
-                if (error instanceof NetworkError) {
-                    throw error;
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), this.settings.llmTimeout);
+
+                const response = await fetch(`${this.settings.llamaServerUrl}/completion`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        n_predict: options?.n_predict || 256,
+                        temperature: options?.temperature ?? 0.7,
+                        stop: options?.stop || ['}'],
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    // Handle 503 Service Unavailable - server might have crashed or be loading
+                    if (response.status === 503) {
+                        const isServerRunning = this.serverProcess !== null && 
+                            this.serverProcess.exitCode === null;
+                        
+                        if (!isServerRunning || this.serverProcess === null) {
+                            Logger.warn('Server returned 503 and process is not running, will restart and retry');
+                            this.isServerReady = false;
+                            this.serverProcess = null;
+                            
+                            // If this is not the last attempt, restart and retry
+                            if (attempt < maxRetries) {
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                                continue;
+                            }
+                        } else {
+                            // Server process is running but returned 503 - might be overloaded or still loading
+                            Logger.warn(`Server returned 503 (attempt ${attempt + 1}/${maxRetries + 1})`);
+                            if (attempt < maxRetries) {
+                                // Wait a bit and retry
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                                continue;
+                            }
+                        }
+                        
+                        // If we've exhausted retries, provide helpful error message
+                        const modelConfig = this.modelManager.getModelConfig();
+                        const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
+                        const systemInfo = getSystemInfoString();
+                        
+                        let errorMsg = `Model failed to load (503 Service Unavailable after ${maxRetries + 1} attempts).\n\n`;
+                        errorMsg += `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n`;
+                        errorMsg += `${systemInfo}\n\n`;
+                        
+                        if (!compatibility.isCompatible) {
+                            errorMsg += `This model requires more RAM than your system has. `;
+                        } else {
+                            errorMsg += `Your system may not have enough free RAM to load this model. `;
+                        }
+                        
+                        errorMsg += `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.`;
+                        
+                        throw new NetworkError(errorMsg);
+                    }
+                    throw new NetworkError(`Llama.cpp server error: ${response.status} ${response.statusText}`);
                 }
-                throw new ClassificationError('Failed to complete request', error);
+
+                const data = await response.json();
+                return data.content || '';
+
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    if (error.name === 'AbortError' || error.message.includes('aborted')) {
+                        throw new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`);
+                    }
+                    if (error instanceof NetworkError) {
+                        lastError = error;
+                        // If it's a 503 network error and we have retries left, continue
+                        if (attempt < maxRetries && error.message.includes('503')) {
+                            Logger.warn(`Network error on attempt ${attempt + 1}, will retry...`);
+                            continue;
+                        }
+                        throw error;
+                    }
+                    lastError = error;
+                    // If not the last attempt and it's a connection error, retry
+                    if (attempt < maxRetries && (
+                        error.message.includes('fetch') || 
+                        error.message.includes('network') ||
+                        error.message.includes('ECONNREFUSED')
+                    )) {
+                        Logger.warn(`Connection error on attempt ${attempt + 1}, will retry...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        continue;
+                    }
+                    throw new ClassificationError('Failed to complete request', error);
+                }
+                lastError = new Error('Unknown error occurred');
             }
-            throw new ClassificationError('Unknown error occurred');
         }
+
+        // If we exhausted all retries, throw the last error
+        throw lastError || new ClassificationError('Failed to complete request after retries');
     }
 
     private constructPrompt(text: string): string {
