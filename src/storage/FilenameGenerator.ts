@@ -15,7 +15,7 @@ const MAX_TITLE_LENGTH = 100;
  * Format: Title.md
  * Note: timestamp parameter is kept for backward compatibility but not used
  */
-export function generateFilename(ideaText: string, timestamp?: Date): string {
+export function generateFilename(ideaText: string, _timestamp?: Date): string {
     const title = sanitizeTitle(ideaText);
     return `${title}.md`;
 }
