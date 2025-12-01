@@ -111,7 +111,7 @@ export class CommandRegistry {
 
         plugin.addCommand({
             id: 'guided-ideation',
-            name: 'Ideatr: Transform',
+            name: 'Transform',
             callback: () => new GuidedIdeationCommand(context).execute()
         });
 

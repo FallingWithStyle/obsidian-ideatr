@@ -6,7 +6,7 @@ import { GuidedIdeationModal } from '../../views/GuidedIdeationModal';
 import { Logger } from '../../utils/logger';
 
 /**
- * Command: Ideatr: Transform
+ * Command: Transform
  * Allows users to describe transformations in natural language
  */
 export class GuidedIdeationCommand extends IdeaFileCommand {
@@ -18,7 +18,7 @@ export class GuidedIdeationCommand extends IdeaFileCommand {
     }
 
     protected getCommandName(): string {
-        return 'Ideatr: Transform';
+        return 'Transform';
     }
 
     protected async executeWithFile(
