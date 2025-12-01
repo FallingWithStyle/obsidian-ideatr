@@ -136,7 +136,7 @@ export class FindAllDuplicatesCommand extends BaseCommand {
         await this.context.fileOrganizer.moveToArchive(pair.file2);
         const content = await this.context.app.vault.read(pair.file2);
         const parsed = this.context.frontmatterParser.parse(content);
-        const updated = { ...parsed.frontmatter, status: 'archived' };
+        const updated = { ...parsed.frontmatter, status: 'archived' as const };
         const newContent = this.context.frontmatterParser.build(updated, parsed.body);
         await this.context.app.vault.modify(pair.file2, newContent);
     }

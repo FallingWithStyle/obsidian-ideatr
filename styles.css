@@ -41,11 +41,31 @@
 
 .ideatr-button-container {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.ideatr-button-container button {
+.ideatr-help-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.ideatr-help-text p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ideatr-button-group {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ideatr-button-container button,
+.ideatr-button-group button {
   padding: 8px 16px;
   cursor: pointer;
 }

@@ -1,7 +1,6 @@
 import { Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
-import type { IdeaClassification } from '../../types/classification';
 
 /**
  * Command: classify-current-note

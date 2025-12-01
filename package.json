@@ -1,6 +1,6 @@
 {
   "name": "obsidian-ideatr",
-  "version": "0.1.0",
+  "version": "0.8.5",
   "description": "Fast idea capture with intelligent classification for Obsidian",
   "main": "main.js",
   "scripts": {

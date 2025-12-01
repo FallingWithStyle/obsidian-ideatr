@@ -2,7 +2,6 @@ import { Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { TenuousLinksModal } from '../../views/TenuousLinksModal';
-import { UserFacingError } from '../../utils/errors';
 
 /**
  * Command: find-tenuous-links

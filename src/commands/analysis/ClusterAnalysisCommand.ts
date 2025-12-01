@@ -21,7 +21,7 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
     protected async executeWithFile(
         file: any,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        _content: { frontmatter: any; body: string; content: string; ideaText: string }
     ): Promise<void> {
         if (!this.context.clusteringService) {
             new Notice('Clustering service is not available.');

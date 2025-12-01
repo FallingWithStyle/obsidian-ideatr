@@ -1,7 +1,6 @@
 import { Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
-import { UserFacingError } from '../../utils/errors';
 
 /**
  * Command: check-domains

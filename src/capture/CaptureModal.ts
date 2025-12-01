@@ -23,6 +23,7 @@ export class CaptureModal extends Modal {
     private inputEl!: HTMLTextAreaElement;
     private errorEl!: HTMLDivElement;
     private classificationEl!: HTMLDivElement;
+    private saveButton!: HTMLButtonElement;
     private fileManager: FileManager;
     private classificationService: ClassificationService;
     private duplicateDetector: DuplicateDetector;
@@ -98,9 +99,25 @@ export class CaptureModal extends Modal {
             cls: 'ideatr-button-container'
         });
 
+        // Help text about accessing other Ideatr features (positioned on the left)
+        const helpText = buttonContainer.createEl('div', {
+            cls: 'ideatr-help-text'
+        });
+        helpText.createEl('p', {
+            text: '💡 Tip: Access other Ideatr features via Command Palette (search "Ideatr")',
+            attr: {
+                style: 'font-size: 0.85em; color: var(--text-muted); margin: 0;'
+            }
+        });
+
+        // Button group (right side)
+        const buttonGroup = buttonContainer.createEl('div', {
+            cls: 'ideatr-button-group'
+        });
+
         // Show "Classify Now" button if AI is not configured and setup is not completed
         if (!this.settings.setupCompleted && !this.classificationService.isAvailable()) {
-            const classifyButton = buttonContainer.createEl('button', {
+            const classifyButton = buttonGroup.createEl('button', {
                 text: 'Classify Now',
                 cls: 'mod-cta'
             });
@@ -108,28 +125,17 @@ export class CaptureModal extends Modal {
         }
 
         // Save button
-        const saveButton = buttonContainer.createEl('button', {
+        this.saveButton = buttonGroup.createEl('button', {
             text: 'Save',
             cls: 'mod-cta'
         });
-        saveButton.addEventListener('click', () => this.handleSubmit());
+        this.saveButton.addEventListener('click', () => this.handleSubmit());
 
         // Cancel button
-        const cancelButton = buttonContainer.createEl('button', {
+        const cancelButton = buttonGroup.createEl('button', {
             text: 'Cancel'
         });
         cancelButton.addEventListener('click', () => this.close());
-
-        // Help text about accessing other Ideatr features
-        const helpText = contentEl.createEl('div', {
-            cls: 'ideatr-help-text'
-        });
-        helpText.createEl('p', {
-            text: '💡 Tip: Access Dashboard, Graph View, and other Ideatr features via Command Palette (Cmd/Ctrl + P)',
-            attr: {
-                style: 'font-size: 0.85em; color: var(--text-muted); margin-top: 1em; text-align: center;'
-            }
-        });
 
         // Focus input
         this.inputEl.focus();
@@ -144,7 +150,7 @@ export class CaptureModal extends Modal {
             if (this.isWarningShown) {
                 this.hideError();
                 this.isWarningShown = false;
-                saveButton.setText('Save');
+                this.saveButton.setText('Save');
             }
         });
     }
@@ -231,8 +237,7 @@ export class CaptureModal extends Modal {
                     this.duplicatePaths = duplicateResult.duplicates.map(d => d.path);
 
                     // Update save button text
-                    const saveButton = this.contentEl.querySelector('.mod-cta');
-                    if (saveButton) saveButton.textContent = 'Save Anyway';
+                    this.saveButton.textContent = 'Save Anyway';
 
                     return;
                 }
@@ -271,7 +276,8 @@ export class CaptureModal extends Modal {
                             return; // Classification was cancelled
                         }
                         ideaCategory = classification.category;
-                        this.showClassificationResults(classification, file);
+                        // Automatically accept classification without showing confirmation modal
+                        this.acceptClassification(classification, file);
                         // Trigger validation after classification (to get category)
                         this.triggerValidation(file, idea.text, ideaCategory);
                     })

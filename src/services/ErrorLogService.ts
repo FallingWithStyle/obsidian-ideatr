@@ -128,7 +128,7 @@ export class ErrorLogService {
             return 'No error logs available.';
         }
 
-        const sanitized = logs.map(log => {
+        const entries = logs.map(log => {
             let sanitizedError = this.sanitizeString(log.error);
             let sanitizedStack = log.stack ? this.sanitizeString(log.stack) : undefined;
 
@@ -151,7 +151,7 @@ export class ErrorLogService {
             return entry;
         }).join('\n\n---\n\n');
 
-        return `## Error Logs\n\n${entry}`;
+        return `## Error Logs\n\n${entries}`;
     }
 
     /**

@@ -224,11 +224,6 @@ export class FeatureRequestModal extends Modal {
             : this.requestType === 'performance' 
                 ? 'Performance Issue' 
                 : 'Feature Request';
-        const labels = this.requestType === 'bug' 
-            ? 'bug' 
-            : this.requestType === 'performance' 
-                ? 'performance' 
-                : 'enhancement';
         
         let content = `## ${typeLabel}\n\n`;
         

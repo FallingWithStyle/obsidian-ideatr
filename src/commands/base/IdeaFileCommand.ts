@@ -1,7 +1,6 @@
 import { TFile, Notice } from 'obsidian';
 import { BaseCommand } from './BaseCommand';
 import { CommandContext } from './CommandContext';
-import { NoActiveFileError } from '../../utils/errors';
 
 /**
  * Base class for commands that work with idea files

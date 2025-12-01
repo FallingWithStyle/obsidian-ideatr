@@ -1,4 +1,4 @@
-import { Notice, TFile } from 'obsidian';
+import { Notice } from 'obsidian';
 import { BaseCommand } from '../base/BaseCommand';
 import { CommandContext } from '../base/CommandContext';
 import { ProgressModal } from '../../views/ProgressModal';

@@ -1,4 +1,4 @@
-import { HTMLElement } from 'obsidian';
+// HTMLElement is a global DOM type, no import needed
 import type IdeatrPlugin from '../../main';
 
 /**
