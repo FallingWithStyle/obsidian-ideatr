@@ -25,6 +25,12 @@ describe('Plugin Initialization Integration Tests', () => {
     beforeEach(() => {
         // Create mock app
         mockVault = new Vault();
+        // Add adapter with basePath for plugin directory resolution
+        (mockVault as any).adapter = {
+            basePath: '/mock/vault/path'
+        };
+        // Add configDir property
+        (mockVault as any).configDir = '.obsidian';
         mockWorkspace = {
             getActiveFile: vi.fn(),
         } as any;
@@ -37,6 +43,10 @@ describe('Plugin Initialization Integration Tests', () => {
         plugin = new IdeatrPlugin();
         plugin.app = mockApp;
         plugin.settings = { ...DEFAULT_SETTINGS };
+        // Add manifest for plugin directory resolution
+        (plugin as any).manifest = {
+            id: 'ideatr'
+        };
 
         // Mock vault methods
         vi.spyOn(mockVault, 'getMarkdownFiles').mockReturnValue([]);

@@ -1,8 +1,13 @@
 import type { ILLMService, ClassificationResult, IdeaCategory } from '../types/classification';
 import type { IdeatrSettings } from '../settings';
 import { APITimeoutError, NetworkError, ClassificationError } from '../types/classification';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, ChildProcess, execSync } from 'child_process';
 import { Notice } from 'obsidian';
+import { ModelManager } from './ModelManager';
+import * as path from 'path';
+import * as os from 'os';
+import * as fs from 'fs';
+import { extractAndRepairJSON } from '../utils/jsonRepair';
 
 /**
  * LlamaService - Integrates with local Llama.cpp server
@@ -16,14 +21,131 @@ export class LlamaService implements ILLMService {
     // @ts-ignore - lastUseTime is written to but not read (used for tracking)
     private lastUseTime: number = 0;
     private loadingState: 'not-loaded' | 'loading' | 'ready' | 'idle' = 'not-loaded';
+    private modelManager: ModelManager;
+    private pluginDir: string | null = null;
 
-    constructor(settings: IdeatrSettings) {
+    constructor(settings: IdeatrSettings, pluginDir?: string) {
         this.settings = settings;
+        this.modelManager = new ModelManager();
+        this.pluginDir = pluginDir || null;
         // Update idle timeout if setting changes
         if (settings.keepModelLoaded) {
             // If keepModelLoaded is true, don't set up idle timeout
             this.idleTimeout = 0;
         }
+    }
+
+    /**
+     * Get the effective binary path, using bundled binary if available
+     */
+    private getEffectiveBinaryPath(): string | null {
+        // User-configured path takes precedence
+        if (this.settings.llamaBinaryPath) {
+            return this.settings.llamaBinaryPath;
+        }
+
+        // Check for bundled binary (primary path)
+        if (this.pluginDir) {
+            const platformKey = `${os.platform()}-${os.arch()}`;
+            const binaryName = os.platform() === 'win32' ? 'llama-server.exe' : 'llama-server';
+            const bundledBinaryPath = path.join(this.pluginDir, 'binaries', platformKey, binaryName);
+            
+            try {
+                if (fs.existsSync(bundledBinaryPath)) {
+                    // Check if file is executable, make it executable if needed
+                    try {
+                        fs.accessSync(bundledBinaryPath, fs.constants.X_OK);
+                        console.log(`[LlamaService] Using bundled binary: ${bundledBinaryPath}`);
+                        return bundledBinaryPath;
+                    } catch {
+                        // File exists but not executable, try to make it executable
+                        try {
+                            fs.chmodSync(bundledBinaryPath, 0o755);
+                            console.log(`[LlamaService] Using bundled binary (made executable): ${bundledBinaryPath}`);
+                            return bundledBinaryPath;
+                        } catch (error) {
+                            console.warn(`[LlamaService] Bundled binary exists but cannot be made executable: ${bundledBinaryPath}`, error);
+                            // Still return it - spawn might work anyway
+                            return bundledBinaryPath;
+                        }
+                    }
+                } else {
+                    console.warn(`[LlamaService] Bundled binary not found at: ${bundledBinaryPath}`);
+                    console.warn(`[LlamaService] Expected platform: ${platformKey}, binary: ${binaryName}`);
+                }
+            } catch (error) {
+                console.error(`[LlamaService] Error checking bundled binary: ${error}`);
+            }
+        }
+
+        // Fallback: Try to find binary in PATH (for development/testing)
+        // This is a convenience fallback, but bundled binary should be primary
+        const binaryNames = ['llama-server', 'server'];
+        for (const binName of binaryNames) {
+            try {
+                const whichResult = execSync(`which ${binName}`, { encoding: 'utf8', stdio: 'pipe' }).trim();
+                if (whichResult && fs.existsSync(whichResult)) {
+                    try {
+                        fs.accessSync(whichResult, fs.constants.X_OK);
+                        console.warn(`[LlamaService] Using fallback binary from PATH: ${whichResult} (bundled binary not found)`);
+                        return whichResult;
+                    } catch {
+                        // Continue searching
+                    }
+                }
+            } catch {
+                // Continue
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the effective model path, using default if not configured
+     * Looks for GGUF files in default locations
+     */
+    private async getEffectiveModelPath(): Promise<string | null> {
+        if (this.settings.modelPath) {
+            // Check if configured path exists and is a GGUF file
+            if (fs.existsSync(this.settings.modelPath)) {
+                if (this.settings.modelPath.endsWith('.gguf')) {
+                    return this.settings.modelPath;
+                }
+                console.warn(`[LlamaService] Configured model path doesn't end with .gguf: ${this.settings.modelPath}`);
+            }
+        }
+
+        // Use ModelManager's default path (GGUF file)
+        const defaultPath = this.modelManager.getModelPath();
+        try {
+            // Check if GGUF model exists at default location
+            if (fs.existsSync(defaultPath) && defaultPath.endsWith('.gguf')) {
+                console.log(`[LlamaService] Using GGUF model at default location: ${defaultPath}`);
+                return defaultPath;
+            }
+        } catch {
+            // Model doesn't exist at default location
+        }
+
+        // Also check for any GGUF files in the default model directory
+        try {
+            const modelDir = path.dirname(defaultPath);
+            if (fs.existsSync(modelDir)) {
+                const files = fs.readdirSync(modelDir);
+                const ggufFiles = files.filter(f => f.endsWith('.gguf'));
+                if (ggufFiles.length > 0) {
+                    // Use the first GGUF file found
+                    const foundPath = path.join(modelDir, ggufFiles[0]);
+                    console.log(`[LlamaService] Found GGUF model in default directory: ${foundPath}`);
+                    return foundPath;
+                }
+            }
+        } catch {
+            // Couldn't read directory
+        }
+
+        return null;
     }
 
     async startServer(): Promise<void> {
@@ -70,7 +192,10 @@ export class LlamaService implements ILLMService {
             this.serverProcess.stdout?.on('data', (data) => {
                 const output = data.toString();
                 console.log('[Llama Server]', output.trim());
-                if (output.includes('HTTP server listening')) {
+                // Check for server ready messages (various formats)
+                if (output.includes('HTTP server listening') || 
+                    output.includes('server is listening') ||
+                    output.includes('listening on http')) {
                     this.isServerReady = true;
                     this.loadingState = 'ready';
                     console.log('[LlamaService] Server is ready!');
@@ -80,9 +205,46 @@ export class LlamaService implements ILLMService {
 
             this.serverProcess.stderr?.on('data', (data) => {
                 const errorOutput = data.toString();
-                console.error('[Llama Server Error]', errorOutput.trim());
-                // Check for common startup errors
-                if (errorOutput.includes('error') || errorOutput.includes('Error') || errorOutput.includes('failed')) {
+                const outputLines = errorOutput.split('\n').filter((line: string) => line.trim());
+                
+                // llama.cpp outputs all messages to stderr, including informational ones
+                // Check for actual errors vs informational messages
+                const isError = outputLines.some((line: string) => 
+                    (line.toLowerCase().includes('error') || 
+                     line.toLowerCase().includes('failed') ||
+                     line.toLowerCase().includes('fatal')) &&
+                    !line.toLowerCase().includes('ggml_metal') && // Metal init messages are info
+                    !line.toLowerCase().includes('system info') &&
+                    !line.toLowerCase().includes('llama_model_loader') &&
+                    !line.toLowerCase().includes('print_info') &&
+                    !line.toLowerCase().includes('load:') &&
+                    !line.toLowerCase().includes('llama_context') &&
+                    !line.toLowerCase().includes('main:')
+                );
+                
+                // Log informational messages at debug level, errors at error level
+                for (const line of outputLines) {
+                    if (isError && (line.toLowerCase().includes('error') || 
+                                   line.toLowerCase().includes('failed') ||
+                                   line.toLowerCase().includes('fatal'))) {
+                        console.error('[Llama Server]', line.trim());
+                    } else {
+                        // Most llama.cpp output is informational, log at debug level
+                        console.log('[Llama Server]', line.trim());
+                    }
+                }
+                
+                // Check for server ready messages in stderr (llama.cpp outputs info to stderr)
+                if (errorOutput.includes('HTTP server is listening') || 
+                    errorOutput.includes('server is listening on http') ||
+                    errorOutput.includes('main: server is listening')) {
+                    this.isServerReady = true;
+                    this.loadingState = 'ready';
+                    console.log('[LlamaService] Server is ready!');
+                    new Notice('Llama AI Server Started');
+                }
+                // Check for common startup errors (but not info messages)
+                if (isError) {
                     errorMessage = errorOutput.trim();
                     serverStartError = new Error(`Server startup error: ${errorOutput.trim()}`);
                 }
@@ -195,7 +357,24 @@ export class LlamaService implements ILLMService {
         }
 
         // Ensure server is ready (abstracts away the implementation)
-        await this.ensureReady();
+        const isReady = await this.ensureReady();
+        if (!isReady) {
+            const binaryPath = this.getEffectiveBinaryPath();
+            const modelPath = await this.getEffectiveModelPath();
+            let errorMsg = 'Llama binary or model path not found. ';
+            if (!binaryPath && !modelPath) {
+                errorMsg += 'Please configure paths in settings or install llama-server and download the model.';
+            } else if (!binaryPath) {
+                errorMsg += 'Please configure llama binary path in settings or install llama-server.\n';
+                errorMsg += 'Installation options:\n';
+                errorMsg += '  • Homebrew: brew install llama.cpp\n';
+                errorMsg += '  • Build from source: https://github.com/ggerganov/llama.cpp\n';
+                errorMsg += '  • Or use Ollama via the Custom provider option in settings';
+            } else {
+                errorMsg += 'Please configure model path in settings or download the model.';
+            }
+            throw new Error(errorMsg);
+        }
 
         // Reset idle timer on each use
         this.resetIdleTimer();
@@ -249,22 +428,38 @@ export class LlamaService implements ILLMService {
 
     /**
      * Ensure the LLM service is ready - start server if not already running
+     * @returns true if ready, false if not configured (but available)
      */
-    async ensureReady(): Promise<void> {
+    async ensureReady(): Promise<boolean> {
         if (!this.isAvailable()) {
             // Provider not enabled, nothing to do
-            return;
+            return false;
         }
 
-        // If paths aren't configured, can't start server - return gracefully
-        if (!this.settings.llamaBinaryPath || !this.settings.modelPath) {
-            console.log('[LlamaService] Binary or model path not configured, skipping ensureReady');
-            return;
+        // Get effective paths (use defaults if not configured)
+        const binaryPath = this.getEffectiveBinaryPath();
+        const modelPath = await this.getEffectiveModelPath();
+
+        // If we can't find paths, can't start server - return false
+        if (!binaryPath || !modelPath) {
+            if (!binaryPath && !modelPath) {
+                console.log('[LlamaService] Binary and model paths not found (checked defaults)');
+            } else if (!binaryPath) {
+                console.log('[LlamaService] Binary path not found (checked common locations)');
+                console.log('[LlamaService] To install llama-server on macOS:');
+                console.log('[LlamaService]   1. Install via Homebrew: brew install llama.cpp');
+                console.log('[LlamaService]   2. Or build from source: https://github.com/ggerganov/llama.cpp');
+                console.log('[LlamaService]   3. Or configure the binary path manually in settings');
+                console.log('[LlamaService]   4. Alternatively, use Ollama via the Custom provider option');
+            } else {
+                console.log('[LlamaService] Model path not found (checked default location)');
+            }
+            return false;
         }
 
         // If server is already running and ready, we're good
         if (this.serverProcess && this.isServerReady) {
-            return;
+            return true;
         }
 
         // If server process exists but not ready, wait for it
@@ -276,7 +471,7 @@ export class LlamaService implements ILLMService {
                 attempts++;
             }
             if (this.isServerReady) {
-                return;
+                return true;
             }
             // If still not ready, try starting fresh
             console.warn('[LlamaService] Server process exists but never became ready, restarting...');
@@ -286,7 +481,24 @@ export class LlamaService implements ILLMService {
         // Start server if not running
         if (!this.serverProcess) {
             console.log('[LlamaService] Ensuring server is ready...');
-            await this.startServer();
+            // Use effective paths for starting server
+            const binaryPath = this.getEffectiveBinaryPath();
+            const modelPath = await this.getEffectiveModelPath();
+            if (!binaryPath || !modelPath) {
+                throw new Error('Cannot start server: binary or model path not found');
+            }
+            // Temporarily set paths for startServer
+            const originalBinaryPath = this.settings.llamaBinaryPath;
+            const originalModelPath = this.settings.modelPath;
+            this.settings.llamaBinaryPath = binaryPath;
+            this.settings.modelPath = modelPath;
+            try {
+                await this.startServer();
+            } finally {
+                // Restore original paths (don't save defaults to settings)
+                this.settings.llamaBinaryPath = originalBinaryPath;
+                this.settings.modelPath = originalModelPath;
+            }
             // Wait for server to be ready
             let attempts = 0;
             while (!this.isServerReady && attempts < 50) {
@@ -297,6 +509,8 @@ export class LlamaService implements ILLMService {
                 throw new Error('Server started but did not become ready in time');
             }
         }
+        
+        return true;
     }
 
     /**
@@ -318,7 +532,24 @@ export class LlamaService implements ILLMService {
         }
 
         // Ensure server is ready (abstracts away the implementation)
-        await this.ensureReady();
+        const isReady = await this.ensureReady();
+        if (!isReady) {
+            const binaryPath = this.getEffectiveBinaryPath();
+            const modelPath = await this.getEffectiveModelPath();
+            let errorMsg = 'Llama binary or model path not found. ';
+            if (!binaryPath && !modelPath) {
+                errorMsg += 'Please configure paths in settings or install llama-server and download the model.';
+            } else if (!binaryPath) {
+                errorMsg += 'Please configure llama binary path in settings or install llama-server.\n';
+                errorMsg += 'Installation options:\n';
+                errorMsg += '  • Homebrew: brew install llama.cpp\n';
+                errorMsg += '  • Build from source: https://github.com/ggerganov/llama.cpp\n';
+                errorMsg += '  • Or use Ollama via the Custom provider option in settings';
+            } else {
+                errorMsg += 'Please configure model path in settings or download the model.';
+            }
+            throw new Error(errorMsg);
+        }
 
         // Reset idle timer on each use
         this.resetIdleTimer();
@@ -388,12 +619,9 @@ Response:
 
     private parseResponse(content: string): ClassificationResult {
         try {
-            // Ensure content starts with brace if model missed it (due to prompt ending with {)
-            const jsonStr = content.trim().startsWith('{') ? content : `{${content}`;
-            // Ensure it ends with brace if stop token cut it off
-            const validJsonStr = jsonStr.trim().endsWith('}') ? jsonStr : `${jsonStr}}`;
-
-            const parsed = JSON.parse(validJsonStr);
+            // Extract and repair JSON from response
+            const repaired = extractAndRepairJSON(content, false);
+            const parsed = JSON.parse(repaired);
 
             return {
                 category: this.validateCategory(parsed.category),

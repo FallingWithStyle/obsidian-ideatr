@@ -4,6 +4,7 @@ import type { IdeatrSettings } from '../settings';
 import { NameVariantCache } from './NameVariantCache';
 import { formatVariantsForMarkdown } from './VariantFormatter';
 import { extractIdeaNameRuleBased, extractIdeaNameWithLLM } from '../utils/ideaNameExtractor';
+import { extractAndRepairJSON } from '../utils/jsonRepair';
 
 /**
  * Extract idea name from idea text
@@ -204,12 +205,9 @@ export class NameVariantService implements INameVariantService {
      */
     private parseVariantResponse(content: string): NameVariant[] {
         try {
-            // Ensure content starts with brace
-            const jsonStr = content.trim().startsWith('{') ? content : `{${content}`;
-            // Ensure it ends with brace
-            const validJsonStr = jsonStr.trim().endsWith('}') ? jsonStr : `${jsonStr}}`;
-
-            const parsed = JSON.parse(validJsonStr);
+            // Extract and repair JSON from response
+            const repaired = extractAndRepairJSON(content, false);
+            const parsed = JSON.parse(repaired);
             
             if (!parsed.variants || !Array.isArray(parsed.variants)) {
                 return [];

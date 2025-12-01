@@ -100,9 +100,7 @@ describe('LlamaService', () => {
         it('should not start server if paths missing', async () => {
             mockSettings.llamaBinaryPath = '';
             service = new LlamaService(mockSettings);
-            const startPromise = service.startServer();
-            await vi.advanceTimersByTimeAsync(2000);
-            await startPromise;
+            await expect(service.startServer()).rejects.toThrow('Llama binary path not configured');
             expect(mocks.spawn).not.toHaveBeenCalled();
         });
 

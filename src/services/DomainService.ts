@@ -78,7 +78,7 @@ export class DomainService implements IDomainService {
             return domains.map(domain => ({
                 domain,
                 available: false,
-                error: 'Domain checking service is not available',
+                error: 'Prospectr service is not available',
                 checkedAt: new Date().toISOString()
             }));
         }

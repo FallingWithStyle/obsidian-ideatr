@@ -62,6 +62,14 @@ For each variation, provide:
 - description: How it differs (1-2 sentences)
 - differences: 2-3 key differences
 
+IMPORTANT: 
+- Respond with ONLY a valid JSON array
+- Do not include any explanatory text, markdown formatting, or code blocks
+- Do not include prefixes like "Example response:" or "Here is:"
+- Start your response with [ and end with ]
+- Ensure the JSON is complete and properly closed
+- Generate all ${count} variations
+
 Output format (JSON array):
 [
   {
@@ -69,9 +77,7 @@ Output format (JSON array):
     "description": "How this differs from original...",
     "differences": ["Difference 1", "Difference 2"]
   }
-]
-
-Response:`;
+]`;
     },
 
     /**

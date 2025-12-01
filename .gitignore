@@ -6,4 +6,5 @@ main.js.map
 coverage
 .vscode
 .idea
+binaries/
 

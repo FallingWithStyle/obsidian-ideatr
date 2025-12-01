@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
+import { extractAndRepairJSON } from '../../utils/jsonRepair';
 
 /**
  * Gemini Provider - Gemini 1.5 Flash
@@ -91,12 +92,9 @@ Response:`;
 
     private parseResponse(content: string): ClassificationResult {
         try {
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('No JSON found in response');
-            }
-
-            const parsed = JSON.parse(jsonMatch[0]);
+            // Extract and repair JSON from response
+            const repaired = extractAndRepairJSON(content, false);
+            const parsed = JSON.parse(repaired);
 
             return {
                 category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,

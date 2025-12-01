@@ -104,9 +104,20 @@ describe('ModelManager', () => {
                     'content-length': '2164260864'
                 }),
                 body: {
-                    getReader: () => ({
-                        read: vi.fn().mockResolvedValue({ done: true, value: null })
-                    })
+                    getReader: () => {
+                        let bytesWritten = 0;
+                        const chunkSize = 1024 * 1024; // 1MB chunks
+                        return {
+                            read: vi.fn().mockImplementation(() => {
+                                if (bytesWritten < 2164260864) {
+                                    const chunk = new Uint8Array(Math.min(chunkSize, 2164260864 - bytesWritten));
+                                    bytesWritten += chunk.length;
+                                    return Promise.resolve({ done: false, value: chunk });
+                                }
+                                return Promise.resolve({ done: true, value: null });
+                            })
+                        };
+                    }
                 }
             };
 
@@ -331,12 +342,12 @@ describe('ModelManager', () => {
             expect(result).toBe(false);
         });
 
-        it('should allow 5% tolerance for file size', async () => {
+        it('should allow 1% tolerance for file size', async () => {
             vi.mocked(fs.access).mockResolvedValue(undefined);
             const modelInfo = modelManager.getModelInfo();
             const expectedSizeBytes = modelInfo.sizeBytes;
-            // 3% larger than expected (within 5% tolerance)
-            const actualSizeBytes = expectedSizeBytes * 1.03;
+            // 0.5% larger than expected (within 1% tolerance)
+            const actualSizeBytes = expectedSizeBytes * 1.005;
             
             vi.mocked(fs.stat).mockResolvedValue({
                 size: actualSizeBytes

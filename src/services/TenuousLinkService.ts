@@ -5,6 +5,7 @@
 import type { EmbeddingService } from './EmbeddingService';
 import type { ILLMService } from '../types/classification';
 import type { Vault, TFile } from 'obsidian';
+import { extractAndRepairJSON } from '../utils/jsonRepair';
 
 export interface TenuousLink {
     idea: {
@@ -233,15 +234,13 @@ Response:`;
             });
 
             // Parse JSON response
-            const jsonMatch = response.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const analysis = JSON.parse(jsonMatch[0]);
-                return {
-                    explanation: analysis.explanation || '',
-                    synergy: analysis.synergy,
-                    relevance: analysis.relevance || 0.5
-                };
-            }
+            const repaired = extractAndRepairJSON(response, false);
+            const analysis = JSON.parse(repaired);
+            return {
+                explanation: analysis.explanation || '',
+                synergy: analysis.synergy,
+                relevance: analysis.relevance || 0.5
+            };
         } catch (error) {
             console.warn('Failed to parse LLM analysis:', error);
         }

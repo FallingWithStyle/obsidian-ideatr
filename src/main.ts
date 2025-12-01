@@ -1,4 +1,5 @@
 import { Plugin } from 'obsidian';
+import * as path from 'path';
 import { CaptureModal } from './capture/CaptureModal';
 import { FileManager } from './storage/FileManager';
 import { generateFilename } from './storage/FilenameGenerator';
@@ -31,6 +32,7 @@ import { FirstLaunchSetupModal, isFirstLaunch } from './views/FirstLaunchSetupMo
 import { ModelManager } from './services/ModelManager';
 import { UserFacingError } from './utils/errors';
 import { ClassificationError, NetworkError, APITimeoutError } from './types/classification';
+import { extractAndRepairJSON } from './utils/jsonRepair';
 import type { DomainCheckResult } from './types/domain';
 import type { SearchResult } from './types/search';
 import type { DuplicateCheckResult } from './types/classification';
@@ -115,7 +117,15 @@ export default class IdeatrPlugin extends Plugin {
 
         // Initialize Services
         // Initialize local LLM
-        this.localLLMService = new LlamaService(this.settings);
+        // Get plugin directory path for bundled binary (standard Obsidian plugin location)
+        // Resolve to absolute path using vault base path
+        const vaultBasePath = (this.app.vault.adapter as any).basePath || this.app.vault.configDir;
+        const configDir = path.isAbsolute(this.app.vault.configDir) 
+            ? this.app.vault.configDir 
+            : path.join(vaultBasePath, this.app.vault.configDir);
+        const pluginDir = path.resolve(path.join(configDir, 'plugins', this.manifest.id));
+        console.log(`[IdeatrPlugin] Plugin directory: ${pluginDir}`);
+        this.localLLMService = new LlamaService(this.settings, pluginDir);
 
         // Initialize cloud LLM if configured
         let cloudLLM: ILLMService | null = null;
@@ -1129,11 +1139,36 @@ export default class IdeatrPlugin extends Plugin {
                 return;
             }
 
-            const mutations = await this.llmService.generateMutations(ideaText, {
-                category: frontmatter.category,
-                tags: frontmatter.tags,
-                count: 8,
-            });
+            let mutations;
+            try {
+                mutations = await this.llmService.generateMutations(ideaText, {
+                    category: frontmatter.category,
+                    tags: frontmatter.tags,
+                    count: 8,
+                });
+            } catch (error) {
+                // Show error modal with retry option
+                const { MutationErrorModal } = await import('./views/MutationErrorModal');
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                const errorWithDetails = error as Error & { responseLength?: number; responsePreview?: string };
+                const responseLength = errorWithDetails.responseLength ?? 
+                    (errorMessage.includes('empty response') ? 0 : undefined);
+                const responsePreview = errorWithDetails.responsePreview;
+                
+                new MutationErrorModal(
+                    this.app,
+                    {
+                        message: errorMessage,
+                        responseLength,
+                        responsePreview: responsePreview?.substring(0, 500), // Limit preview length
+                        canRetry: true,
+                    },
+                    async () => {
+                        await this.generateMutations();
+                    }
+                ).open();
+                return;
+            }
 
             if (mutations.length === 0) {
                 new Notice('No mutations could be generated.');
@@ -2166,10 +2201,12 @@ ${link.synergy || 'Potential combination of these ideas'}
                     });
 
                     // Parse JSON response
-                    const jsonMatch = analysisResponse.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        const analysis = JSON.parse(jsonMatch[0]);
+                    try {
+                        const repaired = extractAndRepairJSON(analysisResponse, false);
+                        const analysis = JSON.parse(repaired);
                         commonThemes = analysis.commonThemes || [];
+                    } catch (error) {
+                        console.warn('Failed to parse cluster analysis JSON:', error);
                     }
 
                     // Analyze relationships to top related clusters
@@ -2194,15 +2231,17 @@ ${link.synergy || 'Potential combination of these ideas'}
                                 n_predict: 300
                             });
 
-                            const relationshipJsonMatch = relationshipResponse.match(/\{[\s\S]*\}/);
-                            if (relationshipJsonMatch) {
-                                const relationshipAnalysis = JSON.parse(relationshipJsonMatch[0]);
+                            try {
+                                const repaired = extractAndRepairJSON(relationshipResponse, false);
+                                const relationshipAnalysis = JSON.parse(repaired);
                                 if (relatedCluster.label) {
                                     relationshipExplanations.set(
                                         relatedCluster.label,
                                         relationshipAnalysis.relationshipToOtherCluster || ''
                                     );
                                 }
+                            } catch (error) {
+                                console.warn('Failed to parse relationship analysis JSON:', error);
                             }
                         }
                     }
