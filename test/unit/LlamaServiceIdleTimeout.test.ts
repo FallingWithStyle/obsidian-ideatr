@@ -6,6 +6,17 @@ import type { IdeatrSettings } from '../../src/settings';
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// Mock fs
+vi.mock('fs', async () => {
+    return {
+        existsSync: vi.fn(() => true),
+        accessSync: vi.fn(),
+        constants: {
+            X_OK: 1
+        }
+    };
+});
+
 // Mock child_process
 const mocks = vi.hoisted(() => {
     const mockSpawn = vi.fn();

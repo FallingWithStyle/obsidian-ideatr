@@ -16,6 +16,19 @@ import { DEFAULT_SETTINGS } from '../../src/settings';
 // Mock Obsidian globals
 global.Notice = Notice;
 
+// Mock document for ModelStatusIndicator
+global.document = {
+    createElement: vi.fn((tag: string) => ({
+        tagName: tag.toUpperCase(),
+        appendChild: vi.fn(),
+        addEventListener: vi.fn(),
+        classList: { add: vi.fn(), remove: vi.fn() },
+        setAttribute: vi.fn(),
+        textContent: '',
+        innerHTML: ''
+    }))
+} as any;
+
 // Mock Logger
 vi.mock('../../src/utils/logger', () => ({
     Logger: {

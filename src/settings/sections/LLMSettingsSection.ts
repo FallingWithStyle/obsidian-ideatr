@@ -63,8 +63,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
                         this.plugin.settings.localModel = modelKey;
                         await this.saveSettings();
                         this.refresh(); // Refresh to show updated model info
-                    });
-                });
+                    }));
 
             // Model info display
             const modelManager = new ModelManager(this.plugin.settings.localModel || 'phi-3.5-mini');

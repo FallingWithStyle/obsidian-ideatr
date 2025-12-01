@@ -6,6 +6,17 @@ import type { IdeatrSettings } from '../../src/settings';
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// Mock fs
+vi.mock('fs', async () => {
+    return {
+        existsSync: vi.fn(() => true),
+        accessSync: vi.fn(),
+        constants: {
+            X_OK: 1
+        }
+    };
+});
+
 // Mock child_process
 const mocks = vi.hoisted(() => {
     const mockSpawn = vi.fn();
@@ -83,9 +94,15 @@ describe('LlamaService', () => {
         it('should start server if configured', async () => {
             const startPromise = service.startServer();
 
+            // Wait a tick for spawn to complete and register stdout listener
+            await vi.advanceTimersByTimeAsync(0);
+
             // Simulate server startup
-            const stdoutCallback = mocks.childProcess.stdout.on.mock.calls.find(call => call[0] === 'data')[1];
-            stdoutCallback(Buffer.from('HTTP server listening'));
+            const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
+            if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
+                const stdoutCallback = stdoutCallbacks[0][1];
+                stdoutCallback(Buffer.from('HTTP server listening'));
+            }
 
             // Advance timer to get past the startup delay
             await vi.advanceTimersByTimeAsync(2000);
@@ -106,8 +123,16 @@ describe('LlamaService', () => {
 
         it('should stop server on request', async () => {
             const startPromise = service.startServer();
-            const stdoutCallback = mocks.childProcess.stdout.on.mock.calls.find(call => call[0] === 'data')[1];
-            stdoutCallback(Buffer.from('HTTP server listening'));
+
+            // Wait a tick for spawn to complete and register stdout listener
+            await vi.advanceTimersByTimeAsync(0);
+
+            // Simulate server startup
+            const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
+            if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
+                const stdoutCallback = stdoutCallbacks[0][1];
+                stdoutCallback(Buffer.from('HTTP server listening'));
+            }
 
             await vi.advanceTimersByTimeAsync(2000);
             await startPromise;

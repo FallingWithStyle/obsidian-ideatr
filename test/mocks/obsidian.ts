@@ -11,7 +11,59 @@ export class Plugin {
     }
 }
 export class PluginSettingTab { }
-export class Setting { }
+export class Setting {
+    private containerEl: any;
+    
+    constructor(containerEl: any) {
+        this.containerEl = containerEl;
+    }
+    
+    setName(name: string): Setting {
+        return this;
+    }
+    
+    setDesc(desc: string): Setting {
+        return this;
+    }
+    
+    setValue(value: any): Setting {
+        return this;
+    }
+    
+    setDisabled(disabled: boolean): Setting {
+        return this;
+    }
+    
+    addButton(callback: (button: any) => void): Setting {
+        const button = {
+            setButtonText: (text: string) => button,
+            setCta: () => button,
+            setDisabled: (disabled: boolean) => button,
+            onClick: (handler: () => void) => button
+        };
+        callback(button);
+        return this;
+    }
+    
+    addToggle(callback: (toggle: any) => void): Setting {
+        const toggle = {
+            setValue: (value: boolean) => toggle,
+            onChange: (handler: (value: boolean) => void) => toggle
+        };
+        callback(toggle);
+        return this;
+    }
+    
+    addDropdown(callback: (dropdown: any) => void): Setting {
+        const dropdown = {
+            addOption: (value: string, text: string) => dropdown,
+            setValue: (value: string) => dropdown,
+            onChange: (handler: (value: string) => void) => dropdown
+        };
+        callback(dropdown);
+        return this;
+    }
+}
 export class App {
     vault: Vault = new Vault();
     workspace: Workspace = new Workspace();
@@ -96,11 +148,7 @@ class MockHTMLElement {
     rows: string = '';
     tagName: string = '';
     disabled: boolean = false;
-    setAttribute: any = vi.fn();
-    getAttribute: any = vi.fn();
-    focus: any = vi.fn();
     select: any = vi.fn();
-    setText: any = vi.fn((text: string) => { this.textContent = text; });
     
     // Create classList object that wraps the Set
     get classList() {
@@ -275,12 +323,7 @@ class MockHTMLElement {
     appendText(text: string) { 
         this.textContent += text;
     }
-    setAttribute(name: string, value: string) { 
-        (this as any)[name] = value;
-    }
-    value: string = '';
     checked: boolean = false;
-    tagName: string = 'DIV';
     
     get textContent(): string {
         // Recursively collect text from this element and all children
