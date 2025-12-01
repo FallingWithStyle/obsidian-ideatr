@@ -195,21 +195,27 @@ export class CaptureModal extends Modal {
             classifyButton.addEventListener('click', () => this.handleClassifyNow());
         }
 
-        // Ideate button (only show if LLM is available)
-        if (this.llmService?.isAvailable()) {
-            const ideateContainer = buttonGroup.createDiv({ cls: 'ideatr-button-with-help' });
-            this.ideateButton = ideateContainer.createEl('button', {
-                text: 'Ideate',
-                cls: 'mod-cta ideatr-ideate-button'
-            });
+        // Ideate button (always show, but disabled if LLM is not available)
+        const ideateContainer = buttonGroup.createDiv({ cls: 'ideatr-button-with-help' });
+        const isLLMAvailable = this.llmService?.isAvailable() ?? false;
+        this.ideateButton = ideateContainer.createEl('button', {
+            text: 'Ideate',
+            cls: 'mod-cta ideatr-ideate-button'
+        });
+        
+        if (!isLLMAvailable) {
+            this.ideateButton.disabled = true;
+            this.ideateButton.addClass('ideatr-ideate-button-disabled');
+            this.ideateButton.setAttribute('title', 'Ideate (AI service not available. Please configure AI in settings.)');
+        } else {
             const ideateShortcut = formatShortcut(this.settings.captureIdeateShortcut || 'ctrl+enter');
             this.ideateButton.setAttribute('title', `Ideate (${ideateShortcut})`);
             this.ideateButton.addEventListener('click', () => this.handleIdeate());
-            
-            // Add help icon
-            const ideateHelpIcon = createHelpIcon(this.app, 'ideate-button', 'Learn about the Ideate button');
-            ideateContainer.appendChild(ideateHelpIcon);
         }
+        
+        // Add help icon
+        const ideateHelpIcon = createHelpIcon(this.app, 'ideate-button', 'Learn about the Ideate button');
+        ideateContainer.appendChild(ideateHelpIcon);
 
         // Save button
         const saveContainer = buttonGroup.createDiv({ cls: 'ideatr-button-with-help' });
@@ -240,7 +246,7 @@ export class CaptureModal extends Modal {
             const ideateShortcut = this.settings.captureIdeateShortcut || 'ctrl+enter';
             if (matchesShortcut(e, ideateShortcut)) {
                 e.preventDefault();
-                if (this.llmService?.isAvailable() && this.ideateButton) {
+                if (this.llmService?.isAvailable() && this.ideateButton && !this.ideateButton.disabled) {
                     this.handleIdeate();
                 }
                 return;

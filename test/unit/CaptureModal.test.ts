@@ -187,14 +187,18 @@ describe('CaptureModal', () => {
             const buttons = Array.from(modalWithLLM.contentEl.querySelectorAll('button')) as any[];
             const ideateButton = buttons.find(btn => btn.textContent === 'Ideate' || btn.classList?.contains('ideatr-ideate-button'));
             expect(ideateButton).toBeDefined();
+            expect(ideateButton?.disabled).toBe(false);
+            expect(ideateButton?.classList.contains('ideatr-ideate-button-disabled')).toBe(false);
         });
 
-        it('should not show Ideate button when LLM is not available', () => {
+        it('should show Ideate button as disabled when LLM is not available', () => {
             modal.onOpen();
 
             const buttons = Array.from(modal.contentEl.querySelectorAll('button')) as any[];
-            const ideateButton = buttons.find(btn => btn.textContent === 'Ideate');
-            expect(ideateButton).toBeUndefined();
+            const ideateButton = buttons.find(btn => btn.textContent === 'Ideate' || btn.classList?.contains('ideatr-ideate-button'));
+            expect(ideateButton).toBeDefined();
+            expect(ideateButton?.disabled).toBe(true);
+            expect(ideateButton?.classList.contains('ideatr-ideate-button-disabled')).toBe(true);
         });
 
         it('should show Classify Now button when AI is not configured', () => {
