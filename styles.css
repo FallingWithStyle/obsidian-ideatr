@@ -206,3 +206,67 @@
   margin: 0;
   display: inline-block;
 }
+
+/* Fix z-index for frontmatter dropdowns to prevent them from appearing over modals */
+/* Obsidian modals typically use z-index around 1000-2000, so frontmatter dropdowns should be lower */
+
+/* Target Obsidian's frontmatter properties panel dropdowns and suggestions */
+/* Set a lower z-index to ensure they don't appear over modals */
+.metadata-properties .suggestion-container,
+.metadata-properties .suggestion,
+.metadata-properties .dropdown,
+.metadata-properties .menu,
+.metadata-properties .menu-container,
+.metadata-properties .suggestion-item,
+.metadata-properties .suggestion-list,
+.metadata-properties .suggestion-container .suggestion,
+.metadata-properties .suggestion-container .suggestion-item,
+.metadata-properties .suggestion-container .suggestion-list,
+.metadata-properties .suggestion-container .suggestion-item-list,
+.metadata-properties .suggestion-container .suggestion-item-list-item,
+.metadata-properties-view .suggestion-container,
+.metadata-properties-view .suggestion,
+.metadata-properties-view .dropdown,
+.metadata-properties-view .menu,
+.metadata-properties-view .menu-container {
+  z-index: 999 !important;
+}
+
+/* Ensure modals and modal overlays are above frontmatter dropdowns */
+.modal-container,
+.modal,
+.modal-container-overlay,
+.modal-bg {
+  z-index: 2000 !important;
+}
+
+/* Ensure modal content is also above frontmatter dropdowns */
+.modal-container .modal,
+.modal-container .modal-content,
+.modal-container .modal-content-container {
+  z-index: 2001 !important;
+}
+
+/* When a modal is open, ensure frontmatter dropdowns are below it */
+/* Using :has() selector for modern browsers */
+body:has(.modal-container) .metadata-properties .suggestion-container,
+body:has(.modal-container) .metadata-properties .suggestion,
+body:has(.modal-container) .metadata-properties .dropdown,
+body:has(.modal-container) .metadata-properties .menu,
+body:has(.modal-container) .metadata-properties .menu-container,
+body:has(.modal-container) .metadata-properties-view .suggestion-container,
+body:has(.modal-container) .metadata-properties-view .suggestion,
+body:has(.modal-container) .metadata-properties-view .dropdown,
+body:has(.modal-container) .metadata-properties-view .menu,
+body:has(.modal-container) .metadata-properties-view .menu-container {
+  z-index: 500 !important;
+}
+
+/* Sibling selectors for dropdowns that appear after metadata-properties */
+/* These might be appended to the DOM in different locations */
+.metadata-properties ~ .suggestion-container,
+.metadata-properties ~ .suggestion,
+.metadata-properties ~ .dropdown,
+.metadata-properties ~ .menu {
+  z-index: 999 !important;
+}
