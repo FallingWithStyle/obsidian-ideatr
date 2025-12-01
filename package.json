@@ -7,6 +7,7 @@
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "deploy": "npm run build && mkdir -p ~/Documents/Vault/.obsidian/plugins/ideatr && cp main.js manifest.json styles.css ~/Documents/Vault/.obsidian/plugins/ideatr/ && ([ -d binaries ] && cp -r binaries ~/Documents/Vault/.obsidian/plugins/ideatr/ || true) && ([ -d tutorials ] && cp -r tutorials ~/Documents/Vault/.obsidian/plugins/ideatr/ || true)",
+    "deploy:debug": "npm run build && mkdir -p ~/Documents/Vault/.obsidian/plugins/ideatr && cp main.js manifest.json styles.css ~/Documents/Vault/.obsidian/plugins/ideatr/ && ([ -d binaries ] && cp -r binaries ~/Documents/Vault/.obsidian/plugins/ideatr/ || true) && ([ -d tutorials ] && cp -r tutorials ~/Documents/Vault/.obsidian/plugins/ideatr/ || true) && touch ~/Documents/Vault/.ideatr-debug",
     "package": "bash scripts/package-release.sh",
     "test": "vitest run",
     "test:watch": "vitest",

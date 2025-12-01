@@ -5,7 +5,7 @@ Batch operations let you process multiple ideas at once, saving time and ensurin
 ## Overview
 
 Ideatr provides three batch operations:
-- **Reclassify All Ideas** - Update classification for all ideas
+- **Reclassify All Ideas** - Update AI enhancement (category, tags) for all ideas
 - **Find All Duplicates** - Comprehensive duplicate detection
 - **Refresh All Related Notes** - Update relationship links
 
@@ -13,7 +13,7 @@ Ideatr provides three batch operations:
 
 **Use batch operations when:**
 - You've changed AI models or providers
-- You want to update all classifications
+- You want to update all idea enhancements
 - You're cleaning up your vault
 - You want to refresh relationships
 - You're doing a comprehensive audit
@@ -25,7 +25,7 @@ Ideatr provides three batch operations:
 
 ## Reclassify All Ideas
 
-**What it does:** Updates classification (category, tags) for all ideas using current AI settings.
+**What it does:** Updates classification (category, tags) and related notes for all ideas using current AI settings.
 
 **When to use:**
 - You've changed AI models or providers

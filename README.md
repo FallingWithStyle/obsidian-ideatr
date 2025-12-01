@@ -1,27 +1,27 @@
 # Ideatr
 
-A powerful, Obsidian-native "idea intake + triage + transform + validate" tool. Fast capture, intelligent classification, and comprehensive idea management.
+A powerful, Obsidian-native "idea intake + triage + transform + validate" tool. Fast capture, AI-powered idea enhancement, and comprehensive idea management.
 
 ## Overview
 
-Ideatr is a comprehensive idea management system for Obsidian that captures ideas quickly, classifies them intelligently using AI, clusters related concepts, deduplicates similar ideas, validates domains and existence, generates variants and scaffolds, and prepares ideas for project elevation.
+Ideatr is a comprehensive idea management system for Obsidian that captures ideas quickly, enhances them intelligently using AI, clusters related concepts, deduplicates similar ideas, validates domains and existence, generates variants and scaffolds, and prepares ideas for project elevation.
 
 **Problem**: Creative professionals, entrepreneurs, and knowledge workers generate a large volume of ideas across many domains. These ideas often live in fragmented systems (chat logs, fleeting notes, various apps), causing low retrieval rates, duplicate effort, and missed connections.
 
-**Solution**: Ideatr provides a single, intelligent "front door" for ideas with automatic classification, validation tools, clustering, and seamless integration with your Obsidian vault.
+**Solution**: Ideatr provides a single, intelligent "front door" for ideas with automatic AI enhancement, validation tools, clustering, and seamless integration with your Obsidian vault.
 
 ## Features
 
-### Core Capture & Classification
+### Core Capture & AI Enhancement
 - **Quick Capture Modal**: Universal hotkey opens a lightweight modal anywhere in Obsidian for fast idea capture (<10 seconds)
 - **Ideate Button**: One-click AI-powered idea processing! The gold "Ideate" button automatically:
   - Saves your raw idea text
-  - Auto-classifies with category and tags
+  - Enhances with category and tags
   - Generates a concise title/subject line
   - Expands the idea with related concepts, questions, and next steps
   - All in one action - perfect for rapid idea capture and enrichment
 - **Automatic File Creation**: Ideas automatically create markdown files in `Ideas/` directory with structured frontmatter
-- **AI Auto-Classification**: Multi-provider LLM-powered categorization, tag suggestions, and related note detection
+- **AI Idea Enhancement**: Multi-provider LLM-powered classification (categorization, tag suggestions), expansion, and related note detection
 - **Customizable Keyboard Shortcuts**: Configure your own keyboard shortcuts for Save and Ideate buttons (with tooltips showing shortcuts on hover)
 - **First-Launch Setup**: Guided setup wizard for configuring AI models and providers
 - **Hybrid LLM Support**: Seamlessly switch between local (Llama.cpp) and cloud AI providers
@@ -40,14 +40,14 @@ Ideatr is a comprehensive idea management system for Obsidian that captures idea
 
 ### Local AI Models
 
-Ideatr offers four local AI models for offline classification, organized by tier:
+Ideatr offers four local AI models for offline idea enhancement, organized by tier:
 
 #### Tier 1: Phi-3.5 Mini [EFFICIENT] (Recommended)
 - **Download size**: ~4.2GB
 - **RAM required**: 6-8GB
 - **Quality**: 4/5 | **Speed**: 5/5
 - **Best for**: Most users
-- Fast, lightweight, and ideal for everyday tasks. Excellent at structured work like classification and tagging.
+- Fast, lightweight, and ideal for everyday tasks. Excellent at structured work like categorization and tagging.
 
 #### Tier 2: Qwen 2.5 7B [VERSATILE]
 - **Download size**: ~7.8GB
@@ -63,12 +63,12 @@ Ideatr offers four local AI models for offline classification, organized by tier
 - **Best for**: Power users who want Meta's best
 - Meta's trusted and widely documented model. Excellent accuracy with strong community support.
 
-#### Tier 4: Llama 3.3 70B [PREMIUM]
-- **Download size**: ~43GB
+#### Tier 4: Llama 3.3 70B [MAXIMUM]
+- **Download size**: ~42.5GB
 - **RAM required**: 48GB+
 - **Quality**: 5/5 | **Speed**: 1/5
 - **Best for**: Desktop workstations with 64GB+ RAM
-- Top-tier performance with near-GPT-4 quality. Requires a high-end desktop workstation.
+- Top-tier performance with near-GPT-4 quality. Requires a high-end desktop workstation or powerful laptop with substantial RAM.
 
 You can switch models anytime in **Settings → AI Configuration → Local AI Model**.
 
@@ -233,7 +233,7 @@ Access settings via **Obsidian Settings → Ideatr**:
      - All in one action!
 4. Ideatr automatically:
    - Creates a markdown file in `Ideas/`
-   - Classifies the idea (if auto-classify is enabled or using Ideate)
+   - Classifies and enhances the idea with AI (if auto-enhancement is enabled or using Ideate)
    - Suggests tags and categories
    - Checks for duplicates
    - Validates domain names (if applicable)
@@ -289,15 +289,15 @@ Your idea text goes here...
 - **Open Graph View**: Open the graph visualization
 
 #### Management
-- **Classify Current Note**: Classify an existing note
-- **Refresh Idea**: Update classification and metadata
+- **Classify Current Note**: Classify and enhance an existing note with AI (category, tags, related notes)
+- **Refresh Idea**: Update AI enhancement and metadata
 - **Export Ideas**: Export to JSON/CSV
 - **Import Ideas**: Import from external sources
 - **Generate Weekly Digest**: Create resurfacing digest
 - **Elevate to Project**: Promote idea to project
 
 #### Batch Operations
-- **Reclassify All Ideas**: Update all classifications
+- **Reclassify All Ideas**: Update classification and enhancement for all ideas
 - **Find All Duplicates**: Comprehensive duplicate detection
 - **Refresh All Related Notes**: Update all relationships
 
@@ -374,7 +374,7 @@ Your idea text goes here...
 - **CommandRegistry**: Centralized command registration
 - **HybridLLM**: Manages local and cloud AI with smart fallback
 - **IdeaRepository**: Abstraction for idea file operations
-- **ClassificationService**: AI-powered classification
+- **ClassificationService**: AI-powered classification and idea enhancement
 - **ClusteringService**: Idea relationship detection
 - **DuplicateDetector**: Similarity detection
 - **NameVariantService**: Name generation with caching
@@ -457,7 +457,7 @@ npm run format
 ### Current Version: 0.8.5
 
 **Implemented Features:**
-- ✅ Core capture and classification
+- ✅ Core capture, classification, and idea enhancement
 - ✅ **Ideate Button** - One-click AI-powered idea processing and enrichment
 - ✅ Multi-provider AI support (local + cloud)
 - ✅ Validation tools (domains, existence, duplicates)

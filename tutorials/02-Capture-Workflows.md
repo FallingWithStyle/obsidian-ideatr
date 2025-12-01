@@ -10,7 +10,7 @@ Use **Save** when you want to:
 - Capture a quick idea without processing
 - Save raw notes that you'll process later
 - Capture ideas when AI isn't available
-- Store ideas that don't need immediate classification
+- Store ideas that don't need immediate enhancement
 
 **What Save does:**
 - Creates a markdown file in `Ideas/`
@@ -22,7 +22,7 @@ Use **Save** when you want to:
 
 Use **Ideate** when you want to:
 - Immediately enrich your idea with AI
-- Get automatic classification and tags
+- Get automatic classification (category and tags)
 - Generate a title/subject line
 - Expand the idea with related concepts, questions, and next steps
 - Process the idea in one action
