@@ -8,7 +8,7 @@ import { formatDomainResultsForFrontmatter } from '../services/DomainFormatter';
 import { WebSearchService } from '../services/WebSearchService';
 import { SearchQueryGenerator } from '../services/SearchQueryGenerator';
 import { formatSearchResultsForFrontmatter } from '../services/SearchResultFormatter';
-import { extractIdeaNameRuleBased, extractIdeaNameWithLLM } from '../utils/ideaNameExtractor';
+import { extractIdeaNameRuleBased } from '../utils/ideaNameExtractor';
 import type { INameVariantService } from '../types/transformation';
 import type { IdeatrSettings } from '../settings';
 import type { IdeaClassification, ClassificationResult } from '../types/classification';
@@ -16,7 +16,6 @@ import type { IdeaCategory } from '../types/classification';
 import type { ILLMService } from '../types/classification';
 import { ClassificationResultsModal } from '../views/ClassificationResultsModal';
 import { Logger } from '../utils/logger';
-import { PROMPTS } from '../services/prompts';
 import { createHelpIcon } from '../utils/HelpIcon';
 
 /**

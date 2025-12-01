@@ -117,50 +117,55 @@ describe('FilenameGenerator', () => {
     });
 
     describe('generateFilename', () => {
-        it('should generate filename with date prefix and title', () => {
+        it('should generate filename with title only', () => {
             const date = new Date('2025-11-28T17:00:00Z');
             const filename = generateFilename('My Great Idea', date);
-            expect(filename).toBe('2025-11-28 My Great Idea.md');
+            expect(filename).toBe('My Great Idea.md');
         });
 
         it('should handle special characters in idea text', () => {
             const date = new Date('2025-11-28T17:00:00Z');
             const filename = generateFilename('Idea! (v2.0)', date);
-            expect(filename).toBe('2025-11-28 Idea! (v2.0).md');
+            expect(filename).toBe('Idea! (v2.0).md');
         });
 
         it('should remove filesystem-unsafe characters', () => {
             const date = new Date('2025-11-28T17:00:00Z');
             const filename = generateFilename('Idea: Test*File?', date);
-            expect(filename).toBe('2025-11-28 Idea TestFile.md');
+            expect(filename).toBe('Idea TestFile.md');
         });
 
         it('should truncate long idea text', () => {
             const date = new Date('2025-11-28T17:00:00Z');
             const longIdea = 'a'.repeat(150);
             const filename = generateFilename(longIdea, date);
-            // Format: YYYY-MM-DD + space + title + .md = 10 + 1 + 100 + 3 = 114 max
-            expect(filename.length).toBeLessThanOrEqual(114);
+            // Format: title + .md = 100 + 3 = 103 max
+            expect(filename.length).toBeLessThanOrEqual(103);
         });
 
         it('should handle empty idea text with fallback', () => {
             const date = new Date('2025-11-28T17:00:00Z');
             const filename = generateFilename('', date);
-            expect(filename).toBe('2025-11-28 Untitled.md');
+            expect(filename).toBe('Untitled.md');
+        });
+
+        it('should work without timestamp parameter', () => {
+            const filename = generateFilename('My Great Idea');
+            expect(filename).toBe('My Great Idea.md');
         });
     });
 
     describe('addCollisionSuffix', () => {
         it('should add numeric suffix before extension', () => {
-            expect(addCollisionSuffix('2025-11-28 Idea.md', 2)).toBe('2025-11-28 Idea-2.md');
+            expect(addCollisionSuffix('Idea.md', 2)).toBe('Idea-2.md');
         });
 
         it('should handle multiple suffixes', () => {
-            expect(addCollisionSuffix('2025-11-28 Idea.md', 10)).toBe('2025-11-28 Idea-10.md');
+            expect(addCollisionSuffix('Idea.md', 10)).toBe('Idea-10.md');
         });
 
         it('should work with already suffixed filenames', () => {
-            expect(addCollisionSuffix('2025-11-28 Idea-2.md', 3)).toBe('2025-11-28 Idea-2-3.md');
+            expect(addCollisionSuffix('Idea-2.md', 3)).toBe('Idea-2-3.md');
         });
     });
 });

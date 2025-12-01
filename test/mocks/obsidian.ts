@@ -1,3 +1,6 @@
+// Import vi for mocks
+import { vi } from 'vitest';
+
 export class Notice {
     constructor(message: string) { }
 }
@@ -9,7 +12,12 @@ export class Plugin {
 }
 export class PluginSettingTab { }
 export class Setting { }
-export class App { }
+export class App {
+    vault: Vault = new Vault();
+    workspace: Workspace = new Workspace();
+    keymap: any = {};
+    scope: any = {};
+}
 export class Modal {
     contentEl: any;
     app: any;
@@ -79,8 +87,20 @@ export class WorkspaceLeaf {
 class MockHTMLElement {
     children: any[] = [];
     private classListSet: Set<string> = new Set();
+    private eventListeners: Map<string, any[]> = new Map();
     innerHTML: string = '';
     style: any = {};
+    value: string = '';
+    textContent: string = '';
+    placeholder: string = '';
+    rows: string = '';
+    tagName: string = '';
+    disabled: boolean = false;
+    setAttribute: any = vi.fn();
+    getAttribute: any = vi.fn();
+    focus: any = vi.fn();
+    select: any = vi.fn();
+    setText: any = vi.fn((text: string) => { this.textContent = text; });
     
     // Create classList object that wraps the Set
     get classList() {
@@ -126,6 +146,34 @@ class MockHTMLElement {
         return this;
     }
     
+    focus() {
+        // Mock focus method
+    }
+    
+    setText(text: string) {
+        this.textContent = text;
+    }
+    
+    setAttribute(name: string, value: string) {
+        (this as any)[name] = value;
+    }
+    
+    getAttribute(name: string) {
+        return (this as any)[name];
+    }
+    
+    addEventListener(event: string, handler: any) {
+        if (!this.eventListeners.has(event)) {
+            this.eventListeners.set(event, []);
+        }
+        this.eventListeners.get(event)!.push(handler);
+    }
+    
+    click() {
+        const clickHandlers = this.eventListeners.get('click') || [];
+        clickHandlers.forEach(handler => handler());
+    }
+    
     createDiv(cls?: string) { 
         const el = new MockHTMLElement(); 
         if (cls) el.addClass(cls);
@@ -138,6 +186,9 @@ class MockHTMLElement {
         el.tagName = tag.toUpperCase();
         if (opts?.cls) el.addClass(opts.cls);
         if (opts?.text) el.textContent = opts.text;
+        if (opts?.placeholder) el.placeholder = opts.placeholder;
+        if (opts?.value !== undefined) el.value = opts.value;
+        if (opts?.type) (el as any).type = opts.type;
         if (opts?.attr) {
             Object.keys(opts.attr).forEach(key => {
                 if (key === 'style') {
@@ -220,7 +271,6 @@ class MockHTMLElement {
         return results;
     }
     
-    addEventListener(event: string, handler: any) { }
     appendChild() { }
     appendText(text: string) { 
         this.textContent += text;
@@ -228,10 +278,26 @@ class MockHTMLElement {
     setAttribute(name: string, value: string) { 
         (this as any)[name] = value;
     }
-    textContent: string = '';
     value: string = '';
     checked: boolean = false;
     tagName: string = 'DIV';
+    
+    get textContent(): string {
+        // Recursively collect text from this element and all children
+        let text = this._textContent || '';
+        this.children.forEach((child: any) => {
+            if (child.textContent) {
+                text += child.textContent;
+            }
+        });
+        return text;
+    }
+    
+    set textContent(value: string) {
+        this._textContent = value;
+    }
+    
+    private _textContent: string = '';
     
     private parseStyle(styleStr: string): any {
         const styles: any = {};

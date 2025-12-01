@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 
 /**
  * Tutorial topic identifiers for linking to specific tutorial sections
@@ -114,7 +114,6 @@ export async function openTutorial(app: App, topic: TutorialTopic): Promise<void
     }
     
     // Fallback: show notice
-    const { Notice } = await import('obsidian');
     new Notice(`Tutorial file not found. Please ensure tutorials are available in your vault.`);
 }
 

@@ -2,7 +2,7 @@ import { Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { extractIdeaNameRuleBased } from '../../utils/ideaNameExtractor';
-import { formatDate, sanitizeTitle } from '../../storage/FilenameGenerator';
+import { sanitizeTitle } from '../../storage/FilenameGenerator';
 
 /**
  * Command: add-codename
@@ -47,10 +47,8 @@ export class CodenameCommand extends IdeaFileCommand {
         });
 
         // Update filename
-        const createdDate = new Date(content.frontmatter.created);
         const sanitizedCodename = sanitizeTitle(codename.trim());
-        const dateStr = formatDate(createdDate);
-        const newFilename = `${dateStr} ${sanitizedCodename}.md`;
+        const newFilename = `${sanitizedCodename}.md`;
 
         // Rename file if filename changed
         const currentFilename = file.name;

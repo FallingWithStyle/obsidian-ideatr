@@ -12,6 +12,8 @@ import { LlamaService } from './services/LlamaService';
 import { PluginContext } from './core/PluginContext';
 import { NameVariantService } from './services/NameVariantService';
 import { ErrorLogService } from './services/ErrorLogService';
+import { TutorialManager } from './services/TutorialManager';
+import * as path from 'path';
 
 /**
  * Ideatr Plugin - Fast idea capture with intelligent classification
@@ -60,6 +62,9 @@ export default class IdeatrPlugin extends Plugin {
         const { context, localLLMService: localLLM } = await ServiceInitializer.initialize(this.app, this, this.settings);
         this.pluginContext = context;
         this.localLLMService = localLLM;
+
+        // Auto-copy tutorials to vault if they're available in plugin directory but not in vault
+        await this.ensureTutorialsAvailable();
 
         // Register Dashboard View
         this.registerView(
@@ -143,5 +148,38 @@ export default class IdeatrPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+    }
+
+    /**
+     * Ensure tutorials are available in the vault by copying from plugin directory if needed
+     */
+    private async ensureTutorialsAvailable(): Promise<void> {
+        try {
+            // Get plugin directory
+            const vaultBasePath = (this.app.vault.adapter as any).basePath || this.app.vault.configDir;
+            const configDir = path.isAbsolute(this.app.vault.configDir) 
+                ? this.app.vault.configDir 
+                : path.join(vaultBasePath, this.app.vault.configDir);
+            const pluginDir = path.resolve(path.join(configDir, 'plugins', this.manifest.id));
+            
+            const tutorialManager = new TutorialManager(this.app, pluginDir);
+            
+            // Check if tutorials exist in vault
+            const tutorialsInVault = await tutorialManager.tutorialsExistInVault();
+            
+            // If not in vault, but available in plugin directory, copy them
+            if (!tutorialsInVault) {
+                const bundledAvailable = await tutorialManager.bundledTutorialsAvailable();
+                if (bundledAvailable) {
+                    Logger.info('Tutorials not found in vault, copying from plugin directory...');
+                    await tutorialManager.resetTutorials();
+                } else {
+                    Logger.warn('Tutorial files not found in plugin directory. They may need to be manually restored.');
+                }
+            }
+        } catch (error) {
+            Logger.warn('Error ensuring tutorials are available:', error);
+            // Don't show error to user, just log it
+        }
     }
 }

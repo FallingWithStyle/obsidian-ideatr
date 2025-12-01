@@ -124,10 +124,12 @@ If you're installing from source or a pre-release version:
    - `main.js`
    - `manifest.json`
    - `styles.css`
-   - `binaries/` folder (if included)
+   - `tutorials/` folder (includes all tutorial documentation)
+   - `binaries/` folder (if included, platform-specific binaries)
 3. Reload Obsidian or restart the app
 4. Enable the plugin in **Settings → Community Plugins → Installed plugins**
 5. Configure your AI provider in **Settings → Ideatr**
+6. Tutorials will be automatically copied to your vault on first launch
 
 #### For Developers
 
@@ -150,6 +152,9 @@ npm test
 
 # Deploy to your vault (update path in package.json)
 npm run deploy
+
+# Package for release (creates a zip file with all necessary files)
+npm run package
 ```
 
 ### First Launch Setup

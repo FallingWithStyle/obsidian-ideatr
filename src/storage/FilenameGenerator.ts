@@ -1,7 +1,7 @@
 /**
  * FilenameGenerator - Generates safe, unique filenames for idea files
  * 
- * Follows the pattern: YYYY-MM-DD Title.md
+ * Follows the pattern: Title.md
  * - Preserves original capitalization and spaces
  * - Sanitizes filesystem-unsafe characters
  * - Truncates to reasonable length
@@ -11,13 +11,13 @@
 const MAX_TITLE_LENGTH = 100;
 
 /**
- * Generate a filename from idea text and timestamp
- * Format: YYYY-MM-DD Title.md
+ * Generate a filename from idea text
+ * Format: Title.md
+ * Note: timestamp parameter is kept for backward compatibility but not used
  */
-export function generateFilename(ideaText: string, timestamp: Date): string {
-    const datePrefix = formatDate(timestamp);
+export function generateFilename(ideaText: string, timestamp?: Date): string {
     const title = sanitizeTitle(ideaText);
-    return `${datePrefix} ${title}.md`;
+    return `${title}.md`;
 }
 
 /**

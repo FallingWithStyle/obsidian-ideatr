@@ -1,4 +1,4 @@
-import { Setting, Notice } from 'obsidian';
+import { Setting } from 'obsidian';
 import { BaseSettingsSection } from '../components/SettingsSection';
 import { TutorialManager } from '../../services/TutorialManager';
 import type IdeatrPlugin from '../../main';

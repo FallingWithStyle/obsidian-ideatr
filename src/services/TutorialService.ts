@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 import { openTutorial, getTutorialPath, type TutorialTopic } from '../utils/HelpIcon';
 
 /**
@@ -22,7 +22,6 @@ export class TutorialService {
         }
 
         // Fallback: show notice
-        const { Notice } = await import('obsidian');
         new Notice('Tutorial files not found. Please ensure tutorials are available in your vault.');
     }
 

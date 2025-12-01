@@ -1,4 +1,4 @@
-import { App, TFile, Notice } from 'obsidian';
+import { App, TFile, TFolder, Notice } from 'obsidian';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -54,7 +54,7 @@ export class TutorialManager {
             const vaultPath = this.getTutorialVaultPath();
             try {
                 const tutorialDir = this.app.vault.getAbstractFileByPath(vaultPath);
-                if (tutorialDir && tutorialDir.children) {
+                if (tutorialDir instanceof TFolder && tutorialDir.children) {
                     for (const child of tutorialDir.children) {
                         if (child instanceof TFile && child.name.endsWith('.md')) {
                             try {
@@ -157,7 +157,7 @@ export class TutorialManager {
             // Try to delete the directory if it's empty
             try {
                 const dir = this.app.vault.getAbstractFileByPath(vaultPath);
-                if (dir && !dir.children || dir.children.length === 0) {
+                if (dir instanceof TFolder && (!dir.children || dir.children.length === 0)) {
                     await this.app.vault.delete(dir, true);
                 }
             } catch {

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "deploy": "npm run build && cp main.js manifest.json styles.css ~/Documents/Vault/.obsidian/plugins/ideatr/ && [ -d binaries ] && cp -r binaries ~/Documents/Vault/.obsidian/plugins/ideatr/ || npm run build && cp main.js manifest.json styles.css ~/Documents/Vault/.obsidian/plugins/ideatr/",
+    "deploy": "npm run build && cp main.js manifest.json styles.css ~/Documents/Vault/.obsidian/plugins/ideatr/ && ([ -d binaries ] && cp -r binaries ~/Documents/Vault/.obsidian/plugins/ideatr/ || true) && ([ -d tutorials ] && cp -r tutorials ~/Documents/Vault/.obsidian/plugins/ideatr/ || true)",
+    "package": "bash scripts/package-release.sh",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
