@@ -1,5 +1,6 @@
-import { Modal, App, Notice } from 'obsidian';
+import { Modal, App, Notice, Setting } from 'obsidian';
 import type { IModelManager } from '../services/ModelManager';
+import { ModelManager } from '../services/ModelManager';
 import type { IdeatrSettings } from '../settings';
 import { ModelDownloadModal } from './ModelDownloadModal';
 
@@ -90,41 +91,92 @@ export class FirstLaunchSetupModal extends Modal {
     }
 
     private async handleDownloadOption(): Promise<void> {
-        // Check if model is already downloaded
-        const isDownloaded = await this.modelManager.isModelDownloaded();
-        
-        if (isDownloaded) {
-            // Model already exists, just mark setup as complete
-            this.settings.setupCompleted = true;
-            this.settings.modelDownloaded = true;
-            this.settings.llmProvider = 'llama';
-            this.onComplete();
-            this.close();
-            new Notice('Model already downloaded. Setup complete!');
-            return;
-        }
+        this.contentEl.empty();
+        this.contentEl.createEl('h2', { text: 'Choose AI Model' });
+        this.contentEl.createEl('p', {
+            text: 'Select which model to download. You can change this later in settings.',
+            cls: 'model-selection-intro'
+        });
 
-        // Open download modal
-        const downloadModal = new ModelDownloadModal(this.app, this.modelManager);
-        
+        // Get all models from ModelManager
+        const modelManager = new ModelManager();
+        const availableModels = modelManager.getAvailableModels();
+
+        // Create a card for each model
+        for (const modelKey of Object.keys(availableModels) as Array<keyof typeof availableModels>) {
+            const config = availableModels[modelKey];
+            const container = this.contentEl.createDiv({ cls: 'model-option-card' });
+
+            // Header with name and badge
+            const header = container.createDiv({ cls: 'model-header' });
+            header.createEl('h3', { text: config.name });
+            header.createEl('span', { text: config.badge, cls: 'model-badge' });
+
+            // Description
+            container.createEl('p', { text: config.description, cls: 'model-description' });
+
+            // Stats
+            const stats = container.createDiv({ cls: 'model-stats' });
+            stats.createEl('div', { text: `📦 Size: ${(config.sizeMB / 1000).toFixed(1)}GB` });
+            stats.createEl('div', { text: `💾 RAM: ${config.ram}` });
+            stats.createEl('div', { text: `⭐ Quality: ${config.quality}/5` });
+            stats.createEl('div', { text: `⚡ Speed: ${config.speed}/5` });
+
+            // Pros
+            const prosContainer = container.createDiv({ cls: 'model-pros' });
+            prosContainer.createEl('strong', { text: 'Pros:' });
+            const prosList = prosContainer.createEl('ul');
+            config.pros.forEach((pro: string) => prosList.createEl('li', { text: pro }));
+
+            // Cons
+            const consContainer = container.createDiv({ cls: 'model-cons' });
+            consContainer.createEl('strong', { text: 'Cons:' });
+            const consList = consContainer.createEl('ul');
+            config.cons.forEach((con: string) => consList.createEl('li', { text: con }));
+
+            // Best for
+            container.createEl('p', {
+                text: `Best for: ${config.bestFor}`,
+                cls: 'model-best-for'
+            });
+
+            // Select button
+            new Setting(container)
+                .addButton(btn => btn
+                    .setButtonText(`Select ${config.name}`)
+                    .setCta()
+                    .onClick(async () => {
+                        this.settings.localModel = modelKey as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
+                        await this.startDownload(modelKey);
+                    }));
+        }
+    }
+
+    private async startDownload(modelKey: string): Promise<void> {
+        const modelManager = new ModelManager(modelKey);
+        const modal = new ModelDownloadModal(
+            this.app,
+            modelManager
+        );
+
         // Override close to mark setup as complete
-        const originalClose = downloadModal.close.bind(downloadModal);
-        downloadModal.close = () => {
+        const originalClose = modal.close.bind(modal);
+        modal.close = () => {
             originalClose();
             // Check if download was successful
-            this.modelManager.isModelDownloaded().then(downloaded => {
+            modelManager.isModelDownloaded().then(downloaded => {
                 if (downloaded) {
                     this.settings.setupCompleted = true;
                     this.settings.modelDownloaded = true;
                     this.settings.llmProvider = 'llama';
-                    this.settings.modelPath = this.modelManager.getModelPath();
+                    this.settings.modelPath = modelManager.getModelPath();
                     this.onComplete();
                     this.close();
                 }
             });
         };
 
-        downloadModal.open();
+        modal.open();
     }
 
     private handleApiKeyOption(): void {
@@ -238,8 +290,8 @@ export class FirstLaunchSetupModal extends Modal {
  * Check if this is the first launch
  */
 export function isFirstLaunch(settings: IdeatrSettings): boolean {
-    return !settings.setupCompleted && 
-           !settings.modelDownloaded && 
-           !settings.cloudApiKey;
+    return !settings.setupCompleted &&
+        !settings.modelDownloaded &&
+        !settings.cloudApiKey;
 }
 

@@ -14,6 +14,8 @@ export class ModelDownloadModal extends Modal {
     private retryButton: HTMLElement | null = null;
     private isDownloading: boolean = false;
     private downloadStartTime: number = 0;
+    private isWarning: boolean = false;
+    private allowBackgroundDownload: boolean = false;
 
     constructor(app: App, modelManager: IModelManager) {
         super(app);
@@ -53,16 +55,29 @@ export class ModelDownloadModal extends Modal {
         this.progressText = progressContainer.createEl('div', { cls: 'ideatr-progress-text' });
         this.progressText.textContent = 'Preparing download...';
 
-        // Error message (hidden initially)
+        // Error/warning message (hidden initially)
         this.errorMessage = contentEl.createEl('div', {
             cls: 'ideatr-error',
             attr: {
-                style: 'display: none; color: var(--text-error); margin-top: 10px;'
+                style: 'display: none; margin-top: 10px;'
             }
         });
 
         // Button container
         const buttonContainer = contentEl.createEl('div', { cls: 'ideatr-button-container' });
+
+        // Download in background button
+        const backgroundButton = buttonContainer.createEl('button', {
+            text: 'Download in Background',
+            cls: 'mod-cta'
+        });
+        backgroundButton.style.marginRight = '10px';
+        backgroundButton.addEventListener('click', () => {
+            // Allow modal to close, but continue download
+            this.allowBackgroundDownload = true;
+            new Notice('Download will continue in background. You\'ll be notified when it completes.');
+            this.close();
+        });
 
         // Cancel button
         this.cancelButton = buttonContainer.createEl('button', {
@@ -75,7 +90,7 @@ export class ModelDownloadModal extends Modal {
         this.startDownload();
     }
 
-    private async startDownload(): Promise<void> {
+    private async startDownload(overwrite: boolean = false): Promise<void> {
         if (this.isDownloading) {
             return;
         }
@@ -84,41 +99,63 @@ export class ModelDownloadModal extends Modal {
         this.downloadStartTime = Date.now();
         this.cancelButton.textContent = 'Cancel';
         this.errorMessage.style.display = 'none';
-        this.progressText.textContent = 'Starting download...';
+        this.isWarning = false;
+        this.progressText.textContent = overwrite ? 'Re-downloading model...' : 'Starting download...';
 
         try {
             await this.modelManager.downloadModel(
                 (progress, downloadedMB, totalMB) => {
-                    this.updateProgress(progress, downloadedMB, totalMB);
-                }
+                    // Only update UI if modal is still open
+                    if (this.isDownloading) {
+                        this.updateProgress(progress, downloadedMB, totalMB);
+                    }
+                },
+                undefined,
+                overwrite
             );
 
-            // Download complete
-            this.progressText.textContent = 'Download complete! Verifying...';
+            // Download complete - show notice even if modal was closed
+            new Notice('Model download complete! Verifying...');
             
             // Verify integrity
             const isValid = await this.modelManager.verifyModelIntegrity();
             
             if (isValid) {
-                this.progressText.textContent = 'Download complete and verified!';
-                this.cancelButton.textContent = 'Close';
-                this.cancelButton.removeClass('mod-cancel');
-                this.cancelButton.addClass('mod-cta');
+                // Only update UI if modal is still open
+                if (this.isDownloading) {
+                    this.progressText.textContent = 'Download complete and verified!';
+                    this.cancelButton.textContent = 'Close';
+                    this.cancelButton.removeClass('mod-cancel');
+                    this.cancelButton.addClass('mod-cta');
+                }
                 
-                new Notice('Model downloaded successfully');
+                new Notice('Model downloaded and verified successfully!');
                 
-                // Auto-close after 2 seconds
-                setTimeout(() => {
-                    this.close();
-                }, 2000);
+                // Auto-close after 2 seconds if modal is still open
+                if (this.isDownloading) {
+                    setTimeout(() => {
+                        this.close();
+                    }, 2000);
+                }
             } else {
-                this.showError('Downloaded file failed integrity check. Please try again.');
-                this.showRetryButton();
+                if (this.isDownloading) {
+                    this.showError('Downloaded file failed integrity check. Please try again.');
+                    this.showRetryButton();
+                } else {
+                    new Notice('Model download failed integrity check. Please try again.', 5000);
+                }
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Download failed';
-            this.showError(errorMessage);
-            this.showRetryButton();
+            
+            // Check if this is the "already downloaded" case
+            if (errorMessage === 'Model already downloaded') {
+                this.showWarning('Model is already downloaded. You can download again to replace it.');
+                this.showRetryButton('Download again anyway');
+            } else {
+                this.showError(errorMessage);
+                this.showRetryButton();
+            }
         } finally {
             this.isDownloading = false;
         }
@@ -160,9 +197,33 @@ export class ModelDownloadModal extends Modal {
     }
 
     private showError(message: string): void {
-        this.errorMessage.textContent = message;
+        this.isWarning = false;
+        this.errorMessage.empty();
         this.errorMessage.style.display = 'block';
+        this.errorMessage.style.color = 'var(--text-error)';
         this.progressText.textContent = 'Download failed';
+        
+        // Parse message and make URLs clickable
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const parts = message.split(urlRegex);
+        
+        parts.forEach((part) => {
+            // Check if part is a URL
+            if (part.match(/^https?:\/\//)) {
+                const link = this.errorMessage.createEl('a', {
+                    text: part,
+                    href: part,
+                    attr: {
+                        target: '_blank',
+                        rel: 'noopener noreferrer'
+                    }
+                });
+                link.style.color = 'var(--text-accent)';
+                link.style.textDecoration = 'underline';
+            } else if (part.trim()) {
+                this.errorMessage.createEl('span', { text: part });
+            }
+        });
         
         // Reset progress bar
         const progressBarFill = this.progressBar.querySelector('.ideatr-progress-bar-fill') as HTMLElement;
@@ -171,7 +232,24 @@ export class ModelDownloadModal extends Modal {
         }
     }
 
-    private showRetryButton(): void {
+    private showWarning(message: string): void {
+        this.isWarning = true;
+        this.errorMessage.empty();
+        this.errorMessage.style.display = 'block';
+        // Use warning color - fallback to a yellow/orange color if var doesn't exist
+        this.errorMessage.style.color = 'var(--text-warning, var(--text-warning-color, #d19a66))';
+        this.progressText.textContent = 'Model already exists';
+        
+        this.errorMessage.createEl('span', { text: message });
+        
+        // Reset progress bar
+        const progressBarFill = this.progressBar.querySelector('.ideatr-progress-bar-fill') as HTMLElement;
+        if (progressBarFill) {
+            progressBarFill.style.width = '0%';
+        }
+    }
+
+    private showRetryButton(buttonText: string = 'Retry'): void {
         if (this.retryButton) {
             return; // Already shown
         }
@@ -179,7 +257,7 @@ export class ModelDownloadModal extends Modal {
         const buttonContainer = this.contentEl.querySelector('.ideatr-button-container');
         if (buttonContainer) {
             this.retryButton = buttonContainer.createEl('button', {
-                text: 'Retry',
+                text: buttonText,
                 cls: 'mod-cta'
             });
             this.retryButton.addEventListener('click', () => {
@@ -187,7 +265,8 @@ export class ModelDownloadModal extends Modal {
                     this.retryButton.remove();
                     this.retryButton = null;
                 }
-                this.startDownload();
+                // If it's a warning (already downloaded), pass overwrite flag
+                this.startDownload(this.isWarning);
             });
         }
     }
@@ -205,9 +284,17 @@ export class ModelDownloadModal extends Modal {
 
     onClose(): void {
         const { contentEl } = this;
+        
+        // Only cancel download if we're actually downloading and user didn't choose background download
+        // If user clicked "Download in Background", allowBackgroundDownload will be true
+        if (this.isDownloading && !this.allowBackgroundDownload) {
+            this.modelManager.cancelDownload();
+        }
+        
         contentEl.empty();
         this.isDownloading = false;
         this.retryButton = null;
+        this.allowBackgroundDownload = false;
     }
 }
 

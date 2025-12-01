@@ -23,16 +23,62 @@ export class LLMSettingsSection extends BaseSettingsSection {
                     this.refresh();
                 }));
 
-        // Model download status
+        // Model selection and configuration (only show if Local AI is enabled)
         if (this.plugin.settings.llmProvider === 'llama') {
-            const modelStatus = this.plugin.settings.modelDownloaded 
-                ? `Model downloaded (${this.plugin.settings.modelPath || 'configured'})`
+            // Model selection dropdown
+            new Setting(containerEl)
+                .setName('Local AI Model')
+                .setDesc('Choose which model to download. Larger models are more accurate but require more RAM.')
+                .addDropdown(dropdown => dropdown
+                    .addOption('phi-3.5-mini', 'Phi-3.5 Mini [EFFICIENT] (~4.2GB, 6-8GB RAM)')
+                    .addOption('qwen-2.5-7b', 'Qwen 2.5 7B [VERSATILE] (~7.8GB, 10GB RAM)')
+                    .addOption('llama-3.1-8b', 'Llama 3.1 8B [RELIABLE] (~8.5GB, 10-12GB RAM)')
+                    .addOption('llama-3.3-70b', 'Llama 3.3 70B [PREMIUM] (~43GB, 48GB+ RAM)')
+                    .setValue(this.plugin.settings.localModel || 'phi-3.5-mini')
+                    .onChange(async (value) => {
+                        this.plugin.settings.localModel = value as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
+                        await this.saveSettings();
+                        this.refresh(); // Refresh to show updated model info
+                    }));
+
+            // Model info display
+            const modelManager = new ModelManager(this.plugin.settings.localModel || 'phi-3.5-mini');
+            const modelConfig = modelManager.getModelConfig();
+
+            new Setting(containerEl)
+                .setName('Model Information')
+                .setDesc(`${modelConfig.description}\nSize: ${(modelConfig.sizeMB / 1000).toFixed(1)}GB | RAM: ${modelConfig.ram} | Quality: ${modelConfig.quality}/5 | Speed: ${modelConfig.speed}/5`)
+                .setDisabled(true);
+
+            // Model download status
+            const modelStatus = this.plugin.settings.modelDownloaded
+                ? `Model downloaded: ${modelConfig.name}`
                 : 'Model not downloaded';
-            
+
             new Setting(containerEl)
                 .setName('Model Status')
                 .setDesc(modelStatus)
                 .setDisabled(true);
+
+            // Download/Switch Model button
+            new Setting(containerEl)
+                .setName('Download/Switch Model')
+                .setDesc('Download or switch to the selected model')
+                .addButton(button => button
+                    .setButtonText('Download Model')
+                    .setCta()
+                    .onClick(async () => {
+                        const modal = new FirstLaunchSetupModal(
+                            this.app,
+                            modelManager,
+                            this.plugin.settings,
+                            async () => {
+                                await this.saveSettings();
+                                this.refresh();
+                            }
+                        );
+                        modal.open();
+                    }));
 
             new Setting(containerEl)
                 .setName('Keep model loaded')
@@ -77,28 +123,6 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             button.setButtonText('Ensure Ready');
                         }
                     }));
-
-            // Setup AI button (if not configured)
-            if (!this.plugin.settings.setupCompleted) {
-                new Setting(containerEl)
-                    .setName('Setup AI')
-                    .setDesc('Configure AI model download or API key')
-                    .addButton(button => button
-                        .setButtonText('Setup AI')
-                        .setCta()
-                        .onClick(() => {
-                            const modelManager = new ModelManager();
-                            new FirstLaunchSetupModal(
-                                this.app,
-                                modelManager,
-                                this.plugin.settings,
-                                async () => {
-                                    await this.saveSettings();
-                                    this.refresh();
-                                }
-                            ).open();
-                        }));
-            }
         }
     }
 }

@@ -84,6 +84,7 @@ export interface IdeatrSettings {
     modelDownloaded: boolean; // Model has been downloaded
     keepModelLoaded: boolean; // Keep model loaded in memory
     preloadOnStartup: boolean; // Preload model on Obsidian startup
+    localModel: 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b'; // Selected local AI model
 
     // Cloud AI
     preferCloud: boolean; // Prefer cloud AI over local
@@ -180,6 +181,7 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
     modelDownloaded: false,
     keepModelLoaded: false,
     preloadOnStartup: false,
+    localModel: 'phi-3.5-mini',
 
     // Cloud AI
     preferCloud: false,
