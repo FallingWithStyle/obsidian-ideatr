@@ -104,6 +104,7 @@ export interface IdeatrSettings {
     debugMode: boolean; // Enable debug logging (gates console.log/info/warn)
 
     // Capture Modal Keyboard Shortcuts
+    captureIdeaHotkey: string; // Keyboard shortcut for opening Capture Idea modal (e.g., "cmd+i" or "ctrl+i")
     captureSaveShortcut: string; // Keyboard shortcut for Save button (e.g., "cmd+enter" or "ctrl+enter")
     captureIdeateShortcut: string; // Keyboard shortcut for Ideate button (e.g., "ctrl+enter" or "alt+enter")
 }
@@ -199,6 +200,7 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
     debugMode: false, // Default: false (only enabled for developer vaults)
 
     // Capture Modal Keyboard Shortcuts
+    captureIdeaHotkey: 'cmd+i', // Default: Cmd+I (Mac) or Ctrl+I (Windows/Linux) - users can customize
     captureSaveShortcut: 'cmd+enter', // Default: Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) - users can customize
     captureIdeateShortcut: 'alt+enter' // Default: Alt+Enter (works on both Mac and Windows/Linux)
 };
