@@ -1,6 +1,6 @@
 import type { ILLMService } from '../types/classification';
 import type { IdeatrSettings } from '../settings';
-import { ModelManager, MODELS } from '../services/ModelManager';
+import { MODELS } from '../services/ModelManager';
 import { LlamaService } from '../services/LlamaService';
 import { HybridLLM } from '../services/HybridLLM';
 
@@ -148,7 +148,7 @@ function getCloudProviderStatus(settings: IdeatrSettings): ModelStatus {
     }
 
     // Get provider name
-    let providerName = settings.cloudProvider;
+    let providerName: string = settings.cloudProvider;
     if (settings.cloudProvider === 'openrouter' && settings.openRouterModel) {
         providerName = `OpenRouter: ${settings.openRouterModel}`;
     } else if (settings.cloudProvider === 'custom' && settings.customEndpointUrl) {

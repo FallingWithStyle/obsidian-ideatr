@@ -11,6 +11,7 @@ import { ScaffoldCommand } from './transformation/ScaffoldCommand';
 import { MutationCommand } from './transformation/MutationCommand';
 import { ExpandCommand } from './transformation/ExpandCommand';
 import { ReorganizeCommand } from './transformation/ReorganizeCommand';
+import { GuidedIdeationCommand } from './transformation/GuidedIdeationCommand';
 import { StatusCommand } from './lifecycle/StatusCommand';
 import { ArchiveCommand } from './lifecycle/ArchiveCommand';
 import { CodenameCommand } from './lifecycle/CodenameCommand';
@@ -106,6 +107,12 @@ export class CommandRegistry {
             id: 'reorganize-idea',
             name: 'Reorganize Idea',
             callback: () => new ReorganizeCommand(context).execute()
+        });
+
+        plugin.addCommand({
+            id: 'guided-ideation',
+            name: 'Ideatr: Transform',
+            callback: () => new GuidedIdeationCommand(context).execute()
         });
 
         // Lifecycle commands

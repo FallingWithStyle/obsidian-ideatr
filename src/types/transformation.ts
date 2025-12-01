@@ -166,3 +166,36 @@ export interface ReorganizationOptions {
     tags?: string[];
 }
 
+/**
+ * Transformation operation type
+ */
+export interface TransformationOperation {
+    type: string;
+    target: string;
+    action: string;
+    parameters?: Record<string, any>;
+}
+
+/**
+ * Transformation plan from intent analysis
+ */
+export interface TransformationPlan {
+    intent: 'organize' | 'expand' | 'transform' | 'analyze' | 'restructure' | 'custom';
+    operations: TransformationOperation[];
+    description: string;
+    requiresFileRename?: boolean;
+    requiresFrontmatterUpdate?: boolean;
+    requiresBodyModification?: boolean;
+}
+
+/**
+ * Transformation result
+ */
+export interface TransformationResult {
+    newFilename?: string | null;
+    frontmatter?: any;
+    body?: string;
+    summary: string;
+    originalContent?: string;
+}
+

@@ -9,18 +9,16 @@ import { checkModelCompatibility, getSystemInfoString } from '../utils/systemCap
  * FirstLaunchSetupModal - Modal for first-launch AI setup
  */
 export class FirstLaunchSetupModal extends Modal {
-    private modelManager: IModelManager;
     private settings: IdeatrSettings;
     private onComplete: () => void;
 
     constructor(
         app: App,
-        modelManager: IModelManager,
+        _modelManager: IModelManager,
         settings: IdeatrSettings,
         onComplete: () => void
     ) {
         super(app);
-        this.modelManager = modelManager;
         this.settings = settings;
         this.onComplete = onComplete;
     }

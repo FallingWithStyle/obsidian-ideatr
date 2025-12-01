@@ -94,13 +94,25 @@ export class TutorialManager {
                 try {
                     await this.app.vault.createFolder(vaultPath);
                 } catch (error) {
-                    // Folder might have been created by another process, check again
-                    const checkDir = this.app.vault.getAbstractFileByPath(vaultPath);
-                    if (!checkDir) {
-                        // If it still doesn't exist, re-throw the error
-                        throw error;
+                    // Check if error is about folder already existing
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    if (errorMessage.includes('already exists') || errorMessage.includes('Folder already exists')) {
+                        // Folder already exists, verify and continue silently
+                        const checkDir = this.app.vault.getAbstractFileByPath(vaultPath);
+                        if (!checkDir) {
+                            // Folder doesn't actually exist, but error said it does - might be a race condition
+                            // Just continue anyway, file operations will handle it
+                        }
+                        // Folder exists (or will be handled by file operations), continue silently
+                    } else {
+                        // Folder might have been created by another process, check again
+                        const checkDir = this.app.vault.getAbstractFileByPath(vaultPath);
+                        if (!checkDir) {
+                            // If it still doesn't exist, re-throw the error
+                            throw error;
+                        }
+                        // Otherwise, folder exists now, continue
                     }
-                    // Otherwise, folder exists now, continue
                 }
             }
 
