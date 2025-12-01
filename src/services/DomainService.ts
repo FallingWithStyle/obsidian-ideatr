@@ -1,4 +1,5 @@
 import type { IDomainService, IProspectrService, DomainCheckResult } from '../types/domain';
+import { Logger } from '../utils/logger';
 
 /**
  * DomainService - Orchestrates domain extraction and availability checking
@@ -87,7 +88,7 @@ export class DomainService implements IDomainService {
             return await this.prospectrService.checkDomainsAvailability(domains);
         } catch (error) {
             // Handle errors gracefully
-            console.warn('Domain checking failed:', error);
+            Logger.warn('Domain checking failed:', error);
             return domains.map(domain => ({
                 domain,
                 available: false,

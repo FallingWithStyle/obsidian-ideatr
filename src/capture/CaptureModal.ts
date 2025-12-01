@@ -14,6 +14,7 @@ import type { IdeatrSettings } from '../settings';
 import type { IdeaClassification, ClassificationResult } from '../types/classification';
 import type { IdeaCategory } from '../types/classification';
 import { ClassificationResultsModal } from '../views/ClassificationResultsModal';
+import { Logger } from '../utils/logger';
 
 /**
  * CaptureModal - Modal UI for capturing ideas
@@ -236,7 +237,7 @@ export class CaptureModal extends Modal {
                     return;
                 }
             } catch (error) {
-                console.warn('Duplicate check failed:', error);
+                Logger.warn('Duplicate check failed:', error);
                 // Proceed if check fails
             }
         }
@@ -547,7 +548,7 @@ export class CaptureModal extends Modal {
         const domainPromise = shouldCheckDomains
             ? this.domainService.checkDomains(ideaText, projectName)
                 .catch(error => {
-                    console.warn('Domain check failed:', error);
+                    Logger.warn('Domain check failed:', error);
                     // Return error result for storage
                     return null; // Signal that domain check was attempted but failed
                 })
@@ -556,7 +557,7 @@ export class CaptureModal extends Modal {
         const searchPromise = shouldSearchWeb
             ? this.performWebSearch(ideaText, category, projectName)
                 .catch(error => {
-                    console.warn('Web search failed:', error);
+                    Logger.warn('Web search failed:', error);
                     // Return error result for storage
                     return null; // Signal that web search was attempted but failed
                 })
@@ -573,7 +574,7 @@ export class CaptureModal extends Modal {
                     return Promise.resolve();
                 })
                 .catch(error => {
-                    console.warn('Name variant generation failed:', error);
+                    Logger.warn('Name variant generation failed:', error);
                     // Don't throw - graceful degradation
                 })
             : Promise.resolve(null);
@@ -619,7 +620,7 @@ export class CaptureModal extends Modal {
             })
             .catch(error => {
                 // This catch handles unexpected errors in the Promise.all itself
-                console.warn('Validation orchestration failed:', error);
+                Logger.warn('Validation orchestration failed:', error);
                 // Store error state for both validations if they were attempted
                 const errorUpdates: any = {};
                 if (shouldCheckDomains) {
@@ -664,7 +665,7 @@ export class CaptureModal extends Modal {
 
             return results;
         } catch (error) {
-            console.warn('Web search failed:', error);
+            Logger.warn('Web search failed:', error);
             return [];
         }
     }

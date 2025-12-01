@@ -6,6 +6,7 @@ import type { IdeatrSettings } from '../settings';
 import { FileManager } from '../storage/FileManager';
 import type { Vault, TFile } from 'obsidian';
 import { ManagementError, ManagementErrorCode } from '../types/management';
+import { Logger } from '../utils/logger';
 
 /**
  * ResurfacingService - Identifies and resurfacing old ideas
@@ -39,7 +40,7 @@ export class ResurfacingService implements IResurfacingService {
                     `Failed to parse date for idea ${idea.filename}`,
                     ManagementErrorCode.DATE_PARSE_ERROR
                 );
-                console.warn(managementError.message, managementError);
+                Logger.warn(managementError.message, managementError);
                 continue;
             }
 
@@ -86,13 +87,13 @@ export class ResurfacingService implements IResurfacingService {
      */
     async markAsDismissed(ideaPath: string): Promise<void> {
         if (!this.vault) {
-            console.warn('Vault not available, cannot mark as dismissed');
+            Logger.warn('Vault not available, cannot mark as dismissed');
             return;
         }
 
         const file = this.vault.getAbstractFileByPath(ideaPath) as TFile | null;
         if (!file) {
-            console.warn(`File not found: ${ideaPath}`);
+            Logger.warn(`File not found: ${ideaPath}`);
             return;
         }
 
@@ -109,13 +110,13 @@ export class ResurfacingService implements IResurfacingService {
      */
     async markAsActedUpon(ideaPath: string): Promise<void> {
         if (!this.vault) {
-            console.warn('Vault not available, cannot mark as acted upon');
+            Logger.warn('Vault not available, cannot mark as acted upon');
             return;
         }
 
         const file = this.vault.getAbstractFileByPath(ideaPath) as TFile | null;
         if (!file) {
-            console.warn(`File not found: ${ideaPath}`);
+            Logger.warn(`File not found: ${ideaPath}`);
             return;
         }
 

@@ -2,6 +2,7 @@ import type { ILLMService, ClassificationResult } from '../types/classification'
 import type { Mutation, MutationOptions, ExpansionResult, ExpansionOptions, ReorganizationResult, ReorganizationOptions } from '../types/transformation';
 import { PROMPTS } from './prompts';
 import { extractAndRepairJSON } from '../utils/jsonRepair';
+import { Logger } from '../utils/logger';
 
 /**
  * HybridLLM - Manages both local and cloud LLM providers with intelligent routing
@@ -28,10 +29,10 @@ export class HybridLLM implements ILLMService {
             try {
                 const result = await this.cloudLLM.classify(text);
                 this.lastProvider = 'cloud';
-                console.log(`[HybridLLM] Used cloud provider: ${(this.cloudLLM as any).name || 'cloud'}`);
+                Logger.debug('Used cloud provider:', (this.cloudLLM as any).name || 'cloud');
                 return result;
             } catch (error) {
-                console.warn('[HybridLLM] Cloud provider failed, falling back to local:', error);
+                Logger.warn('Cloud provider failed, falling back to local:', error);
                 // Fall through to local
             }
         }
@@ -39,7 +40,7 @@ export class HybridLLM implements ILLMService {
         // Use local AI
         const result = await this.localLLM.classify(text);
         this.lastProvider = 'local';
-        console.log('[HybridLLM] Used local provider');
+        Logger.debug('Used local provider');
         return result;
     }
 
@@ -59,7 +60,7 @@ export class HybridLLM implements ILLMService {
                     return true;
                 }
             } catch (error) {
-                console.warn('[HybridLLM] Cloud provider ensureReady failed, falling back to local:', error);
+                Logger.warn('Cloud provider ensureReady failed, falling back to local:', error);
             }
         }
 
@@ -111,7 +112,7 @@ export class HybridLLM implements ILLMService {
                 this.lastProvider = 'cloud';
                 return result;
             } catch (error) {
-                console.warn('[HybridLLM] Cloud provider failed, falling back to local:', error);
+                Logger.warn('Cloud provider failed, falling back to local:', error);
                 // Fall through to local
             }
         }
@@ -180,7 +181,7 @@ export class HybridLLM implements ILLMService {
             throw new Error('No valid mutations found in response');
         } catch (error) {
             parseError = error instanceof Error ? error : new Error(String(error));
-            console.warn('Strategy 1 failed, trying alternative approaches:', parseError.message);
+            Logger.warn('Strategy 1 failed, trying alternative approaches:', parseError.message);
         }
         
         // Strategy 2: Try parsing without repair first (in case it's already valid)
@@ -199,18 +200,18 @@ export class HybridLLM implements ILLMService {
                         } as Mutation));
                     
                     if (validMutations.length > 0) {
-                        console.log('Strategy 2 succeeded: extracted valid JSON array');
+                        Logger.debug('Strategy 2 succeeded: extracted valid JSON array');
                         return validMutations;
                     }
                 }
             }
         } catch (error) {
-            console.warn('Strategy 2 failed:', error instanceof Error ? error.message : String(error));
+            Logger.warn('Strategy 2 failed:', error instanceof Error ? error.message : String(error));
         }
         
         // Strategy 3: Fallback extraction (existing logic)
         try {
-            console.log('Raw response (first 500 chars):', response.substring(0, 500));
+            Logger.debug('Raw response (first 500 chars):', response.substring(0, 500));
             
             // Fallback: Try to extract individual mutation objects from the response
             try {
@@ -305,14 +306,14 @@ export class HybridLLM implements ILLMService {
                 }
                 
                 if (mutationObjects.length > 0) {
-                    console.log(`Extracted ${mutationObjects.length} mutations from malformed JSON`);
+                    Logger.debug(`Extracted ${mutationObjects.length} mutations from malformed JSON`);
                     return mutationObjects;
                 }
             } catch (fallbackError) {
-                console.warn('Strategy 3 (fallback extraction) also failed:', fallbackError);
+                Logger.warn('Strategy 3 (fallback extraction) also failed:', fallbackError);
             }
         } catch (error) {
-            console.warn('Strategy 3 failed:', error instanceof Error ? error.message : String(error));
+            Logger.warn('Strategy 3 failed:', error instanceof Error ? error.message : String(error));
         }
         
         // Strategy 4: Try to extract individual objects and build array manually
@@ -338,12 +339,12 @@ export class HybridLLM implements ILLMService {
                     }
                 }
                 if (mutationObjects.length > 0) {
-                    console.log(`Strategy 4 succeeded: extracted ${mutationObjects.length} mutations from individual objects`);
+                    Logger.debug(`Strategy 4 succeeded: extracted ${mutationObjects.length} mutations from individual objects`);
                     return mutationObjects;
                 }
             }
         } catch (error) {
-            console.warn('Strategy 4 failed:', error instanceof Error ? error.message : String(error));
+            Logger.warn('Strategy 4 failed:', error instanceof Error ? error.message : String(error));
         }
         
         // All strategies failed - log detailed error information

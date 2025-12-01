@@ -5,6 +5,7 @@ import type { IdeaFilter } from '../types/management';
 import { ManagementError, getManagementErrorMessage } from '../types/management';
 import { paginate, parseTagsInput, parseDateRange } from './dashboardUtils';
 import { renderGraphLayout } from './GraphRenderer';
+import { Logger } from '../utils/logger';
 
 /**
  * DashboardView - Displays a table view of all ideas with filtering and search
@@ -47,7 +48,7 @@ export class DashboardView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'Ideatr Project Internal Dashboard';
+        return 'Ideatr Dashboard';
     }
 
     getIcon(): string {
@@ -65,7 +66,7 @@ export class DashboardView extends ItemView {
 
         // Create header
         const header = container.createDiv('dashboard-header');
-        header.createEl('h2', { text: 'Ideatr Project Internal Dashboard' });
+        header.createEl('h2', { text: 'Ideatr Dashboard' });
 
         const toolbar = header.createDiv('dashboard-toolbar');
         const refreshBtn = toolbar.createEl('button', { text: 'Refresh' });
@@ -493,7 +494,7 @@ export class DashboardView extends ItemView {
                 this.filters = viewState.state.filters as IdeaFilter;
             }
         } catch (error) {
-            console.warn('Failed to load persisted filter state:', error);
+            Logger.warn('Failed to load persisted filter state:', error);
             // Continue with empty filters
         }
     }
@@ -510,7 +511,7 @@ export class DashboardView extends ItemView {
                 }
             });
         } catch (error) {
-            console.warn('Failed to save filter state:', error);
+            Logger.warn('Failed to save filter state:', error);
             // Non-fatal: continue without persistence
         }
     }
@@ -740,12 +741,12 @@ export class DashboardView extends ItemView {
                 
                 // Show warnings if any
                 if (result.warnings && result.warnings.length > 0) {
-                    console.warn('Elevation warnings:', result.warnings);
+                    Logger.warn('Elevation warnings:', result.warnings);
                 }
             } else {
                 new Notice(`Failed to elevate idea: ${result.error || 'Unknown error'}`);
                 if (result.warnings && result.warnings.length > 0) {
-                    console.warn('Elevation warnings:', result.warnings);
+                    Logger.warn('Elevation warnings:', result.warnings);
                 }
             }
         } catch (error) {

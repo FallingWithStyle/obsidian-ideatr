@@ -4,6 +4,7 @@
 
 import type { Vault } from 'obsidian';
 import { FrontmatterParser } from './FrontmatterParser';
+import { Logger } from '../utils/logger';
 
 export interface IdeaExportItem {
     type: string;
@@ -68,7 +69,7 @@ export class ExportService {
                     path: file.path
                 });
             } catch (error) {
-                console.warn(`Failed to export ${file.path}:`, error);
+                Logger.warn(`Failed to export ${file.path}:`, error);
             }
         }
 

@@ -4,6 +4,7 @@ import type {
     ISearchService,
     IdeaClassification
 } from '../types/classification';
+import { Logger } from '../utils/logger';
 
 /**
  * ClassificationService - Orchestrates AI classification and related note detection
@@ -48,7 +49,7 @@ export class ClassificationService implements IClassificationService {
                         result.tags = [...new Set(classification.tags)];
                     })
                     .catch(error => {
-                        console.warn('LLM classification failed:', error);
+                        Logger.warn('LLM classification failed:', error);
                         // Keep defaults on error
                     })
             );
@@ -61,7 +62,7 @@ export class ClassificationService implements IClassificationService {
                     result.related = relatedNotes.map(note => note.path);
                 })
                 .catch(error => {
-                    console.warn('Related note search failed:', error);
+                    Logger.warn('Related note search failed:', error);
                     // Keep defaults on error
                 })
         );

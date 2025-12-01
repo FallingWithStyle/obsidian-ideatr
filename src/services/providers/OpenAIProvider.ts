@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
 import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
  * OpenAI Provider - GPT-4o Mini
@@ -20,7 +21,7 @@ export class OpenAIProvider implements ILLMProvider {
             try {
                 this.client = new OpenAI({ apiKey: this.apiKey });
             } catch (error) {
-                console.warn('Failed to initialize OpenAI client:', error);
+                Logger.warn('Failed to initialize OpenAI client:', error);
                 throw new Error('Failed to initialize OpenAI client');
             }
         }
@@ -118,7 +119,7 @@ Response:`;
                 confidence: parsed.confidence || 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse OpenAI response:', content, error);
+            Logger.warn('Failed to parse OpenAI response:', content, error);
             return {
                 category: '',
                 tags: [],

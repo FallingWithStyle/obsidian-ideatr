@@ -29,7 +29,7 @@ export class FirstLaunchSetupModal extends Modal {
         contentEl.addClass('ideatr-setup-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Welcome to Ideatr Project Internal AI' });
+        contentEl.createEl('h2', { text: 'Welcome to Ideatr AI' });
         contentEl.createEl('p', {
             text: 'Choose how you want to use AI for idea classification:',
             cls: 'ideatr-setup-description'

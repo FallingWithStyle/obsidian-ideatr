@@ -1,6 +1,7 @@
 import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
 import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
  * OpenRouter Provider - Multiple models via OpenRouter API
@@ -116,7 +117,7 @@ Response:`;
                 confidence: parsed.confidence || 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse OpenRouter response:', content, error);
+            Logger.warn('Failed to parse OpenRouter response:', content, error);
             return {
                 category: '',
                 tags: [],

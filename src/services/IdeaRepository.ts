@@ -5,6 +5,7 @@ import type { IdeaFilter } from '../types/management';
 import { ManagementError, ManagementErrorCode } from '../types/management';
 import { FrontmatterParser } from './FrontmatterParser';
 import type { IFrontmatterParser } from '../types/management';
+import { Logger } from '../utils/logger';
 
 /**
  * IdeaRepository - Manages reading and caching of idea files from vault
@@ -47,7 +48,7 @@ export class IdeaRepository implements IIdeaRepository {
                     `Failed to read idea file: ${file.path}`,
                     ManagementErrorCode.FILE_READ_ERROR
                 );
-                console.warn(managementError.message, managementError);
+                Logger.warn(managementError.message, managementError);
                 // Continue with other files
             }
         }
@@ -138,7 +139,7 @@ export class IdeaRepository implements IIdeaRepository {
             this.cache.set(path, idea);
             return idea;
         } catch (error) {
-            console.warn(`Failed to read idea file: ${path}`, error);
+            Logger.warn(`Failed to read idea file: ${path}`, error);
             return null;
         }
     }

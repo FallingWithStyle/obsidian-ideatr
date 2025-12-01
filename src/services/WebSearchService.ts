@@ -1,6 +1,7 @@
 import type { IWebSearchService, SearchResult } from '../types/search';
 import type { IdeatrSettings } from '../settings';
 import type { IdeaCategory } from '../types/classification';
+import { Logger } from '../utils/logger';
 
 /**
  * WebSearchService - Provides web search functionality using Google Custom Search API
@@ -49,7 +50,7 @@ export class WebSearchService implements IWebSearchService {
             const results = await this.performSearch(query, limit);
             return this.processResults(results, query);
         } catch (error) {
-            console.warn('Web search failed:', error);
+            Logger.warn('Web search failed:', error);
             return [];
         }
     }

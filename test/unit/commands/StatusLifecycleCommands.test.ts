@@ -5,21 +5,37 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Notice, TFile, Vault, App, Workspace } from '../../../test/mocks/obsidian';
-import IdeatrPlugin from '../../../src/main';
+import { StatusCommand } from '../../../src/commands/lifecycle/StatusCommand';
+import { ArchiveCommand } from '../../../src/commands/lifecycle/ArchiveCommand';
+import { CommandContext } from '../../../src/commands/base/CommandContext';
 import { FrontmatterParser } from '../../../src/services/FrontmatterParser';
 import { FileOrganizer } from '../../../src/utils/fileOrganization';
 import { DEFAULT_SETTINGS } from '../../../src/settings';
+import { StatusPickerModal } from '../../../src/views/StatusPickerModal';
 
 // Mock Obsidian globals
 global.Notice = Notice;
 
+// Mock StatusPickerModal
+vi.mock('../../../src/views/StatusPickerModal', () => ({
+    StatusPickerModal: vi.fn().mockImplementation((app, currentStatus, callback) => ({
+        open: vi.fn(() => {
+            // Simulate user selecting a status
+            callback('validated');
+        })
+    }))
+}));
+
 describe('Status & Lifecycle Commands', () => {
-    let plugin: IdeatrPlugin;
+    let statusCommand: StatusCommand;
+    let archiveCommand: ArchiveCommand;
+    let unarchiveCommand: ArchiveCommand;
     let mockApp: App;
     let mockVault: Vault;
     let mockWorkspace: Workspace;
     let mockFile: TFile;
     let mockFileOrganizer: FileOrganizer;
+    let context: CommandContext;
 
     beforeEach(() => {
         // Create mock app
@@ -37,16 +53,42 @@ describe('Status & Lifecycle Commands', () => {
         mockFile.path = 'Ideas/2025-01-15-test-idea.md';
         mockFile.name = '2025-01-15-test-idea.md';
 
-        // Create plugin instance
-        plugin = new IdeatrPlugin();
-        plugin.app = mockApp;
-        plugin.settings = { ...DEFAULT_SETTINGS, moveArchivedToFolder: false };
+        const settings = { ...DEFAULT_SETTINGS, moveArchivedToFolder: false };
+        mockFileOrganizer = new FileOrganizer(mockVault, settings);
+        const frontmatterParser = new FrontmatterParser();
 
-        // Create file organizer (will be initialized in plugin.onload, but we set it here for tests)
-        mockFileOrganizer = new FileOrganizer(mockVault, plugin.settings);
-        plugin.fileOrganizer = mockFileOrganizer;
+        // Create command context
+        context = new CommandContext(
+            mockApp,
+            {} as any, // plugin
+            settings,
+            {} as any, // fileManager
+            {} as any, // classificationService
+            {} as any, // duplicateDetector
+            {} as any, // domainService
+            {} as any, // webSearchService
+            {} as any, // nameVariantService
+            {} as any, // scaffoldService
+            frontmatterParser,
+            {} as any, // ideaRepository
+            {} as any, // embeddingService
+            {} as any, // clusteringService
+            {} as any, // graphLayoutService
+            {} as any, // resurfacingService
+            {} as any, // projectElevationService
+            {} as any, // tenuousLinkService
+            {} as any, // exportService
+            {} as any, // importService
+            {} as any, // searchService
+            {} as any, // llmService
+            { logError: vi.fn() } as any, // errorLogService
+            mockFileOrganizer
+        );
 
-        plugin.frontmatterParser = new FrontmatterParser();
+        // Create command instances
+        statusCommand = new StatusCommand(context);
+        archiveCommand = new ArchiveCommand(context, true);
+        unarchiveCommand = new ArchiveCommand(context, false);
         
         // Mock vault methods as spies
         vi.spyOn(mockVault, 'read');
@@ -76,13 +118,12 @@ Test idea
             (mockVault.read as any).mockResolvedValue(fileContent);
             (mockVault.modify as any).mockResolvedValue(undefined);
 
-            // Act - changeStatus opens a modal, so we can't fully test it without mocking the modal
-            // For now, just verify it doesn't throw
-            await expect((plugin as any).changeStatus()).resolves.not.toThrow();
+            // Act
+            await statusCommand.execute();
             
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
-            // Note: Modal interaction would be tested separately
+            expect(StatusPickerModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {
@@ -90,7 +131,7 @@ Test idea
             mockWorkspace.getActiveFile = vi.fn().mockReturnValue(null);
 
             // Act
-            await (plugin as any).changeStatus();
+            await statusCommand.execute();
 
             // Assert
             expect(mockVault.read).not.toHaveBeenCalled();
@@ -119,7 +160,7 @@ Test idea
             (mockVault.modify as any).mockResolvedValue(undefined);
 
             // Act
-            await (plugin as any).archiveIdea();
+            await archiveCommand.execute();
 
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
@@ -132,9 +173,11 @@ Test idea
 
         it('should move file to archive directory if enabled', async () => {
             // Arrange
-            plugin.settings.moveArchivedToFolder = true;
-            mockFileOrganizer = new FileOrganizer(mockVault, plugin.settings);
-            plugin.fileOrganizer = mockFileOrganizer as any;
+            context.settings.moveArchivedToFolder = true;
+            const fileOrganizerWithArchive = new FileOrganizer(mockVault, context.settings);
+            context.fileOrganizer = fileOrganizerWithArchive;
+
+            const archiveCommandWithMove = new ArchiveCommand(context, true);
 
             const fileContent = `---
 type: idea
@@ -152,7 +195,7 @@ Test idea
             (mockVault.rename as any).mockResolvedValue(undefined);
 
             // Act
-            await (plugin as any).archiveIdea();
+            await archiveCommandWithMove.execute();
 
             // Assert
             expect(mockVault.rename).toHaveBeenCalled();
@@ -163,7 +206,7 @@ Test idea
             mockWorkspace.getActiveFile = vi.fn().mockReturnValue(null);
 
             // Act
-            await (plugin as any).archiveIdea();
+            await archiveCommand.execute();
 
             // Assert
             expect(mockVault.read).not.toHaveBeenCalled();
@@ -193,7 +236,7 @@ Test idea
             (mockVault.modify as any).mockResolvedValue(undefined);
 
             // Act
-            await (plugin as any).unarchiveIdea();
+            await unarchiveCommand.execute();
 
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
@@ -206,9 +249,11 @@ Test idea
 
         it('should move file from archive if enabled', async () => {
             // Arrange
-            plugin.settings.moveArchivedToFolder = true;
-            mockFileOrganizer = new FileOrganizer(mockVault, plugin.settings);
-            plugin.fileOrganizer = mockFileOrganizer as any;
+            context.settings.moveArchivedToFolder = true;
+            const fileOrganizerWithArchive = new FileOrganizer(mockVault, context.settings);
+            context.fileOrganizer = fileOrganizerWithArchive;
+
+            const unarchiveCommandWithMove = new ArchiveCommand(context, false);
 
             const fileContent = `---
 type: idea
@@ -226,7 +271,7 @@ Test idea
             (mockVault.rename as any).mockResolvedValue(undefined);
 
             // Act
-            await (plugin as any).unarchiveIdea();
+            await unarchiveCommandWithMove.execute();
 
             // Assert
             expect(mockVault.rename).toHaveBeenCalled();
@@ -237,7 +282,7 @@ Test idea
             mockWorkspace.getActiveFile = vi.fn().mockReturnValue(null);
 
             // Act
-            await (plugin as any).unarchiveIdea();
+            await unarchiveCommand.execute();
 
             // Assert
             expect(mockVault.read).not.toHaveBeenCalled();

@@ -3,6 +3,7 @@ import type { IdeaInput } from '../types/idea';
 import { generateFilename, addCollisionSuffix } from './FilenameGenerator';
 import { buildFrontmatter, frontmatterToYAML } from '../metadata/FrontmatterBuilder';
 import type { IdeaFrontmatter } from '../types/idea';
+import { Logger } from '../utils/logger';
 
 /**
  * FileManager - Handles file creation and management for ideas
@@ -88,7 +89,7 @@ export class FileManager {
             const match = content.match(frontmatterRegex);
 
             if (!match) {
-                console.warn('No frontmatter found in file:', file.path);
+                Logger.warn('No frontmatter found in file:', file.path);
                 return content;
             }
 

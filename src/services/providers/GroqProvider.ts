@@ -2,6 +2,7 @@ import Groq from 'groq-sdk';
 import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
 import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
  * Groq Provider - Llama 3.3 70B
@@ -20,7 +21,7 @@ export class GroqProvider implements ILLMProvider {
             try {
                 this.client = new Groq({ apiKey: this.apiKey });
             } catch (error) {
-                console.warn('Failed to initialize Groq client:', error);
+                Logger.warn('Failed to initialize Groq client:', error);
                 throw new Error('Failed to initialize Groq client');
             }
         }
@@ -112,7 +113,7 @@ Response:`;
                 confidence: parsed.confidence || 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse Groq response:', content, error);
+            Logger.warn('Failed to parse Groq response:', content, error);
             return {
                 category: '',
                 tags: [],

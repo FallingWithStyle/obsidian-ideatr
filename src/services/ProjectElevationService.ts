@@ -5,6 +5,7 @@ import type { IdeatrSettings } from '../settings';
 import { FrontmatterParser } from './FrontmatterParser';
 import { extractIdeaNameRuleBased } from '../utils/ideaNameExtractor';
 import { frontmatterToYAML } from '../metadata/FrontmatterBuilder';
+import { Logger } from '../utils/logger';
 
 /**
  * ProjectElevationService - Handles elevation of ideas to projects
@@ -177,7 +178,7 @@ export class ProjectElevationService implements IProjectElevationService {
                 createdPaths.push(`${projectPath}/.devra.json`);
             } catch (error) {
                 warnings.push('Failed to create Devra metadata file (non-fatal)');
-                console.warn('Devra integration failed:', error);
+                Logger.warn('Devra integration failed:', error);
             }
 
             // Delete original file (last step)
@@ -185,7 +186,7 @@ export class ProjectElevationService implements IProjectElevationService {
                 await this.vault.delete(originalFile);
             } catch (error) {
                 warnings.push('Failed to delete original idea file (project created successfully)');
-                console.warn('Failed to delete original file:', error);
+                Logger.warn('Failed to delete original file:', error);
             }
 
             return {
@@ -321,7 +322,7 @@ export class ProjectElevationService implements IProjectElevationService {
                     }
                 }
             } catch (error) {
-                console.warn(`Failed to rollback ${path}:`, error);
+                Logger.warn(`Failed to rollback ${path}:`, error);
             }
         }
     }

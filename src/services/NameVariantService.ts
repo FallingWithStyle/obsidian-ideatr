@@ -5,6 +5,7 @@ import { NameVariantCache } from './NameVariantCache';
 import { formatVariantsForMarkdown } from './VariantFormatter';
 import { extractIdeaNameRuleBased, extractIdeaNameWithLLM } from '../utils/ideaNameExtractor';
 import { extractAndRepairJSON } from '../utils/jsonRepair';
+import { Logger } from '../utils/logger';
 
 /**
  * Extract idea name from idea text
@@ -64,7 +65,7 @@ export class NameVariantService implements INameVariantService {
         // Load cache from disk if persistence is enabled
         if (settings.variantCachePersist && loadCacheData) {
             this.loadCache().catch(err => {
-                console.warn('Failed to load variant cache:', err);
+                Logger.warn('Failed to load variant cache:', err);
             });
         }
     }
@@ -81,7 +82,7 @@ export class NameVariantService implements INameVariantService {
                 this.cache.loadFromData(data);
             }
         } catch (error) {
-            console.warn('Failed to load variant cache:', error);
+            Logger.warn('Failed to load variant cache:', error);
         }
     }
 
@@ -95,7 +96,7 @@ export class NameVariantService implements INameVariantService {
             const data = this.cache.toData();
             await this.saveCacheData(data);
         } catch (error) {
-            console.warn('Failed to save variant cache:', error);
+            Logger.warn('Failed to save variant cache:', error);
         }
     }
 
@@ -112,7 +113,7 @@ export class NameVariantService implements INameVariantService {
     clearCache(): void {
         this.cache.clear();
         this.saveCache().catch(err => {
-            console.warn('Failed to save cache after clear:', err);
+            Logger.warn('Failed to save cache after clear:', err);
         });
     }
 
@@ -145,12 +146,12 @@ export class NameVariantService implements INameVariantService {
                     this.cache.set(name, variants, avgQuality);
                     // Save cache if persistence enabled
                     if (this.settings.variantCachePersist) {
-                        this.saveCache().catch(err => console.warn('Cache save failed:', err));
+                        this.saveCache().catch(err => Logger.warn('Cache save failed:', err));
                     }
                     return variants;
                 }
             } catch (error) {
-                console.warn('LLM variant generation failed, using fallback:', error);
+                Logger.warn('LLM variant generation failed, using fallback:', error);
             }
         }
 
@@ -162,7 +163,7 @@ export class NameVariantService implements INameVariantService {
         this.cache.set(name, fallbackVariants, avgQuality);
         // Save cache if persistence enabled
         if (this.settings.variantCachePersist) {
-            this.saveCache().catch(err => console.warn('Cache save failed:', err));
+            this.saveCache().catch(err => Logger.warn('Cache save failed:', err));
         }
         return fallbackVariants;
     }
@@ -191,7 +192,7 @@ export class NameVariantService implements INameVariantService {
                     return variants;
                 }
             } catch (error) {
-                console.warn('LLM completion failed, using fallback:', error);
+                Logger.warn('LLM completion failed, using fallback:', error);
                 // Fall through to fallback generation
             }
         }
@@ -222,7 +223,7 @@ export class NameVariantService implements INameVariantService {
                 }))
                 .slice(0, this.settings.maxVariants || 10);
         } catch (error) {
-            console.warn('Failed to parse variant response:', content, error);
+            Logger.warn('Failed to parse variant response:', content, error);
             return [];
         }
     }

@@ -4,6 +4,7 @@ import { templates as defaultTemplates, selectTemplate as selectDefaultTemplate 
 import { extractIdeaNameSync } from './NameVariantService';
 import type { Vault } from 'obsidian';
 import { TFile } from 'obsidian';
+import { Logger } from '../utils/logger';
 
 const TEMPLATES_DIR = '.ideatr/templates';
 
@@ -21,7 +22,7 @@ export class ScaffoldService implements IScaffoldService {
         this.allTemplates = [...defaultTemplates];
         if (vault) {
             this.loadCustomTemplates().catch(err => {
-                console.warn('Failed to load custom templates:', err);
+                Logger.warn('Failed to load custom templates:', err);
             });
         }
     }
@@ -55,17 +56,17 @@ export class ScaffoldService implements IScaffoldService {
                     if (this.validateTemplate(template)) {
                         loadedTemplates.push(template);
                     } else {
-                        console.warn(`Invalid template structure in ${file.path}`);
+                        Logger.warn(`Invalid template structure in ${file.path}`);
                     }
                 } catch (error) {
-                    console.warn(`Failed to load template from ${file.path}:`, error);
+                    Logger.warn(`Failed to load template from ${file.path}:`, error);
                 }
             }
 
             this.customTemplates = loadedTemplates;
             this.updateAllTemplates();
         } catch (error) {
-            console.warn('Failed to load custom templates:', error);
+            Logger.warn('Failed to load custom templates:', error);
             this.updateAllTemplates();
         }
     }

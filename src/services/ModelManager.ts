@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { createWriteStream } from 'fs';
 import { createHash } from 'crypto';
+import { Logger } from '../utils/logger';
 
 /**
  * Model information
@@ -274,7 +275,7 @@ export class ModelManager implements IModelManager {
                 const checksumMatches = calculatedChecksum.toLowerCase() === this.modelInfo.checksum.toLowerCase();
                 
                 if (!sizeMatches || !checksumMatches) {
-                    console.warn('Model integrity check failed:', {
+                    Logger.warn('Model integrity check failed:', {
                         expectedSizeBytes,
                         actualSizeBytes,
                         sizeDifference,
@@ -288,7 +289,7 @@ export class ModelManager implements IModelManager {
             
             // If no checksum provided, fall back to size check only
             if (!sizeMatches) {
-                console.warn('Model integrity check failed - size mismatch:', {
+                Logger.warn('Model integrity check failed - size mismatch:', {
                     expectedSizeMB: expectedSizeMB.toFixed(2),
                     actualSizeMB: actualSizeMB.toFixed(2),
                     differenceMB: (actualSizeMB - expectedSizeMB).toFixed(2),

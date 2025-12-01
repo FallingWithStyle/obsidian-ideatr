@@ -1,3 +1,5 @@
+import { Logger } from './logger';
+
 /**
  * Enhanced idea name extraction utilities
  * Supports both rule-based and LLM-based extraction
@@ -88,7 +90,7 @@ Name:`;
         return extractedName;
     } catch (error) {
         // If LLM extraction fails, fallback to rule-based
-        console.warn('LLM name extraction failed, using rule-based fallback:', error);
+        Logger.warn('LLM name extraction failed, using rule-based fallback:', error);
         return extractIdeaNameRuleBased(ideaText);
     }
 }

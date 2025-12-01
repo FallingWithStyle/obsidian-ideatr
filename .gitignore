@@ -7,4 +7,5 @@ coverage
 .vscode
 .idea
 binaries/
+.ideatr-debug
 

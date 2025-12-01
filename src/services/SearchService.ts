@@ -1,5 +1,6 @@
 import type { Vault, TFile } from 'obsidian';
 import type { ISearchService, RelatedNote } from '../types/classification';
+import { Logger } from '../utils/logger';
 
 /**
  * SearchService - Finds related notes using keyword-based similarity
@@ -37,7 +38,7 @@ export class SearchService implements ISearchService {
                     similarities.push({ file, similarity });
                 }
             } catch (error) {
-                console.warn(`Failed to read file ${file.path}:`, error);
+                Logger.warn(`Failed to read file ${file.path}:`, error);
             }
         }
 

@@ -1,5 +1,5 @@
 /**
- * Type definitions for Ideatr Project Internal plugin
+ * Type definitions for Ideatr plugin
  */
 
 /**

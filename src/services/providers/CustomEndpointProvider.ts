@@ -1,6 +1,7 @@
 import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
 import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
  * Custom Endpoint Provider - Self-hosted (Ollama, LM Studio, etc.)
@@ -134,7 +135,7 @@ Response:`;
                 confidence: parsed.confidence || 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse custom endpoint response:', content, error);
+            Logger.warn('Failed to parse custom endpoint response:', content, error);
             return {
                 category: '',
                 tags: [],

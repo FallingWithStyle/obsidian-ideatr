@@ -6,6 +6,7 @@ import type { EmbeddingService } from './EmbeddingService';
 import type { ILLMService } from '../types/classification';
 import type { Vault, TFile } from 'obsidian';
 import { extractAndRepairJSON } from '../utils/jsonRepair';
+import { Logger } from '../utils/logger';
 
 export interface TenuousLink {
     idea: {
@@ -102,7 +103,7 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
                     }
                 }
             } catch (error) {
-                console.warn(`Failed to process ${file.path} for tenuous links:`, error);
+                Logger.warn(`Failed to process ${file.path} for tenuous links:`, error);
                 // Continue with other files
             }
         }
@@ -134,7 +135,7 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
                     });
                 }
             } catch (error) {
-                console.warn(`Failed to analyze connection with ${candidate.file.path}:`, error);
+                Logger.warn(`Failed to analyze connection with ${candidate.file.path}:`, error);
                 // Continue with other candidates
             }
         }
@@ -242,7 +243,7 @@ Response:`;
                 relevance: analysis.relevance || 0.5
             };
         } catch (error) {
-            console.warn('Failed to parse LLM analysis:', error);
+            Logger.warn('Failed to parse LLM analysis:', error);
         }
 
         // Fallback

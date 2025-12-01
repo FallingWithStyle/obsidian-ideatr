@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import { extractAndRepairJSON } from '../utils/jsonRepair';
+import { Logger } from '../utils/logger';
 
 /**
  * LlamaService - Integrates with local Llama.cpp server
@@ -55,23 +56,23 @@ export class LlamaService implements ILLMService {
                     // Check if file is executable, make it executable if needed
                     try {
                         fs.accessSync(bundledBinaryPath, fs.constants.X_OK);
-                        console.log(`[LlamaService] Using bundled binary: ${bundledBinaryPath}`);
+                        Logger.debug('Using bundled binary:', bundledBinaryPath);
                         return bundledBinaryPath;
                     } catch {
                         // File exists but not executable, try to make it executable
                         try {
                             fs.chmodSync(bundledBinaryPath, 0o755);
-                            console.log(`[LlamaService] Using bundled binary (made executable): ${bundledBinaryPath}`);
+                            Logger.debug('Using bundled binary (made executable):', bundledBinaryPath);
                             return bundledBinaryPath;
                         } catch (error) {
-                            console.warn(`[LlamaService] Bundled binary exists but cannot be made executable: ${bundledBinaryPath}`, error);
+                            Logger.warn('Bundled binary exists but cannot be made executable:', bundledBinaryPath, error);
                             // Still return it - spawn might work anyway
                             return bundledBinaryPath;
                         }
                     }
                 } else {
-                    console.warn(`[LlamaService] Bundled binary not found at: ${bundledBinaryPath}`);
-                    console.warn(`[LlamaService] Expected platform: ${platformKey}, binary: ${binaryName}`);
+                    Logger.warn('Bundled binary not found at:', bundledBinaryPath);
+                    Logger.warn('Expected platform:', platformKey, 'binary:', binaryName);
                 }
             } catch (error) {
                 console.error(`[LlamaService] Error checking bundled binary: ${error}`);
@@ -87,7 +88,7 @@ export class LlamaService implements ILLMService {
                 if (whichResult && fs.existsSync(whichResult)) {
                     try {
                         fs.accessSync(whichResult, fs.constants.X_OK);
-                        console.warn(`[LlamaService] Using fallback binary from PATH: ${whichResult} (bundled binary not found)`);
+                        Logger.warn('Using fallback binary from PATH:', whichResult, '(bundled binary not found)');
                         return whichResult;
                     } catch {
                         // Continue searching
@@ -112,7 +113,7 @@ export class LlamaService implements ILLMService {
                 if (this.settings.modelPath.endsWith('.gguf')) {
                     return this.settings.modelPath;
                 }
-                console.warn(`[LlamaService] Configured model path doesn't end with .gguf: ${this.settings.modelPath}`);
+                Logger.warn('Configured model path doesn\'t end with .gguf:', this.settings.modelPath);
             }
         }
 
@@ -121,7 +122,7 @@ export class LlamaService implements ILLMService {
         try {
             // Check if GGUF model exists at default location
             if (fs.existsSync(defaultPath) && defaultPath.endsWith('.gguf')) {
-                console.log(`[LlamaService] Using GGUF model at default location: ${defaultPath}`);
+                Logger.debug('Using GGUF model at default location:', defaultPath);
                 return defaultPath;
             }
         } catch {
@@ -137,7 +138,7 @@ export class LlamaService implements ILLMService {
                 if (ggufFiles.length > 0) {
                     // Use the first GGUF file found
                     const foundPath = path.join(modelDir, ggufFiles[0]);
-                    console.log(`[LlamaService] Found GGUF model in default directory: ${foundPath}`);
+                    Logger.debug('Found GGUF model in default directory:', foundPath);
                     return foundPath;
                 }
             }
@@ -151,7 +152,7 @@ export class LlamaService implements ILLMService {
     async startServer(): Promise<void> {
         // If already running, return early
         if (this.serverProcess) {
-            console.log('[LlamaService] Server already running');
+            Logger.debug('Server already running');
             return;
         }
 
@@ -164,10 +165,10 @@ export class LlamaService implements ILLMService {
         }
 
         this.loadingState = 'loading';
-        console.log('[LlamaService] Starting Llama server...');
-        console.log('[LlamaService] Binary:', this.settings.llamaBinaryPath);
-        console.log('[LlamaService] Model:', this.settings.modelPath);
-        console.log('[LlamaService] Port:', this.settings.llamaServerPort);
+        Logger.debug('Starting Llama server...');
+        Logger.debug('Binary:', this.settings.llamaBinaryPath);
+        Logger.debug('Model:', this.settings.modelPath);
+        Logger.debug('Port:', this.settings.llamaServerPort);
         
         // Show loading notice on first use
         if (this.loadingState === 'loading') {
@@ -191,14 +192,14 @@ export class LlamaService implements ILLMService {
 
             this.serverProcess.stdout?.on('data', (data) => {
                 const output = data.toString();
-                console.log('[Llama Server]', output.trim());
+                Logger.debug('[Llama Server]', output.trim());
                 // Check for server ready messages (various formats)
                 if (output.includes('HTTP server listening') || 
                     output.includes('server is listening') ||
                     output.includes('listening on http')) {
                     this.isServerReady = true;
                     this.loadingState = 'ready';
-                    console.log('[LlamaService] Server is ready!');
+                    Logger.debug('Server is ready!');
                     new Notice('Llama AI Server Started');
                 }
             });
@@ -230,7 +231,7 @@ export class LlamaService implements ILLMService {
                         console.error('[Llama Server]', line.trim());
                     } else {
                         // Most llama.cpp output is informational, log at debug level
-                        console.log('[Llama Server]', line.trim());
+                        Logger.debug('[Llama Server]', line.trim());
                     }
                 }
                 
@@ -240,7 +241,7 @@ export class LlamaService implements ILLMService {
                     errorOutput.includes('main: server is listening')) {
                     this.isServerReady = true;
                     this.loadingState = 'ready';
-                    console.log('[LlamaService] Server is ready!');
+                    Logger.debug('Server is ready!');
                     new Notice('Llama AI Server Started');
                 }
                 // Check for common startup errors (but not info messages)
@@ -251,7 +252,7 @@ export class LlamaService implements ILLMService {
             });
 
             this.serverProcess.on('close', (code) => {
-                console.log(`[LlamaService] Server exited with code ${code}`);
+                Logger.debug('Server exited with code', code);
                 processExited = true;
                 exitCode = code;
                 this.serverProcess = null;
@@ -310,7 +311,7 @@ export class LlamaService implements ILLMService {
 
     stopServer(): void {
         if (this.serverProcess) {
-            console.log('Stopping Llama server...');
+            Logger.debug('Stopping Llama server...');
             this.clearIdleTimer();
             this.serverProcess.kill();
             this.serverProcess = null;
@@ -322,7 +323,7 @@ export class LlamaService implements ILLMService {
 
     private unloadModel(): void {
         if (this.serverProcess && !this.settings.keepModelLoaded) {
-            console.log('[LlamaService] Unloading model due to idle timeout');
+            Logger.debug('Unloading model due to idle timeout');
             this.stopServer();
         }
     }
@@ -443,16 +444,16 @@ export class LlamaService implements ILLMService {
         // If we can't find paths, can't start server - return false
         if (!binaryPath || !modelPath) {
             if (!binaryPath && !modelPath) {
-                console.log('[LlamaService] Binary and model paths not found (checked defaults)');
+                Logger.debug('Binary and model paths not found (checked defaults)');
             } else if (!binaryPath) {
-                console.log('[LlamaService] Binary path not found (checked common locations)');
-                console.log('[LlamaService] To install llama-server on macOS:');
-                console.log('[LlamaService]   1. Install via Homebrew: brew install llama.cpp');
-                console.log('[LlamaService]   2. Or build from source: https://github.com/ggerganov/llama.cpp');
-                console.log('[LlamaService]   3. Or configure the binary path manually in settings');
-                console.log('[LlamaService]   4. Alternatively, use Ollama via the Custom provider option');
+                Logger.debug('Binary path not found (checked common locations)');
+                Logger.debug('To install llama-server on macOS:');
+                Logger.debug('  1. Install via Homebrew: brew install llama.cpp');
+                Logger.debug('  2. Or build from source: https://github.com/ggerganov/llama.cpp');
+                Logger.debug('  3. Or configure the binary path manually in settings');
+                Logger.debug('  4. Alternatively, use Ollama via the Custom provider option');
             } else {
-                console.log('[LlamaService] Model path not found (checked default location)');
+                Logger.debug('Model path not found (checked default location)');
             }
             return false;
         }
@@ -464,7 +465,7 @@ export class LlamaService implements ILLMService {
 
         // If server process exists but not ready, wait for it
         if (this.serverProcess && !this.isServerReady) {
-            console.log('[LlamaService] Server process exists but not ready, waiting...');
+            Logger.debug('Server process exists but not ready, waiting...');
             let attempts = 0;
             while (!this.isServerReady && attempts < 50) {
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -474,13 +475,13 @@ export class LlamaService implements ILLMService {
                 return true;
             }
             // If still not ready, try starting fresh
-            console.warn('[LlamaService] Server process exists but never became ready, restarting...');
+            Logger.warn('Server process exists but never became ready, restarting...');
             this.stopServer();
         }
 
         // Start server if not running
         if (!this.serverProcess) {
-            console.log('[LlamaService] Ensuring server is ready...');
+            Logger.debug('Ensuring server is ready...');
             // Use effective paths for starting server
             const binaryPath = this.getEffectiveBinaryPath();
             const modelPath = await this.getEffectiveModelPath();
@@ -629,7 +630,7 @@ Response:
                 confidence: 0.8 // Placeholder confidence
             };
         } catch (error) {
-            console.warn('Failed to parse Llama response:', content, error);
+            Logger.warn('Failed to parse Llama response:', content, error);
             return {
                 category: '',
                 tags: [],

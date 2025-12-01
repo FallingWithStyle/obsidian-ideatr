@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
 import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
  * Gemini Provider - Gemini 1.5 Flash
@@ -20,7 +21,7 @@ export class GeminiProvider implements ILLMProvider {
             try {
                 this.client = new GoogleGenerativeAI(this.apiKey);
             } catch (error) {
-                console.warn('Failed to initialize Gemini client:', error);
+                Logger.warn('Failed to initialize Gemini client:', error);
                 throw new Error('Failed to initialize Gemini client');
             }
         }
@@ -102,7 +103,7 @@ Response:`;
                 confidence: parsed.confidence || 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse Gemini response:', content, error);
+            Logger.warn('Failed to parse Gemini response:', content, error);
             return {
                 category: '',
                 tags: [],

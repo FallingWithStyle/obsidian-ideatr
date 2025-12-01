@@ -4,6 +4,7 @@ import type { IIdeaRepository } from '../types/management';
 import type { IdeaFile } from '../types/idea';
 import { ManagementError, getManagementErrorMessage } from '../types/management';
 import { renderGraphLayout } from './GraphRenderer';
+import { Logger } from '../utils/logger';
 
 /**
  * GraphView - Displays idea clusters as an interactive graph
@@ -36,7 +37,7 @@ export class GraphView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'Ideatr Project Internal Graph';
+        return 'Ideatr Graph';
     }
 
     getIcon(): string {
@@ -281,12 +282,12 @@ export class GraphView extends ItemView {
                 
                 // Show warnings if any
                 if (result.warnings && result.warnings.length > 0) {
-                    console.warn('Elevation warnings:', result.warnings);
+                    Logger.warn('Elevation warnings:', result.warnings);
                 }
             } else {
                 new Notice(`Failed to elevate idea: ${result.error || 'Unknown error'}`);
                 if (result.warnings && result.warnings.length > 0) {
-                    console.warn('Elevation warnings:', result.warnings);
+                    Logger.warn('Elevation warnings:', result.warnings);
                 }
             }
         } catch (error) {
