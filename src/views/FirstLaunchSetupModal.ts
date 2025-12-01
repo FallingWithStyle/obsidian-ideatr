@@ -3,6 +3,7 @@ import type { IModelManager } from '../services/ModelManager';
 import { ModelManager } from '../services/ModelManager';
 import type { IdeatrSettings } from '../settings';
 import { ModelDownloadModal } from './ModelDownloadModal';
+import { checkModelCompatibility, getSystemInfoString } from '../utils/systemCapabilities';
 
 /**
  * FirstLaunchSetupModal - Modal for first-launch AI setup
@@ -30,18 +31,21 @@ export class FirstLaunchSetupModal extends Modal {
         contentEl.addClass('ideatr-setup-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Welcome to Ideatr AI' });
+        contentEl.createEl('h2', { text: 'Manage AI Models' });
         contentEl.createEl('p', {
-            text: 'Choose how you want to use AI for idea classification:',
+            text: 'Choose how you want to use AI for idea enhancement:',
             cls: 'ideatr-setup-description'
         });
 
         // Option 1: Download AI Model
         const downloadOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
         downloadOption.createEl('h3', { text: 'Download AI Model' });
-        const modelInfo = this.modelManager.getModelInfo();
+        // Use smallest model as default for display
+        const defaultModelManager = new ModelManager('phi-3.5-mini');
+        const modelConfig = defaultModelManager.getModelConfig();
+        const modelSizeGB = (modelConfig.sizeMB / 1024).toFixed(1);
         downloadOption.createEl('p', {
-            text: `Download Llama 3.2 3B model (${(modelInfo.sizeMB / 1024).toFixed(2)} GB) for offline, free AI classification.`
+            text: `Download a local AI model (${modelSizeGB} GB for default model) for offline, free AI idea enhancement including classification, expansion, and more. Choose from multiple models optimized for different needs.`
         });
         downloadOption.createEl('ul', {
             cls: 'ideatr-setup-features'
@@ -49,10 +53,10 @@ export class FirstLaunchSetupModal extends Modal {
             <li>✅ Works offline</li>
             <li>✅ Free to use</li>
             <li>✅ No API keys needed</li>
-            <li>⚠️ Requires ~2.3 GB download</li>
+            <li>⚠️ Requires ${modelSizeGB} GB download (varies by model)</li>
         `;
         const downloadButton = downloadOption.createEl('button', {
-            text: 'Download Model',
+            text: 'Choose & Download Model',
             cls: 'mod-cta'
         });
         downloadButton.addEventListener('click', () => this.handleDownloadOption());
@@ -146,7 +150,30 @@ export class FirstLaunchSetupModal extends Modal {
                     .setButtonText(`Select ${config.name}`)
                     .setCta()
                     .onClick(async () => {
-                        this.settings.localModel = modelKey as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
+                        const modelKeyTyped = modelKey as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
+                        
+                        // Check system compatibility
+                        const compatibility = checkModelCompatibility(modelKey);
+                        
+                        if (!compatibility.isCompatible) {
+                            // Show warning and ask for confirmation
+                            const systemInfo = getSystemInfoString();
+                            const message = `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
+                            
+                            const proceed = confirm(message);
+                            if (!proceed) {
+                                return; // User cancelled
+                            }
+                        } else if (compatibility.warning) {
+                            // Show warning but allow proceeding
+                            const systemInfo = getSystemInfoString();
+                            const proceed = confirm(`${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed?`);
+                            if (!proceed) {
+                                return; // User cancelled
+                            }
+                        }
+                        
+                        this.settings.localModel = modelKeyTyped;
                         await this.startDownload(modelKey);
                     }));
         }

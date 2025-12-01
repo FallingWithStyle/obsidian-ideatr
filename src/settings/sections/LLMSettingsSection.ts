@@ -3,6 +3,7 @@ import { BaseSettingsSection } from '../components/SettingsSection';
 import { FirstLaunchSetupModal } from '../../views/FirstLaunchSetupModal';
 import { ModelManager } from '../../services/ModelManager';
 import { createHelpIcon } from '../../utils/HelpIcon';
+import { checkModelCompatibility, getSystemInfoString } from '../../utils/systemCapabilities';
 
 export class LLMSettingsSection extends BaseSettingsSection {
     display(containerEl: HTMLElement): void {
@@ -14,7 +15,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
         // Local AI settings
         new Setting(containerEl)
             .setName('Local AI')
-            .setDesc('Use local Llama model for classification (offline, free)')
+            .setDesc('Use local AI model for idea enhancement (offline, free)')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.llmProvider === 'llama')
                 .onChange(async (value) => {
@@ -33,13 +34,37 @@ export class LLMSettingsSection extends BaseSettingsSection {
                     .addOption('phi-3.5-mini', 'Phi-3.5 Mini [EFFICIENT] (~4.2GB, 6-8GB RAM)')
                     .addOption('qwen-2.5-7b', 'Qwen 2.5 7B [VERSATILE] (~7.8GB, 10GB RAM)')
                     .addOption('llama-3.1-8b', 'Llama 3.1 8B [RELIABLE] (~8.5GB, 10-12GB RAM)')
-                    .addOption('llama-3.3-70b', 'Llama 3.3 70B [PREMIUM] (~43GB, 48GB+ RAM)')
+                    .addOption('llama-3.3-70b', 'Llama 3.3 70B [MAXIMUM] (~42.5GB, 48GB+ RAM)')
                     .setValue(this.plugin.settings.localModel || 'phi-3.5-mini')
                     .onChange(async (value) => {
-                        this.plugin.settings.localModel = value as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
+                        const modelKey = value as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
+                        
+                        // Check system compatibility
+                        const compatibility = checkModelCompatibility(modelKey);
+                        
+                        if (!compatibility.isCompatible) {
+                            // Show warning and ask for confirmation
+                            const systemInfo = getSystemInfoString();
+                            const message = `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
+                            
+                            // Use Obsidian's built-in confirm dialog
+                            const proceed = confirm(message);
+                            if (!proceed) {
+                                // Reset to previous value
+                                dropdown.setValue(this.plugin.settings.localModel || 'phi-3.5-mini');
+                                return;
+                            }
+                        } else if (compatibility.warning) {
+                            // Show warning but allow proceeding
+                            const systemInfo = getSystemInfoString();
+                            new Notice(`${compatibility.warning} ${systemInfo}`, 8000);
+                        }
+                        
+                        this.plugin.settings.localModel = modelKey;
                         await this.saveSettings();
                         this.refresh(); // Refresh to show updated model info
-                    }));
+                    });
+                });
 
             // Model info display
             const modelManager = new ModelManager(this.plugin.settings.localModel || 'phi-3.5-mini');
@@ -62,10 +87,10 @@ export class LLMSettingsSection extends BaseSettingsSection {
 
             // Download/Switch Model button
             new Setting(containerEl)
-                .setName('Download/Switch Model')
-                .setDesc('Download or switch to the selected model')
+                .setName('Manage AI Models')
+                .setDesc('Download a new model, switch between models, or configure cloud AI providers')
                 .addButton(button => button
-                    .setButtonText('Download Model')
+                    .setButtonText('Manage AI Models')
                     .setCta()
                     .onClick(async () => {
                         const modal = new FirstLaunchSetupModal(

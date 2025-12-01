@@ -17,6 +17,7 @@ import type { ILLMService } from '../types/classification';
 import { ClassificationResultsModal } from '../views/ClassificationResultsModal';
 import { Logger } from '../utils/logger';
 import { createHelpIcon } from '../utils/HelpIcon';
+import { createModelStatusIndicator } from '../utils/ModelStatusIndicator';
 
 /**
  * Format keyboard shortcut for display (e.g., "cmd+enter" -> "⌘ Enter")
@@ -137,8 +138,13 @@ export class CaptureModal extends Modal {
         contentEl.empty();
         contentEl.addClass('ideatr-capture-modal');
 
-        // Title
-        contentEl.createEl('h2', { text: 'Capture Idea' });
+        // Title with status indicator
+        const titleContainer = contentEl.createDiv({ cls: 'ideatr-capture-title-container' });
+        titleContainer.createEl('h2', { text: 'Capture Idea' });
+        
+        // Add model status indicator
+        const statusIndicator = createModelStatusIndicator(this.llmService, this.settings);
+        titleContainer.appendChild(statusIndicator);
 
         // Input textarea
         this.inputEl = contentEl.createEl('textarea', {
