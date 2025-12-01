@@ -3,7 +3,8 @@ import type { IdeatrSettings } from '../settings';
 import { APITimeoutError, NetworkError, ClassificationError } from '../types/classification';
 import { spawn, ChildProcess, execSync } from 'child_process';
 import { Notice } from 'obsidian';
-import { ModelManager } from './ModelManager';
+// @ts-ignore - MODELS will be used for chat template support
+import { ModelManager, MODELS } from './ModelManager';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
@@ -27,7 +28,8 @@ export class LlamaService implements ILLMService {
 
     constructor(settings: IdeatrSettings, pluginDir?: string) {
         this.settings = settings;
-        this.modelManager = new ModelManager();
+        // Initialize ModelManager with selected model
+        this.modelManager = new ModelManager(settings.localModel || 'phi-3.5-mini');
         this.pluginDir = pluginDir || null;
         // Update idle timeout if setting changes
         if (settings.keepModelLoaded) {
@@ -50,7 +52,7 @@ export class LlamaService implements ILLMService {
             const platformKey = `${os.platform()}-${os.arch()}`;
             const binaryName = os.platform() === 'win32' ? 'llama-server.exe' : 'llama-server';
             const bundledBinaryPath = path.join(this.pluginDir, 'binaries', platformKey, binaryName);
-            
+
             try {
                 if (fs.existsSync(bundledBinaryPath)) {
                     // Check if file is executable, make it executable if needed
@@ -117,6 +119,9 @@ export class LlamaService implements ILLMService {
             }
         }
 
+        // Update ModelManager with current localModel setting (in case it changed)
+        this.modelManager = new ModelManager(this.settings.localModel || 'phi-3.5-mini');
+        
         // Use ModelManager's default path (GGUF file)
         const defaultPath = this.modelManager.getModelPath();
         try {
@@ -156,28 +161,49 @@ export class LlamaService implements ILLMService {
             return;
         }
 
+        // Get effective paths (use ModelManager if not explicitly configured)
+        const binaryPath = this.getEffectiveBinaryPath();
+        const modelPath = await this.getEffectiveModelPath();
+
         // Validate configuration
-        if (!this.settings.llamaBinaryPath) {
-            throw new Error('Llama binary path not configured. Please set it in settings.');
+        if (!binaryPath) {
+            throw new Error('Llama binary path not configured. Please set it in settings or ensure bundled binary is available.');
         }
-        if (!this.settings.modelPath) {
-            throw new Error('Model path not configured. Please set it in settings.');
+        if (!modelPath) {
+            throw new Error('Model path not configured. Please set it in settings or download a model.');
+        }
+
+        // Validate that files exist
+        if (!fs.existsSync(binaryPath)) {
+            throw new Error(`Llama binary not found at: ${binaryPath}. Please check the path in settings.`);
+        }
+        if (!fs.existsSync(modelPath)) {
+            throw new Error(`Model file not found at: ${modelPath}. Please check the path in settings or download the model.`);
+        }
+
+        // Check if binary is executable (Unix-like systems)
+        if (os.platform() !== 'win32') {
+            try {
+                fs.accessSync(binaryPath, fs.constants.X_OK);
+            } catch {
+                throw new Error(`Llama binary is not executable: ${binaryPath}. Please check file permissions.`);
+            }
         }
 
         this.loadingState = 'loading';
         Logger.debug('Starting Llama server...');
-        Logger.debug('Binary:', this.settings.llamaBinaryPath);
-        Logger.debug('Model:', this.settings.modelPath);
+        Logger.debug('Binary:', binaryPath);
+        Logger.debug('Model:', modelPath);
         Logger.debug('Port:', this.settings.llamaServerPort);
-        
+
         // Show loading notice on first use
         if (this.loadingState === 'loading') {
             new Notice('Loading AI model... (~10 seconds)');
         }
 
         try {
-            this.serverProcess = spawn(this.settings.llamaBinaryPath, [
-                '-m', this.settings.modelPath,
+            this.serverProcess = spawn(binaryPath, [
+                '-m', modelPath,
                 '--port', String(this.settings.llamaServerPort),
                 '--ctx-size', '2048',
                 '--n-gpu-layers', '99', // Try to use GPU
@@ -194,7 +220,7 @@ export class LlamaService implements ILLMService {
                 const output = data.toString();
                 Logger.debug('[Llama Server]', output.trim());
                 // Check for server ready messages (various formats)
-                if (output.includes('HTTP server listening') || 
+                if (output.includes('HTTP server listening') ||
                     output.includes('server is listening') ||
                     output.includes('listening on http')) {
                     this.isServerReady = true;
@@ -207,13 +233,13 @@ export class LlamaService implements ILLMService {
             this.serverProcess.stderr?.on('data', (data) => {
                 const errorOutput = data.toString();
                 const outputLines = errorOutput.split('\n').filter((line: string) => line.trim());
-                
+
                 // llama.cpp outputs all messages to stderr, including informational ones
                 // Check for actual errors vs informational messages
-                const isError = outputLines.some((line: string) => 
-                    (line.toLowerCase().includes('error') || 
-                     line.toLowerCase().includes('failed') ||
-                     line.toLowerCase().includes('fatal')) &&
+                const isError = outputLines.some((line: string) =>
+                    (line.toLowerCase().includes('error') ||
+                        line.toLowerCase().includes('failed') ||
+                        line.toLowerCase().includes('fatal')) &&
                     !line.toLowerCase().includes('ggml_metal') && // Metal init messages are info
                     !line.toLowerCase().includes('system info') &&
                     !line.toLowerCase().includes('llama_model_loader') &&
@@ -222,21 +248,21 @@ export class LlamaService implements ILLMService {
                     !line.toLowerCase().includes('llama_context') &&
                     !line.toLowerCase().includes('main:')
                 );
-                
+
                 // Log informational messages at debug level, errors at error level
                 for (const line of outputLines) {
-                    if (isError && (line.toLowerCase().includes('error') || 
-                                   line.toLowerCase().includes('failed') ||
-                                   line.toLowerCase().includes('fatal'))) {
+                    if (isError && (line.toLowerCase().includes('error') ||
+                        line.toLowerCase().includes('failed') ||
+                        line.toLowerCase().includes('fatal'))) {
                         console.error('[Llama Server]', line.trim());
                     } else {
                         // Most llama.cpp output is informational, log at debug level
                         Logger.debug('[Llama Server]', line.trim());
                     }
                 }
-                
+
                 // Check for server ready messages in stderr (llama.cpp outputs info to stderr)
-                if (errorOutput.includes('HTTP server is listening') || 
+                if (errorOutput.includes('HTTP server is listening') ||
                     errorOutput.includes('server is listening on http') ||
                     errorOutput.includes('main: server is listening')) {
                     this.isServerReady = true;
@@ -283,7 +309,22 @@ export class LlamaService implements ILLMService {
             if (processExited) {
                 this.serverProcess = null;
                 this.loadingState = 'not-loaded';
-                const errorMsg = errorMessage || `Server process exited during startup with code ${exitCode}`;
+                let errorMsg: string;
+                if (exitCode === null) {
+                    // Process was killed (SIGKILL) - likely a fatal error
+                    // Use the actual paths that were used (from variables in scope)
+                    const errorBinaryPath = binaryPath || 'not configured';
+                    const errorModelPath = modelPath || 'not configured';
+                    errorMsg = errorMessage || 
+                        'Server process was terminated during startup. This may indicate:\n' +
+                        '  • Binary or model file is corrupted\n' +
+                        '  • Insufficient system resources (memory/disk)\n' +
+                        '  • Permission issues\n' +
+                        '  • Binary architecture mismatch\n' +
+                        `Check the console for more details. Binary: ${errorBinaryPath}, Model: ${errorModelPath}`;
+                } else {
+                    errorMsg = errorMessage || `Server process exited during startup with code ${exitCode}`;
+                }
                 throw new Error(errorMsg);
             }
 
@@ -482,24 +523,8 @@ export class LlamaService implements ILLMService {
         // Start server if not running
         if (!this.serverProcess) {
             Logger.debug('Ensuring server is ready...');
-            // Use effective paths for starting server
-            const binaryPath = this.getEffectiveBinaryPath();
-            const modelPath = await this.getEffectiveModelPath();
-            if (!binaryPath || !modelPath) {
-                throw new Error('Cannot start server: binary or model path not found');
-            }
-            // Temporarily set paths for startServer
-            const originalBinaryPath = this.settings.llamaBinaryPath;
-            const originalModelPath = this.settings.modelPath;
-            this.settings.llamaBinaryPath = binaryPath;
-            this.settings.modelPath = modelPath;
-            try {
-                await this.startServer();
-            } finally {
-                // Restore original paths (don't save defaults to settings)
-                this.settings.llamaBinaryPath = originalBinaryPath;
-                this.settings.modelPath = originalModelPath;
-            }
+            // startServer() now uses getEffectiveBinaryPath() and getEffectiveModelPath() directly
+            await this.startServer();
             // Wait for server to be ready
             let attempts = 0;
             while (!this.isServerReady && attempts < 50) {
@@ -510,7 +535,7 @@ export class LlamaService implements ILLMService {
                 throw new Error('Server started but did not become ready in time');
             }
         }
-        
+
         return true;
     }
 
@@ -597,25 +622,28 @@ export class LlamaService implements ILLMService {
     }
 
     private constructPrompt(text: string): string {
-        return `Classify this idea into one category and suggest 2-4 relevant tags.
-
-Idea: "${text}"
+        return `Classify ideas into ONE category and generate 3-5 relevant tags.
 
 Categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal
 
-Rules:
-- Choose the single best category
-- Tags should be specific and relevant (2-4 tags)
-- Use lowercase for category and tags
+Format: JSON only, no markdown
 
-Example response:
-{
-  "category": "game",
-  "tags": ["rpg", "fantasy", "multiplayer"]
-}
+Examples:
 
-Response:
-{`;
+Input: "A game about baristas stuck in a time loop where you optimize workflow"
+Output: {"category": "game", "tags": ["time-loop", "service-industry", "roguelike", "optimization"]}
+
+Input: "SaaS tool for managing restaurant inventory with AI predictions"
+Output: {"category": "saas", "tags": ["restaurant", "inventory", "ai", "b2b", "operations"]}
+
+Input: "Story about a sentient spaceship that falls in love with an asteroid"
+Output: {"category": "story", "tags": ["sci-fi", "romance", "ai", "space"]}
+
+Input: "Hardware device that translates dog barks into English"
+Output: {"category": "hardware", "tags": ["pets", "translation", "iot", "consumer"]}
+
+Input: "${text}"
+Output: {`;
     }
 
     private parseResponse(content: string): ClassificationResult {

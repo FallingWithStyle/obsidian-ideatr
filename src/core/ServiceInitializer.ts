@@ -199,7 +199,11 @@ export class ServiceInitializer {
 
         // Preload model on startup if enabled
         if (settings.preloadOnStartup && llmService.isAvailable()) {
-            llmService.ensureReady?.().catch((error) => {
+            llmService.ensureReady?.().then((ready) => {
+                if (!ready) {
+                    Logger.debug('LLM not ready for preload (paths not configured or model not downloaded)');
+                }
+            }).catch((error) => {
                 Logger.warn('Failed to preload LLM on startup:', error);
             });
         }

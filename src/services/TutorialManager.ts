@@ -91,7 +91,17 @@ export class TutorialManager {
             // Ensure tutorial directory exists
             const tutorialDir = this.app.vault.getAbstractFileByPath(vaultPath);
             if (!tutorialDir) {
-                await this.app.vault.createFolder(vaultPath);
+                try {
+                    await this.app.vault.createFolder(vaultPath);
+                } catch (error) {
+                    // Folder might have been created by another process, check again
+                    const checkDir = this.app.vault.getAbstractFileByPath(vaultPath);
+                    if (!checkDir) {
+                        // If it still doesn't exist, re-throw the error
+                        throw error;
+                    }
+                    // Otherwise, folder exists now, continue
+                }
             }
 
             // Copy each tutorial file
