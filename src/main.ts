@@ -56,6 +56,8 @@ import { ImportService } from './services/ImportService';
 import { PROMPTS } from './services/prompts';
 import { formatDate, sanitizeTitle } from './storage/FilenameGenerator';
 import { extractIdeaNameRuleBased } from './utils/ideaNameExtractor';
+import { ErrorLogService } from './services/ErrorLogService';
+import { Logger } from './utils/logger';
 
 /**
  * Ideatr Project Internal Plugin - Fast idea capture with intelligent classification
@@ -84,11 +86,13 @@ export default class IdeatrPlugin extends Plugin {
     tenuousLinkService!: TenuousLinkServiceImpl; // Public for testing
     private exportService!: ExportService;
     private importService!: ImportService;
+    errorLogService!: ErrorLogService; // Public for settings modal
 
     async onload() {
-        console.log('Loading Ideatr Project Internal plugin');
-
         await this.loadSettings();
+
+        // Initialize Logger with app instance and debug mode setting
+        Logger.initialize(this.app, this.settings.debugMode);
 
         // Initialize ModelManager for first-launch detection
         this.modelManager = new ModelManager();
@@ -115,6 +119,13 @@ export default class IdeatrPlugin extends Plugin {
         // Initialize FileOrganizer
         this.fileOrganizer = new FileOrganizer(this.app.vault, this.settings);
 
+        // Initialize ErrorLogService for bug reports
+        this.errorLogService = new ErrorLogService({
+            enabled: this.settings.errorLoggingEnabled,
+            maxEntries: this.settings.errorLogMaxEntries,
+            retentionDays: this.settings.errorLogRetentionDays
+        });
+
         // Initialize Services
         // Initialize local LLM
         // Get plugin directory path for bundled binary (standard Obsidian plugin location)
@@ -124,7 +135,7 @@ export default class IdeatrPlugin extends Plugin {
             ? this.app.vault.configDir 
             : path.join(vaultBasePath, this.app.vault.configDir);
         const pluginDir = path.resolve(path.join(configDir, 'plugins', this.manifest.id));
-        console.log(`[IdeatrPlugin] Plugin directory: ${pluginDir}`);
+        Logger.debug('Plugin directory:', pluginDir);
         this.localLLMService = new LlamaService(this.settings, pluginDir);
 
         // Initialize cloud LLM if configured
@@ -140,9 +151,9 @@ export default class IdeatrPlugin extends Plugin {
                     }
                 );
                 cloudLLM = new ProviderAdapter(provider);
-                console.log(`[Ideatr Project Internal] Cloud AI provider initialized: ${provider.name}`);
+                Logger.info('Cloud AI provider initialized:', provider.name);
             } catch (error) {
-                console.warn('[Ideatr Project Internal] Failed to initialize cloud provider:', error);
+                Logger.warn('Failed to initialize cloud provider:', error);
                 new Notice('Failed to initialize cloud AI provider. Using local AI only.');
             }
         }
@@ -159,7 +170,7 @@ export default class IdeatrPlugin extends Plugin {
             // Ensure LLM is ready asynchronously (don't block plugin load)
             // This works for both local and cloud providers
             this.llmService.ensureReady?.().catch((error) => {
-                console.warn('[Ideatr Project Internal] Failed to preload LLM on startup:', error);
+                Logger.warn('Failed to preload LLM on startup:', error);
             });
         }
 
@@ -248,10 +259,9 @@ export default class IdeatrPlugin extends Plugin {
         this.addSettingTab(new IdeatrSettingTab(this.app, this));
 
         // Register all commands
-        console.log('Ideatr Project Internal: Starting command registration...');
+        Logger.debug('Starting command registration...');
         try {
             // Register command to open capture modal
-            console.log('Ideatr Project Internal: Registering capture-idea command...');
             this.addCommand({
             id: 'capture-idea',
             name: 'Capture Idea',
@@ -261,7 +271,6 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register name variant generation command
-            console.log('Ideatr Project Internal: Registering generate-name-variants command...');
             this.addCommand({
             id: 'generate-name-variants',
             name: 'Generate Name Variants',
@@ -271,7 +280,6 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register scaffold generation command
-            console.log('Ideatr Project Internal: Registering generate-scaffold command...');
             this.addCommand({
             id: 'generate-scaffold',
             name: 'Generate Scaffold',
@@ -281,7 +289,6 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register dashboard command
-            console.log('Ideatr Project Internal: Registering open-dashboard command...');
             this.addCommand({
             id: 'open-dashboard',
             name: 'Open Dashboard',
@@ -291,7 +298,6 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register graph view command
-            console.log('Ideatr Project Internal: Registering open-graph command...');
             this.addCommand({
             id: 'open-graph',
             name: 'Open Graph View',
@@ -301,7 +307,6 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register digest command
-            console.log('Ideatr Project Internal: Registering generate-digest command...');
             this.addCommand({
             id: 'generate-digest',
             name: 'Generate Weekly Digest',
@@ -311,7 +316,6 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Register elevation command
-            console.log('Ideatr Project Internal: Registering elevate-to-project command...');
             this.addCommand({
             id: 'elevate-to-project',
             name: 'Elevate to Project',
@@ -329,7 +333,6 @@ export default class IdeatrPlugin extends Plugin {
         });
 
             // Manual Validation Commands
-            console.log('Ideatr Project Internal: Registering validation commands...');
             
             this.addCommand({
                 id: 'check-domains',
@@ -372,7 +375,6 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Idea Transformation Commands
-            console.log('Ideatr Project Internal: Registering transformation commands...');
             
             this.addCommand({
                 id: 'generate-mutations',
@@ -399,7 +401,6 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Status & Lifecycle Commands
-            console.log('Ideatr Project Internal: Registering status commands...');
             
             this.addCommand({
                 id: 'change-status',
@@ -434,7 +435,6 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Batch Operations Commands
-            console.log('Ideatr Project Internal: Registering batch operation commands...');
             
             this.addCommand({
                 id: 'reclassify-all-ideas',
@@ -461,7 +461,6 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Analysis & Insights Commands
-            console.log('Ideatr Project Internal: Registering analysis commands...');
             
             this.addCommand({
                 id: 'find-tenuous-links',
@@ -488,7 +487,6 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Quick Actions Commands
-            console.log('Ideatr Project Internal: Registering quick action commands...');
             
             this.addCommand({
                 id: 'refresh-idea',
@@ -499,7 +497,6 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             // Export & Import Commands
-            console.log('Ideatr Project Internal: Registering export/import commands...');
             
             this.addCommand({
                 id: 'export-ideas',
@@ -522,10 +519,10 @@ export default class IdeatrPlugin extends Plugin {
                 this.openCaptureModal();
             });
 
-            console.log('Ideatr Project Internal: All commands registered successfully');
+            Logger.debug('All commands registered successfully');
         } catch (error) {
-            console.error('Ideatr Project Internal: Error registering commands:', error);
-            console.error('Ideatr Project Internal: Error details:', error instanceof Error ? error.stack : error);
+            console.error('Error registering commands:', error);
+            console.error('Error details:', error instanceof Error ? error.stack : error);
         }
     }
 
@@ -553,7 +550,7 @@ export default class IdeatrPlugin extends Plugin {
     }
 
     onunload() {
-        console.log('Unloading Ideatr Project Internal plugin');
+        Logger.debug('Unloading Ideatr plugin');
         if (this.localLLMService) {
             this.localLLMService.stopServer();
         }
@@ -612,6 +609,7 @@ export default class IdeatrPlugin extends Plugin {
             new Notice(`Name variants generated and added to note.`);
         } catch (error) {
             console.error('Failed to generate name variants:', error);
+            this.logError(error, 'name-variants', 'generate-variants');
             new Notice('Failed to generate name variants. Please try again.');
         }
     }
@@ -661,6 +659,7 @@ export default class IdeatrPlugin extends Plugin {
             new Notice('Classification complete!');
         } catch (error) {
             console.error('Failed to classify note:', error);
+            this.logError(error, 'classification', 'classify-note');
             new Notice('Failed to classify note. Please try again.');
         }
     }
@@ -745,6 +744,7 @@ export default class IdeatrPlugin extends Plugin {
             }
         } catch (error) {
             console.error('Failed to generate scaffold:', error);
+            this.logError(error, 'scaffold-generation', 'generate-scaffold');
             new Notice('Failed to generate scaffold. Please try again.');
         }
     }
@@ -872,6 +872,7 @@ export default class IdeatrPlugin extends Plugin {
             new Notice(`Domain check complete: ${availableCount}/${results.length} available`);
         } catch (error) {
             console.error('Failed to check domains:', error);
+            this.logError(error, 'domain-check', 'check-domains');
             if (error instanceof UserFacingError) {
                 new Notice(error.userMessage);
             } else {
@@ -920,6 +921,7 @@ export default class IdeatrPlugin extends Plugin {
             new Notice(`Search complete: Found ${results.length} similar idea${results.length > 1 ? 's' : ''}`);
         } catch (error) {
             console.error('Failed to search existence:', error);
+            this.logError(error, 'web-search', 'search-existence');
             if (error instanceof UserFacingError) {
                 new Notice(error.userMessage);
             } else {
@@ -966,6 +968,7 @@ export default class IdeatrPlugin extends Plugin {
             ).open();
         } catch (error) {
             console.error('Failed to check duplicates:', error);
+            this.logError(error, 'duplicate-detection', 'check-duplicates');
             if (error instanceof UserFacingError) {
                 new Notice(error.userMessage);
             } else {
@@ -1013,6 +1016,7 @@ export default class IdeatrPlugin extends Plugin {
             ).open();
         } catch (error) {
             console.error('Failed to find related notes:', error);
+            this.logError(error, 'related-notes', 'find-related-notes');
             if (error instanceof UserFacingError) {
                 new Notice(error.userMessage);
             } else {
@@ -1323,7 +1327,7 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
             try {
                 await this.app.vault.create(backupPath, content);
             } catch (error) {
-                console.warn('Failed to create backup file:', error);
+                Logger.warn('Failed to create backup file:', error);
                 // Continue anyway
             }
 
@@ -1520,6 +1524,7 @@ ${mutation.differences.map(d => `- ${d}`).join('\n')}
             new Notice(`Codename "${codename}" generated successfully.`);
         } catch (error) {
             console.error('Failed to generate codename:', error);
+            this.logError(error, 'codename-generation', 'generate-codename');
             
             // Check for specific error types
             if (error instanceof UserFacingError) {
@@ -1748,7 +1753,7 @@ Return only the codename. No quotes, no explanation, just the name:`;
                             });
                         }
                     } catch (error) {
-                        console.warn(`Failed to compare ${file1.name} and ${file2.name}:`, error);
+                        Logger.warn(`Failed to compare ${file1.name} and ${file2.name}:`, error);
                         // Continue with other pairs
                     }
                 }
@@ -2088,7 +2093,7 @@ ${link.synergy || 'Potential combination of these ideas'}
                     );
                     ideas.push(parsed);
                 } catch (error) {
-                    console.warn(`Failed to parse ${ideaFile.path}:`, error);
+                    Logger.warn(`Failed to parse ${ideaFile.path}:`, error);
                 }
             }
 
@@ -2206,7 +2211,7 @@ ${link.synergy || 'Potential combination of these ideas'}
                         const analysis = JSON.parse(repaired);
                         commonThemes = analysis.commonThemes || [];
                     } catch (error) {
-                        console.warn('Failed to parse cluster analysis JSON:', error);
+                        Logger.warn('Failed to parse cluster analysis JSON:', error);
                     }
 
                     // Analyze relationships to top related clusters
@@ -2241,12 +2246,12 @@ ${link.synergy || 'Potential combination of these ideas'}
                                     );
                                 }
                             } catch (error) {
-                                console.warn('Failed to parse relationship analysis JSON:', error);
+                                Logger.warn('Failed to parse relationship analysis JSON:', error);
                             }
                         }
                     }
                 } catch (error) {
-                    console.warn('Failed to analyze cluster with LLM:', error);
+                    Logger.warn('Failed to analyze cluster with LLM:', error);
                     // Continue without LLM analysis
                 }
             }
@@ -2356,7 +2361,7 @@ ${link.synergy || 'Potential combination of these ideas'}
                     updates.category = classification.category;
                     updates.tags = classification.tags;
                 } catch (error) {
-                    console.warn('Failed to re-classify:', error);
+                    Logger.warn('Failed to re-classify:', error);
                 }
             }
 
@@ -2365,7 +2370,7 @@ ${link.synergy || 'Potential combination of these ideas'}
                 const related = await this.searchService.findRelatedNotes(ideaText, 5);
                 updates.related = related.map(r => r.path);
             } catch (error) {
-                console.warn('Failed to refresh related notes:', error);
+                Logger.warn('Failed to refresh related notes:', error);
             }
 
             // Regenerate name variants (if enabled)
@@ -2378,7 +2383,7 @@ ${link.synergy || 'Potential combination of these ideas'}
                         await this.fileManager.appendToFileBody(file, 'Name Variants', variantsText);
                     }
                 } catch (error) {
-                    console.warn('Failed to regenerate name variants:', error);
+                    Logger.warn('Failed to regenerate name variants:', error);
                 }
             }
 
@@ -2629,12 +2634,30 @@ ${link.synergy || 'Potential combination of these ideas'}
             } else {
                 new Notice(`Failed to elevate idea: ${result.error || 'Unknown error'}`);
                 if (result.warnings && result.warnings.length > 0) {
-                    console.warn('Elevation warnings:', result.warnings);
+                    Logger.warn('Elevation warnings:', result.warnings);
                 }
             }
         } catch (error) {
             console.error('Failed to elevate idea:', error);
+            this.logError(error, 'project-elevation', 'elevate-idea');
             new Notice('Failed to elevate idea. Please try again.');
         }
+    }
+
+    /**
+     * Helper method to log errors for bug reports
+     */
+    private logError(
+        error: unknown,
+        context?: string,
+        userAction?: string,
+        metadata?: Record<string, unknown>
+    ): void {
+        if (!this.errorLogService) {
+            return;
+        }
+
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        this.errorLogService.logError(errorObj, context, userAction, metadata);
     }
 }

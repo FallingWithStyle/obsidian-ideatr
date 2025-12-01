@@ -4,6 +4,7 @@ import { FirstLaunchSetupModal } from './views/FirstLaunchSetupModal';
 import { ModelManager } from './services/ModelManager';
 import { ProviderFactory } from './services/providers/ProviderFactory';
 import type { CloudProviderType } from './types/llm-provider';
+import { FeatureRequestModal } from './views/FeatureRequestModal';
 
 export interface IdeatrSettings {
     llmProvider: 'llama' | 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter' | 'custom' | 'none';
@@ -86,6 +87,14 @@ export interface IdeatrSettings {
 
     // File Organization
     moveArchivedToFolder: boolean; // Move archived ideas to Ideas/Archived/ directory
+
+    // Error Logging (for bug reports)
+    errorLoggingEnabled: boolean; // Enable error logging
+    errorLogMaxEntries: number; // Maximum number of error log entries
+    errorLogRetentionDays: number; // Days to retain error logs
+
+    // Debug Mode (for developers)
+    debugMode: boolean; // Enable debug logging (gates console.log/info/warn)
 }
 
 export const DEFAULT_SETTINGS: IdeatrSettings = {
@@ -168,7 +177,15 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
     openRouterModel: '',
 
     // File Organization
-    moveArchivedToFolder: false // Default: don't move files, just update status
+    moveArchivedToFolder: false, // Default: don't move files, just update status
+
+    // Error Logging
+    errorLoggingEnabled: true, // Default: enabled
+    errorLogMaxEntries: 50, // Default: 50 entries
+    errorLogRetentionDays: 7, // Default: 7 days
+
+    // Debug Mode (for developers)
+    debugMode: false // Default: false (only enabled for developer vaults)
 };
 
 export class IdeatrSettingTab extends PluginSettingTab {
@@ -954,5 +971,125 @@ export class IdeatrSettingTab extends PluginSettingTab {
             <br><br>
             <strong>Note:</strong> Folder structure customization is planned for v2. Currently, the default structure is used for all projects.
         `;
+
+        // Feedback Section
+        containerEl.createEl('h2', { text: 'Feedback & Support' });
+
+        new Setting(containerEl)
+            .setName('View existing issues')
+            .setDesc('Browse and search existing bug reports and feature requests on GitHub')
+            .addButton(button => button
+                .setButtonText('View Issues')
+                .onClick(() => {
+                    window.open('https://github.com/FallingWithStyle/obsidian-ideatr/issues', '_blank');
+                }));
+
+        new Setting(containerEl)
+            .setName('Submit Feedback')
+            .setDesc('Report bugs, suggest features, or report performance issues. Error logs can be included to help diagnose issues.')
+            .addButton(button => button
+                .setButtonText('Submit Feedback')
+                .setCta()
+                .onClick(() => {
+                    // Get Obsidian version - try multiple methods
+                    let obsidianVersion = 'Unknown';
+                    try {
+                        // @ts-ignore - Obsidian internal API
+                        obsidianVersion = this.app.appVersion || this.app.version || 'Unknown';
+                    } catch {
+                        obsidianVersion = 'Unknown';
+                    }
+
+                    const systemInfo: FeatureRequestModal['systemInfo'] = {
+                        obsidianVersion,
+                        pluginVersion: this.plugin.manifest.version,
+                        platform: this.app.isMobile ? 'mobile' : 'desktop',
+                        os: navigator.platform || 'Unknown'
+                    };
+
+                    const modal = new FeatureRequestModal(
+                        this.app,
+                        systemInfo,
+                        this.plugin.errorLogService
+                    );
+                    modal.open();
+                }));
+
+        // Error Logging Settings
+        containerEl.createEl('h3', { text: 'Error Logging' });
+
+        new Setting(containerEl)
+            .setName('Enable error logging')
+            .setDesc('Collect error logs for bug reports. Logs are stored locally and only sent if you choose to include them.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.errorLoggingEnabled)
+                .onChange(async (value) => {
+                    this.plugin.settings.errorLoggingEnabled = value;
+                    await this.plugin.saveSettings();
+                    // Update error log service settings
+                    if (this.plugin.errorLogService) {
+                        this.plugin.errorLogService.updateSettings({
+                            enabled: value,
+                            maxEntries: this.plugin.settings.errorLogMaxEntries,
+                            retentionDays: this.plugin.settings.errorLogRetentionDays
+                        });
+                    }
+                }));
+
+        new Setting(containerEl)
+            .setName('Maximum log entries')
+            .setDesc('Maximum number of error log entries to keep in memory (default: 50)')
+            .addText(text => text
+                .setPlaceholder('50')
+                .setValue(String(this.plugin.settings.errorLogMaxEntries))
+                .onChange(async (value) => {
+                    const numValue = Number(value);
+                    if (!isNaN(numValue) && numValue > 0 && numValue <= 500) {
+                        this.plugin.settings.errorLogMaxEntries = numValue;
+                        await this.plugin.saveSettings();
+                        // Update error log service settings
+                        if (this.plugin.errorLogService) {
+                            this.plugin.errorLogService.updateSettings({
+                                enabled: this.plugin.settings.errorLoggingEnabled,
+                                maxEntries: numValue,
+                                retentionDays: this.plugin.settings.errorLogRetentionDays
+                            });
+                        }
+                    }
+                }));
+
+        new Setting(containerEl)
+            .setName('Log retention (days)')
+            .setDesc('Number of days to retain error logs (default: 7)')
+            .addText(text => text
+                .setPlaceholder('7')
+                .setValue(String(this.plugin.settings.errorLogRetentionDays))
+                .onChange(async (value) => {
+                    const numValue = Number(value);
+                    if (!isNaN(numValue) && numValue > 0 && numValue <= 30) {
+                        this.plugin.settings.errorLogRetentionDays = numValue;
+                        await this.plugin.saveSettings();
+                        // Update error log service settings
+                        if (this.plugin.errorLogService) {
+                            this.plugin.errorLogService.updateSettings({
+                                enabled: this.plugin.settings.errorLoggingEnabled,
+                                maxEntries: this.plugin.settings.errorLogMaxEntries,
+                                retentionDays: numValue
+                            });
+                        }
+                    }
+                }));
+
+        new Setting(containerEl)
+            .setName('Clear error logs')
+            .setDesc('Clear all stored error logs')
+            .addButton(button => button
+                .setButtonText('Clear Logs')
+                .onClick(() => {
+                    if (this.plugin.errorLogService) {
+                        this.plugin.errorLogService.clearLogs();
+                        new Notice('Error logs cleared');
+                    }
+                }));
     }
 }
