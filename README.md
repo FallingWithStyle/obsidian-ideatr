@@ -38,6 +38,40 @@ Ideatr is a comprehensive idea management system for Obsidian that captures idea
 - **Smart Fallback**: Automatic fallback from cloud to local AI if requests fail
 - **Model Management**: Download, configure, and manage local AI models through the UI
 
+### Local AI Models
+
+Ideatr offers four local AI models for offline classification, organized by tier:
+
+#### Tier 1: Phi-3.5 Mini [EFFICIENT] (Recommended)
+- **Download size**: ~4.2GB
+- **RAM required**: 6-8GB
+- **Quality**: 4/5 | **Speed**: 5/5
+- **Best for**: Most users
+- Fast, lightweight, and ideal for everyday tasks. Excellent at structured work like classification and tagging.
+
+#### Tier 2: Qwen 2.5 7B [VERSATILE]
+- **Download size**: ~7.8GB
+- **RAM required**: 10GB
+- **Quality**: 4.5/5 | **Speed**: 4/5
+- **Best for**: Users with 16GB+ RAM who want better quality
+- A well-rounded model with stronger reasoning. Great at handling more complex and multilingual tasks.
+
+#### Tier 3: Llama 3.1 8B [RELIABLE]
+- **Download size**: ~8.5GB
+- **RAM required**: 10-12GB
+- **Quality**: 4.5/5 | **Speed**: 3/5
+- **Best for**: Power users who want Meta's best
+- Meta's trusted and widely documented model. Excellent accuracy with strong community support.
+
+#### Tier 4: Llama 3.3 70B [PREMIUM]
+- **Download size**: ~43GB
+- **RAM required**: 48GB+
+- **Quality**: 5/5 | **Speed**: 1/5
+- **Best for**: Desktop workstations with 64GB+ RAM
+- Top-tier performance with near-GPT-4 quality. Requires a high-end desktop workstation.
+
+You can switch models anytime in **Settings → AI Configuration → Local AI Model**.
+
 ### Validation Tools
 - **Domain Availability Check**: Quick domain name validation (local or API-based)
 - **"Does This Exist?" Search**: Web search integration (Google, DuckDuckGo) to check if ideas already exist
