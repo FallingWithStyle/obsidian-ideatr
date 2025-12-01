@@ -48,14 +48,14 @@ describe('ModelManager', () => {
     describe('getModelPath', () => {
         it('should return path in ~/.ideatr/models/ directory', () => {
             const modelPath = modelManager.getModelPath();
-            expect(modelPath).toBe(path.join(mockHomeDir, '.ideatr', 'models', 'Llama-3.2-3B-Instruct-Q4_K_M.gguf'));
+            expect(modelPath).toBe(path.join(mockHomeDir, '.ideatr', 'models', 'Phi-3.5-mini-instruct-q8_0.gguf'));
         });
     });
 
     describe('getModelInfo', () => {
         it('should return model information', () => {
             const info = modelManager.getModelInfo();
-            expect(info.name).toBe('Llama-3.2-3B-Instruct-Q4_K_M.gguf');
+            expect(info.name).toBe('Phi-3.5-mini-instruct-q8_0.gguf');
             expect(info.sizeMB).toBeGreaterThan(0);
             expect(info.downloadUrl).toContain('huggingface.co');
         });

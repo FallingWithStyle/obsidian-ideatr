@@ -17,14 +17,14 @@ describe('ModelDownloadModal', () => {
         app = createMockApp();
         mockModelManager = {
             isModelDownloaded: vi.fn(),
-            getModelPath: vi.fn(() => '/home/test/.ideatr/models/llama-3.2-3b-q4.gguf'),
+            getModelPath: vi.fn(() => '/home/test/.ideatr/models/Phi-3.5-mini-instruct-q8_0.gguf'),
             downloadModel: vi.fn(),
             cancelDownload: vi.fn(),
             verifyModelIntegrity: vi.fn(),
             getModelInfo: vi.fn(() => ({
-                name: 'llama-3.2-3b-q4.gguf',
-                sizeBytes: 2416640000,
-                sizeMB: 2306,
+                name: 'Phi-3.5-mini-instruct-q8_0.gguf',
+                sizeBytes: 4200000000,
+                sizeMB: 4200,
                 checksum: '',
                 downloadUrl: 'https://example.com/model.gguf'
             }))
