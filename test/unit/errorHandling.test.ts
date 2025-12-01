@@ -14,10 +14,11 @@ const { mockNotice } = vi.hoisted(() => {
 });
 
 vi.mock('obsidian', () => ({
-    Notice: vi.fn().mockImplementation((message: string) => {
-        mockNotice(message);
-        return {};
-    }),
+    Notice: class MockNotice {
+        constructor(message: string) {
+            mockNotice(message);
+        }
+    },
 }));
 
 describe('CommandErrorHandler', () => {

@@ -342,8 +342,8 @@ Content
             const createCall = (mockVault.create as any).mock.calls[0];
             const path = createCall[0];
             
-            // Filename format: YYYY-MM-DD Title.md (with space, not hyphen)
-            expect(path).toMatch(/^Ideas\/\d{4}-\d{2}-\d{2} /);
+            // Filename format: Title.md (no date prefix)
+            expect(path).toMatch(/^Ideas\//);
             expect(path.toLowerCase()).toContain('test');
             expect(path.toLowerCase()).toContain('idea');
             expect(path).toMatch(/\.md$/);
