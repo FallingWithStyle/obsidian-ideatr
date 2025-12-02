@@ -161,14 +161,16 @@ export class ServiceInitializer {
         plugin: IdeatrPlugin,
         settings: IdeatrSettings
     ): Promise<{ localLLMService: LlamaService; llmService: ILLMService }> {
-        // Initialize local LLM
+        // Initialize local LLM using singleton pattern
         const vaultBasePath = (app.vault.adapter as any).basePath || app.vault.configDir;
-        const configDir = path.isAbsolute(app.vault.configDir) 
-            ? app.vault.configDir 
+        const configDir = path.isAbsolute(app.vault.configDir)
+            ? app.vault.configDir
             : path.join(vaultBasePath, app.vault.configDir);
         const pluginDir = path.resolve(path.join(configDir, 'plugins', plugin.manifest.id));
         Logger.debug('Plugin directory:', pluginDir);
-        const localLLMService = new LlamaService(settings, pluginDir);
+
+        // Use singleton getInstance instead of new to ensure only one instance
+        const localLLMService = LlamaService.getInstance(settings, pluginDir);
 
         // Initialize cloud LLM if configured
         let cloudLLM: ILLMService | null = null;

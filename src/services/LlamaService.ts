@@ -11,11 +11,16 @@ import * as fs from 'fs';
 import { extractAndRepairJSON } from '../utils/jsonRepair';
 import { Logger } from '../utils/logger';
 import { checkModelCompatibility, getSystemInfoString } from '../utils/systemCapabilities';
+import { ProcessHealthMonitor } from '../utils/ProcessHealthMonitor';
 
 /**
  * LlamaService - Integrates with local Llama.cpp server
+ * Singleton pattern ensures only one instance manages the llama-server process
  */
 export class LlamaService implements ILLMService {
+    private static instance: LlamaService | null = null;
+    private static instanceLock: boolean = false;
+
     private settings: IdeatrSettings;
     private serverProcess: ChildProcess | null = null;
     private isServerReady: boolean = false;
@@ -26,16 +31,61 @@ export class LlamaService implements ILLMService {
     private loadingState: 'not-loaded' | 'loading' | 'ready' | 'idle' = 'not-loaded';
     private modelManager: ModelManager;
     private pluginDir: string | null = null;
+    private processHealthMonitor: ProcessHealthMonitor;
 
-    constructor(settings: IdeatrSettings, pluginDir?: string) {
+    private constructor(settings: IdeatrSettings, pluginDir?: string) {
         this.settings = settings;
         // Initialize ModelManager with selected model
         this.modelManager = new ModelManager(settings.localModel || 'phi-3.5-mini');
         this.pluginDir = pluginDir || null;
+        this.processHealthMonitor = new ProcessHealthMonitor();
         // Update idle timeout if setting changes
         if (settings.keepModelLoaded) {
             // If keepModelLoaded is true, don't set up idle timeout
             this.idleTimeout = 0;
+        }
+    }
+
+    /**
+     * Get or create singleton instance
+     * Ensures only one LlamaService instance exists to prevent multiple server processes
+     */
+    static getInstance(settings: IdeatrSettings, pluginDir?: string): LlamaService {
+        if (!LlamaService.instance) {
+            if (LlamaService.instanceLock) {
+                throw new Error('LlamaService instance is being created');
+            }
+            LlamaService.instanceLock = true;
+            LlamaService.instance = new LlamaService(settings, pluginDir);
+            LlamaService.instanceLock = false;
+            Logger.debug('LlamaService singleton instance created');
+        }
+        return LlamaService.instance;
+    }
+
+    /**
+     * Update settings for existing instance
+     */
+    updateSettings(settings: IdeatrSettings): void {
+        this.settings = settings;
+        // Update ModelManager if model changed
+        this.modelManager = new ModelManager(settings.localModel || 'phi-3.5-mini');
+        // Update idle timeout
+        if (settings.keepModelLoaded) {
+            this.idleTimeout = 0;
+        } else {
+            this.idleTimeout = 15 * 60 * 1000;
+        }
+    }
+
+    /**
+     * Destroy singleton instance (called on plugin unload)
+     */
+    static destroyInstance(): void {
+        if (LlamaService.instance) {
+            Logger.debug('Destroying LlamaService singleton instance');
+            LlamaService.instance.cleanup();
+            LlamaService.instance = null;
         }
     }
 
@@ -122,7 +172,7 @@ export class LlamaService implements ILLMService {
 
         // Update ModelManager with current localModel setting (in case it changed)
         this.modelManager = new ModelManager(this.settings.localModel || 'phi-3.5-mini');
-        
+
         // Use ModelManager's default path (GGUF file)
         const defaultPath = this.modelManager.getModelPath();
         try {
@@ -211,6 +261,9 @@ export class LlamaService implements ILLMService {
                 '--parallel', String(this.settings.concurrency)
             ]);
 
+            // Track process health
+            this.processHealthMonitor.setProcess(this.serverProcess);
+
             // Track if server failed to start
             let serverStartError: Error | null = null;
             let processExited = false;
@@ -274,7 +327,7 @@ export class LlamaService implements ILLMService {
                 // Check for common startup errors (but not info messages)
                 if (isError) {
                     errorMessage = errorOutput.trim();
-                    
+
                     // Check for RAM/VRAM-related errors
                     const lowerOutput = errorOutput.toLowerCase();
                     const isRAMError = lowerOutput.includes('failed to load model') ||
@@ -282,27 +335,27 @@ export class LlamaService implements ILLMService {
                         lowerOutput.includes('insufficient memory') ||
                         lowerOutput.includes('vram') ||
                         lowerOutput.includes('reduce') && lowerOutput.includes('gpu-layers');
-                    
+
                     if (isRAMError) {
                         // Get model info and system capabilities
                         const modelConfig = this.modelManager.getModelConfig();
                         const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
                         const systemInfo = getSystemInfoString();
-                        
+
                         // Create a more helpful error message
                         let enhancedError = `Model failed to load - likely insufficient RAM/VRAM.\n\n`;
                         enhancedError += `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n`;
                         enhancedError += `${systemInfo}\n\n`;
-                        
+
                         if (!compatibility.isCompatible) {
                             enhancedError += `This model requires more RAM than your system has. `;
                         } else {
                             enhancedError += `Your system may not have enough free RAM to load this model. `;
                         }
-                        
+
                         enhancedError += `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.\n\n`;
                         enhancedError += `Original error: ${errorOutput.trim()}`;
-                        
+
                         errorMessage = enhancedError;
                         serverStartError = new Error(enhancedError);
                     } else {
@@ -349,7 +402,7 @@ export class LlamaService implements ILLMService {
                     // Use the actual paths that were used (from variables in scope)
                     const errorBinaryPath = binaryPath || 'not configured';
                     const errorModelPath = modelPath || 'not configured';
-                    
+
                     // Check if we already have a RAM-related error message
                     if (errorMessage && (errorMessage.includes('insufficient RAM') || errorMessage.includes('requires more RAM'))) {
                         errorMsg = errorMessage;
@@ -358,7 +411,7 @@ export class LlamaService implements ILLMService {
                         const modelConfig = this.modelManager.getModelConfig();
                         const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
                         const systemInfo = getSystemInfoString();
-                        
+
                         const errorMsgLower = errorMessage.toLowerCase();
                         if (!compatibility.isCompatible || errorMsgLower.includes('failed to load model')) {
                             errorMsg = `Model failed to load - likely insufficient RAM/VRAM.\n\n` +
@@ -368,7 +421,7 @@ export class LlamaService implements ILLMService {
                                 `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.\n\n` +
                                 `Check the console for more details. Binary: ${errorBinaryPath}, Model: ${errorModelPath}`;
                         } else {
-                            errorMsg = errorMessage || 
+                            errorMsg = errorMessage ||
                                 'Server process was terminated during startup. This may indicate:\n' +
                                 '  • Binary or model file is corrupted\n' +
                                 '  • Insufficient system resources (memory/disk)\n' +
@@ -400,10 +453,10 @@ export class LlamaService implements ILLMService {
             console.error('[LlamaService] Failed to start Llama server:', error);
             this.loadingState = 'not-loaded';
             this.serverProcess = null;
-            
+
             // Show a more helpful notice if it's a RAM-related error
             const errorMessage = error instanceof Error ? error.message : String(error);
-            if (errorMessage.includes('insufficient RAM') || errorMessage.includes('requires more RAM') || 
+            if (errorMessage.includes('insufficient RAM') || errorMessage.includes('requires more RAM') ||
                 errorMessage.includes('failed to load model')) {
                 new Notice('Model too large for system RAM. Consider switching to a smaller model in Settings.', 10000);
             } else {
@@ -419,10 +472,48 @@ export class LlamaService implements ILLMService {
             this.clearIdleTimer();
             this.serverProcess.kill();
             this.serverProcess = null;
+            this.processHealthMonitor.setProcess(null);
             this.isServerReady = false;
             this.loadingState = 'not-loaded';
             this.lastUseTime = 0;
         }
+    }
+
+    /**
+     * Comprehensive cleanup - called on plugin unload
+     * Ensures all resources are properly released
+     */
+    cleanup(): void {
+        Logger.debug('LlamaService cleanup started');
+
+        // Clear idle timer
+        this.clearIdleTimer();
+
+        // Stop server process
+        if (this.serverProcess) {
+            Logger.debug('Stopping server process...');
+            this.stopServer();
+        }
+
+        // Cancel any ongoing downloads
+        if (this.modelManager?.isDownloadInProgress()) {
+            Logger.debug('Canceling ongoing download...');
+            this.modelManager.cancelDownload();
+        }
+
+        // Clear state
+        this.isServerReady = false;
+        this.loadingState = 'not-loaded';
+        this.lastUseTime = 0;
+
+        Logger.debug('LlamaService cleanup completed');
+    }
+
+    /**
+     * Get process health information
+     */
+    getProcessHealth() {
+        return this.processHealthMonitor.getHealth();
     }
 
     private unloadModel(): void {
@@ -494,9 +585,9 @@ export class LlamaService implements ILLMService {
             try {
                 // Check if server process is still running before each retry
                 if (attempt > 0) {
-                    const isServerRunning = this.serverProcess !== null && 
+                    const isServerRunning = this.serverProcess !== null &&
                         this.serverProcess.exitCode === null;
-                    
+
                     if (!isServerRunning || this.serverProcess === null) {
                         Logger.warn('Server process not running, attempting restart...');
                         this.isServerReady = false;
@@ -553,14 +644,14 @@ export class LlamaService implements ILLMService {
                 if (response.status < 200 || response.status >= 300) {
                     // Handle 503 Service Unavailable - server might have crashed or be loading
                     if (response.status === 503) {
-                        const isServerRunning = this.serverProcess !== null && 
+                        const isServerRunning = this.serverProcess !== null &&
                             this.serverProcess.exitCode === null;
-                        
+
                         if (!isServerRunning || this.serverProcess === null) {
                             Logger.warn('Server returned 503 and process is not running, will restart and retry');
                             this.isServerReady = false;
                             this.serverProcess = null;
-                            
+
                             // If this is not the last attempt, restart and retry
                             if (attempt < maxRetries) {
                                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -575,27 +666,27 @@ export class LlamaService implements ILLMService {
                                 continue;
                             }
                         }
-                        
+
                         // If we've exhausted retries, provide helpful error message
                         const modelConfig = this.modelManager.getModelConfig();
                         const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
                         const systemInfo = getSystemInfoString();
-                        
+
                         let errorMsg = `Model failed to load (503 Service Unavailable after ${maxRetries + 1} attempts).\n\n`;
                         errorMsg += `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n`;
                         errorMsg += `${systemInfo}\n\n`;
-                        
+
                         if (!compatibility.isCompatible) {
                             errorMsg += `This model requires more RAM than your system has. `;
                         } else {
                             errorMsg += `Your system may not have enough free RAM to load this model. `;
                         }
-                        
+
                         errorMsg += `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.`;
-                        
+
                         throw new NetworkError(errorMsg);
                     }
-                        throw new NetworkError(`Llama.cpp server error: ${response.status}`);
+                    throw new NetworkError(`Llama.cpp server error: ${response.status}`);
                 }
 
                 // requestUrl returns json as a property, not a method
@@ -787,9 +878,9 @@ export class LlamaService implements ILLMService {
             try {
                 // Check if server process is still running before each retry
                 if (attempt > 0) {
-                    const isServerRunning = this.serverProcess !== null && 
+                    const isServerRunning = this.serverProcess !== null &&
                         this.serverProcess.exitCode === null;
-                    
+
                     if (!isServerRunning || this.serverProcess === null) {
                         Logger.warn('Server process not running, attempting restart...');
                         this.isServerReady = false;
@@ -846,14 +937,14 @@ export class LlamaService implements ILLMService {
                 if (response.status < 200 || response.status >= 300) {
                     // Handle 503 Service Unavailable - server might have crashed or be loading
                     if (response.status === 503) {
-                        const isServerRunning = this.serverProcess !== null && 
+                        const isServerRunning = this.serverProcess !== null &&
                             this.serverProcess.exitCode === null;
-                        
+
                         if (!isServerRunning || this.serverProcess === null) {
                             Logger.warn('Server returned 503 and process is not running, will restart and retry');
                             this.isServerReady = false;
                             this.serverProcess = null;
-                            
+
                             // If this is not the last attempt, restart and retry
                             if (attempt < maxRetries) {
                                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -868,27 +959,27 @@ export class LlamaService implements ILLMService {
                                 continue;
                             }
                         }
-                        
+
                         // If we've exhausted retries, provide helpful error message
                         const modelConfig = this.modelManager.getModelConfig();
                         const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
                         const systemInfo = getSystemInfoString();
-                        
+
                         let errorMsg = `Model failed to load (503 Service Unavailable after ${maxRetries + 1} attempts).\n\n`;
                         errorMsg += `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n`;
                         errorMsg += `${systemInfo}\n\n`;
-                        
+
                         if (!compatibility.isCompatible) {
                             errorMsg += `This model requires more RAM than your system has. `;
                         } else {
                             errorMsg += `Your system may not have enough free RAM to load this model. `;
                         }
-                        
+
                         errorMsg += `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.`;
-                        
+
                         throw new NetworkError(errorMsg);
                     }
-                        throw new NetworkError(`Llama.cpp server error: ${response.status}`);
+                    throw new NetworkError(`Llama.cpp server error: ${response.status}`);
                 }
 
                 // requestUrl returns json as a property, not a method
