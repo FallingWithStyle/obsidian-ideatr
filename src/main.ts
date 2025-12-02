@@ -1,4 +1,4 @@
-import { Plugin } from 'obsidian';
+import { Plugin, Notice } from 'obsidian';
 import { CaptureModal } from './capture/CaptureModal';
 import { DashboardView } from './views/DashboardView';
 import { GraphView } from './views/GraphView';
@@ -42,7 +42,7 @@ export default class IdeatrPlugin extends Plugin {
         await this.loadSettings();
 
         // Initialize Logger with app instance and debug mode setting
-        Logger.initialize(this.app, this.settings.debugMode);
+        await Logger.initialize(this.app, this.settings.debugMode);
 
         // Initialize ModelManager for first-launch detection
         this.modelManager = new ModelManager();
@@ -106,6 +106,13 @@ export default class IdeatrPlugin extends Plugin {
         // Register all commands using CommandRegistry
         Logger.debug('Starting command registration...');
         try {
+            if (!this.pluginContext) {
+                throw new Error('PluginContext is not initialized');
+            }
+            if (!this.pluginContext.commandContext) {
+                throw new Error('CommandContext is not initialized');
+            }
+
             CommandRegistry.registerAll(this, this.pluginContext.commandContext);
 
             // Add ribbon icon
@@ -114,9 +121,11 @@ export default class IdeatrPlugin extends Plugin {
             });
 
             Logger.debug('All commands registered successfully');
+            console.log('[Ideatr] Commands registered successfully');
         } catch (error) {
-            console.error('Error registering commands:', error);
-            console.error('Error details:', error instanceof Error ? error.stack : error);
+            console.error('[Ideatr] Error registering commands:', error);
+            console.error('[Ideatr] Error details:', error instanceof Error ? error.stack : error);
+            new Notice('Failed to register Ideatr commands. Check console for details.');
         }
 
         // Start memory monitoring if debug mode is enabled

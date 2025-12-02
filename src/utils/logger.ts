@@ -11,28 +11,29 @@ import type { App, Vault } from 'obsidian';
  */
 export class Logger {
     private static app: App | null = null;
-    private static debugMode: boolean = false;
+    private static debugMode: boolean = true;
     private static debugFileChecked: boolean = false;
     private static debugFileExists: boolean = false;
     private static readonly DEBUG_FILE_NAMES = ['.ideatr-debug', '.ideatr-debug.md'];
     private static checkPromise: Promise<void> | null = null;
-    private static lastRecheckTime: number = 0;
-    private static readonly RECHECK_INTERVAL_MS = 5000; // Recheck every 5 seconds
 
     /**
      * Initialize the logger with app instance and debug mode setting
      */
-    static initialize(app: App | null, debugMode: boolean = false): void {
+    static async initialize(app: App | null, debugMode: boolean = false): Promise<void> {
         Logger.app = app;
         Logger.debugMode = debugMode;
         // Reset check state to allow rechecking
         Logger.debugFileChecked = false;
         Logger.debugFileExists = false;
+
         // Check for debug file asynchronously (non-blocking)
         if (app?.vault) {
-            Logger.checkDebugFile(app.vault).catch(() => {
-                // Silently fail - debug file check is optional
-            });
+            await Logger.checkDebugFile(app.vault);
+        }
+
+        if (Logger.isDebugEnabled()) {
+            console.log('[Ideatr] Logger initialized in DEBUG mode');
         }
     }
 
@@ -69,10 +70,10 @@ export class Logger {
         // Create a promise for this check
         Logger.checkPromise = (async () => {
             try {
-                // Check for both possible file names
+                // Check for both possible file names using adapter to see dotfiles
                 for (const fileName of Logger.DEBUG_FILE_NAMES) {
-                    const debugFile = vault.getAbstractFileByPath(fileName);
-                    if (debugFile !== null) {
+                    const exists = await vault.adapter.exists(fileName);
+                    if (exists) {
                         Logger.debugFileExists = true;
                         Logger.debugFileChecked = true;
                         Logger.checkPromise = null;
@@ -92,28 +93,6 @@ export class Logger {
     }
 
     /**
-     * Synchronously check if debug file exists (for immediate use)
-     */
-    private static checkDebugFileSync(): boolean {
-        if (!Logger.app?.vault) {
-            return false;
-        }
-
-        try {
-            // Check for both possible file names synchronously
-            for (const fileName of Logger.DEBUG_FILE_NAMES) {
-                const debugFile = Logger.app.vault.getAbstractFileByPath(fileName);
-                if (debugFile !== null) {
-                    return true;
-                }
-            }
-        } catch {
-            // Silently fail
-        }
-        return false;
-    }
-
-    /**
      * Check if debug mode is enabled
      */
     private static isDebugEnabled(): boolean {
@@ -123,32 +102,6 @@ export class Logger {
         }
 
         // Secondary: Check for debug flag file (developer convenience)
-        // If not yet checked, do a synchronous check first for immediate result
-        if (!Logger.debugFileChecked && Logger.app?.vault) {
-            const exists = Logger.checkDebugFileSync();
-            Logger.debugFileExists = exists;
-            Logger.debugFileChecked = true;
-            // Also trigger async check to ensure we catch any edge cases
-            Logger.checkDebugFile(Logger.app.vault).catch(() => {
-                // Silently fail
-            });
-            return exists;
-        }
-
-        // If already checked, use cached result
-        // Periodically recheck in case file was created/removed after plugin load
-        if (Logger.app?.vault) {
-            const now = Date.now();
-            if (now - Logger.lastRecheckTime > Logger.RECHECK_INTERVAL_MS) {
-                const currentlyExists = Logger.checkDebugFileSync();
-                if (currentlyExists !== Logger.debugFileExists) {
-                    // File state changed, update cache
-                    Logger.debugFileExists = currentlyExists;
-                }
-                Logger.lastRecheckTime = now;
-            }
-        }
-
         return Logger.debugFileExists;
     }
 
