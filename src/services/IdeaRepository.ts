@@ -14,6 +14,7 @@ export class IdeaRepository implements IIdeaRepository {
     private cache: Map<string, IdeaFile> = new Map();
     private watchers: Set<any> = new Set();
     private parser: IFrontmatterParser;
+    private readonly MAX_CACHE_SIZE = 10000; // Prevent unbounded cache growth
 
     constructor(
         private vault: Vault,
@@ -40,8 +41,15 @@ export class IdeaRepository implements IIdeaRepository {
                 const content = await this.vault.read(file);
                 const idea = this.parser.parseIdeaFile(file, content);
                 ideas.push(idea);
-                // Update cache
+                // Update cache with size limit to prevent unbounded growth
                 this.cache.set(file.path, idea);
+                // If cache exceeds limit, remove oldest entries (LRU-like, but simple FIFO)
+                if (this.cache.size > this.MAX_CACHE_SIZE) {
+                    const firstKey = this.cache.keys().next().value;
+                    if (firstKey) {
+                        this.cache.delete(firstKey);
+                    }
+                }
             } catch (error) {
                 // Wrap underlying error in a typed ManagementError for better diagnostics (QA 4.6)
                 const managementError = new ManagementError(
@@ -135,8 +143,15 @@ export class IdeaRepository implements IIdeaRepository {
         try {
             const content = await this.vault.read(file);
             const idea = this.parser.parseIdeaFile(file, content);
-            // Update cache
+            // Update cache with size limit
             this.cache.set(path, idea);
+            // If cache exceeds limit, remove oldest entries
+            if (this.cache.size > this.MAX_CACHE_SIZE) {
+                const firstKey = this.cache.keys().next().value;
+                if (firstKey) {
+                    this.cache.delete(firstKey);
+                }
+            }
             return idea;
         } catch (error) {
             Logger.warn(`Failed to read idea file: ${path}`, error);

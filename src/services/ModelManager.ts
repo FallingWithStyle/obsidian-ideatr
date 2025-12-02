@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { createWriteStream } from 'fs';
+import { createWriteStream, createReadStream } from 'fs';
 import { createHash } from 'crypto';
 import { Logger } from '../utils/logger';
 
@@ -24,6 +24,7 @@ export interface ModelConfig {
     cons: string[];
     bestFor: string;
     chatTemplate: 'phi-3.5' | 'llama-3.1' | 'qwen-2.5';
+    sha256?: string; // SHA-256 checksum for integrity verification
 }
 
 /**
@@ -39,6 +40,10 @@ export interface ModelInfo {
 
 /**
  * Available model configurations
+ * 
+ * Note: SHA256 checksums can be added to the sha256 field for each model.
+ * To calculate a checksum for a downloaded model, use ModelManager.calculateModelChecksum()
+ * Checksums provide the most reliable integrity verification.
  */
 export const MODELS: Record<string, ModelConfig> = {
     // Tier 1: Default (Best for most)
@@ -57,7 +62,8 @@ export const MODELS: Record<string, ModelConfig> = {
         pros: ['Fast', 'Accurate', 'Small download', 'Low RAM usage'],
         cons: ['Less creative than larger models'],
         bestFor: 'Most users',
-        chatTemplate: 'phi-3.5'
+        chatTemplate: 'phi-3.5',
+        sha256: '76fbf02f6fe92af57dbd818409bc8a0240026f1f3609bb405c3be94c973fb823'
     },
 
     // Tier 2: Step up (More quality)
@@ -76,7 +82,8 @@ export const MODELS: Record<string, ModelConfig> = {
         pros: ['Higher accuracy', 'Better context understanding', 'Multilingual'],
         cons: ['Larger download', 'More RAM needed'],
         bestFor: 'Users with 16GB+ RAM who want better quality',
-        chatTemplate: 'qwen-2.5'
+        chatTemplate: 'qwen-2.5',
+        sha256: '9c6a6e61664446321d9c0dd7ee28a0d03914277609e21bc0e1fce4abe780ce1b'
     },
 
     // Tier 3: Premium (Best quality, reasonable size)
@@ -95,7 +102,8 @@ export const MODELS: Record<string, ModelConfig> = {
         pros: ['Very accurate', 'Well-tested', 'Strong community'],
         cons: ['Larger download', 'Slower inference'],
         bestFor: 'Power users who want Meta\'s best',
-        chatTemplate: 'llama-3.1'
+        chatTemplate: 'llama-3.1',
+        sha256: '9da71c45c90a821809821244d4971e5e5dfad7eb091f0b8ff0546392393b6283'
     },
 
     // Tier 4: Maximum (For enthusiasts only)
@@ -122,7 +130,8 @@ export const MODELS: Record<string, ModelConfig> = {
             'Very slow on most hardware'
         ],
         bestFor: 'Desktop workstations with 64GB+ RAM',
-        chatTemplate: 'llama-3.1'
+        chatTemplate: 'llama-3.1',
+        sha256: '32df3baccb556f9840059b2528b2dee4d3d516b24afdfb9d0c56ff5f63e3a664'
     }
 };
 
@@ -200,6 +209,8 @@ export class ModelManager implements IModelManager {
     private abortController: AbortController | null = null;
     private isDownloading: boolean = false;
     private downloadProgressCallback: ((progress: number, downloadedMB: number, totalMB: number) => void) | null = null;
+    private activeHashOperations: number = 0; // Track concurrent hash operations
+    private hashOperationLock: Promise<void> = Promise.resolve(); // Serialize hash operations
 
     constructor(modelKey: string = 'phi-3.5-mini') {
         // Validate model key
@@ -220,7 +231,7 @@ export class ModelManager implements IModelManager {
             name: this.modelConfig.fileName,
             sizeBytes: this.modelConfig.sizeBytes,
             sizeMB: this.modelConfig.sizeMB,
-            checksum: '', // SHA-256 checksum - will be calculated or fetched from Hugging Face
+            checksum: this.modelConfig.sha256 || '', // SHA-256 checksum from config
             downloadUrl: this.modelConfig.url
         };
     }
@@ -442,58 +453,209 @@ export class ModelManager implements IModelManager {
                 return false;
             }
 
-            // First, check file size matches expected size (quick check)
+            // Check file size is within reasonable range
             const stats = await fs.stat(this.modelPath);
             const actualSizeBytes = stats.size;
             const actualSizeMB = actualSizeBytes / (1024 * 1024);
 
-            // Allow 1% tolerance for file size differences (more strict than before)
-            const expectedSizeBytes = this.modelInfo.sizeBytes;
-            const expectedSizeMB = this.modelInfo.sizeMB;
-            const toleranceBytes = expectedSizeBytes * 0.01;
-            const toleranceMB = expectedSizeMB * 0.01;
-
-            const sizeDifference = Math.abs(actualSizeBytes - expectedSizeBytes);
-            const sizeMatches = sizeDifference <= toleranceBytes;
-
-            // If checksum is provided, verify SHA-256 checksum
-            if (this.modelInfo.checksum && this.modelInfo.checksum.trim().length > 0) {
-                // Calculate SHA-256 hash of the file
-                const fileBuffer = await fs.readFile(this.modelPath);
-                const hash = createHash('sha256');
-                hash.update(fileBuffer);
-                const calculatedChecksum = hash.digest('hex');
-
-                // Compare checksums (case-insensitive)
-                const checksumMatches = calculatedChecksum.toLowerCase() === this.modelInfo.checksum.toLowerCase();
-
-                if (!sizeMatches || !checksumMatches) {
-                    Logger.warn('Model integrity check failed:', {
-                        expectedSizeBytes,
-                        actualSizeBytes,
-                        sizeDifference,
-                        sizeMatches,
-                        checksumMatches
-                    });
-                }
-
-                return sizeMatches && checksumMatches;
+            // File must not be empty
+            if (actualSizeBytes === 0) {
+                Logger.warn('Model integrity check failed - file is empty');
+                return false;
             }
 
-            // If no checksum provided, fall back to size check only
-            if (!sizeMatches) {
-                Logger.warn('Model integrity check failed - size mismatch:', {
+            const expectedSizeBytes = this.modelInfo.sizeBytes;
+            const expectedSizeMB = this.modelInfo.sizeMB;
+
+            // Allow 20% tolerance on either side (80% to 120% of expected size)
+            // This accounts for variations in actual file sizes from Hugging Face
+            const minSizeBytes = expectedSizeBytes * 0.8;
+            const maxSizeBytes = expectedSizeBytes * 1.2;
+            const sizeInRange = actualSizeBytes >= minSizeBytes && actualSizeBytes <= maxSizeBytes;
+
+            // If checksum is provided, SHA-256 checksum verification is the primary method
+            if (this.modelInfo.checksum && this.modelInfo.checksum.trim().length > 0) {
+                // Serialize hash operations to prevent concurrent streams on the same file
+                await this.hashOperationLock;
+                
+                // Create a new lock for the next operation
+                let lockResolver!: () => void;
+                this.hashOperationLock = new Promise<void>((resolve) => {
+                    lockResolver = resolve;
+                });
+
+                try {
+                    // Calculate SHA-256 hash of the file using streaming for large files
+                    const calculatedChecksum = await new Promise<string>((resolve, reject) => {
+                        // Track active hash operations for debugging
+                        this.activeHashOperations++;
+                        const beforeMemory = process.memoryUsage().rss;
+                        
+                        Logger.debug('HASH START', this.modelPath, 'Active:', this.activeHashOperations);
+                        
+                        const hash = createHash('sha256');
+                        const stream = createReadStream(this.modelPath);
+                        
+                        // Ensure stream is destroyed on any error
+                        const cleanup = () => {
+                            if (!stream.destroyed) {
+                                stream.destroy();
+                            }
+                            this.activeHashOperations--;
+                            const afterMemory = process.memoryUsage().rss;
+                            Logger.debug('HASH END', this.modelPath, 'Active:', this.activeHashOperations, 
+                                'Memory delta:', ((afterMemory - beforeMemory) / 1024 / 1024).toFixed(2), 'MB');
+                            // Release lock for next operation
+                            lockResolver();
+                        };
+                        
+                        stream.on('data', (data) => hash.update(data));
+                        stream.on('end', () => {
+                            try {
+                                const result = hash.digest('hex').toLowerCase();
+                                cleanup();
+                                resolve(result);
+                            } catch (error) {
+                                cleanup();
+                                reject(error);
+                            }
+                        });
+                        stream.on('error', (error) => {
+                            cleanup();
+                            reject(error);
+                        });
+                        stream.on('close', () => {
+                            // Stream closed - ensure cleanup if not already done
+                            if (this.activeHashOperations > 0) {
+                                this.activeHashOperations--;
+                            }
+                        });
+                    });
+                    
+                    const expectedChecksum = this.modelInfo.checksum.toLowerCase().trim();
+
+                    // Compare checksums (case-insensitive)
+                    const checksumMatches = calculatedChecksum === expectedChecksum;
+
+                    if (!checksumMatches) {
+                        Logger.warn('Model integrity check failed - SHA256 checksum mismatch:', {
+                            expected: expectedChecksum.substring(0, 16) + '...',
+                            calculated: calculatedChecksum.substring(0, 16) + '...',
+                            sizeInRange,
+                            modelPath: this.modelPath
+                        });
+                        return false; // Checksum mismatch is a hard failure
+                    }
+
+                    // Checksum matches - also verify size is reasonable as secondary check
+                    if (!sizeInRange) {
+                        Logger.warn('Model integrity check - checksum matches but size outside expected range:', {
+                            expectedSizeMB: expectedSizeMB.toFixed(2),
+                            actualSizeMB: actualSizeMB.toFixed(2)
+                        });
+                        // Still return true since checksum matches (size might vary slightly)
+                    }
+
+                    return true; // Checksum verification passed
+                } catch (error) {
+                    // Release lock even on error
+                    lockResolver();
+                    throw error;
+                }
+            }
+
+            // If no checksum provided, fall back to size range check only
+            // This is less secure but allows verification when checksums aren't available
+            if (!sizeInRange) {
+                Logger.warn('Model integrity check - size outside expected range (no checksum available):', {
                     expectedSizeMB: expectedSizeMB.toFixed(2),
                     actualSizeMB: actualSizeMB.toFixed(2),
-                    differenceMB: (actualSizeMB - expectedSizeMB).toFixed(2),
-                    toleranceMB: toleranceMB.toFixed(2)
+                    minSizeMB: (minSizeBytes / (1024 * 1024)).toFixed(2),
+                    maxSizeMB: (maxSizeBytes / (1024 * 1024)).toFixed(2)
                 });
             }
 
-            return sizeMatches;
+            return sizeInRange;
         } catch (error) {
             console.error('Model integrity check error:', error);
             return false;
+        }
+    }
+
+    /**
+     * Calculate SHA-256 checksum of the downloaded model file
+     * Useful for generating checksums to add to model configs
+     * Uses streaming to handle large files efficiently
+     */
+    async calculateModelChecksum(): Promise<string | null> {
+        try {
+            if (!(await this.isModelDownloaded())) {
+                return null;
+            }
+
+            // Serialize hash operations to prevent concurrent streams on the same file
+            await this.hashOperationLock;
+            
+            // Create a new lock for the next operation
+            let lockResolver!: () => void;
+            this.hashOperationLock = new Promise<void>((resolve) => {
+                lockResolver = resolve;
+            });
+
+            try {
+                return await new Promise<string>((resolve, reject) => {
+                    // Track active hash operations for debugging
+                    this.activeHashOperations++;
+                    const beforeMemory = process.memoryUsage().rss;
+                    
+                    Logger.debug('HASH START', this.modelPath, 'Active:', this.activeHashOperations);
+                    
+                    const hash = createHash('sha256');
+                    const stream = createReadStream(this.modelPath);
+                    
+                    // Ensure stream is destroyed on any error
+                    const cleanup = () => {
+                        if (!stream.destroyed) {
+                            stream.destroy();
+                        }
+                        this.activeHashOperations--;
+                        const afterMemory = process.memoryUsage().rss;
+                        Logger.debug('HASH END', this.modelPath, 'Active:', this.activeHashOperations,
+                            'Memory delta:', ((afterMemory - beforeMemory) / 1024 / 1024).toFixed(2), 'MB');
+                        // Release lock for next operation
+                        lockResolver();
+                    };
+                    
+                    stream.on('data', (data) => hash.update(data));
+                    stream.on('end', () => {
+                        try {
+                            const result = hash.digest('hex');
+                            cleanup();
+                            resolve(result);
+                        } catch (error) {
+                            cleanup();
+                            reject(error);
+                        }
+                    });
+                    stream.on('error', (error) => {
+                        cleanup();
+                        reject(error);
+                    });
+                    stream.on('close', () => {
+                        // Stream closed - ensure cleanup if not already done
+                        if (this.activeHashOperations > 0) {
+                            this.activeHashOperations--;
+                        }
+                    });
+                });
+            } catch (error) {
+                // Release lock even on error
+                lockResolver();
+                throw error;
+            }
+        } catch (error) {
+            Logger.error('Failed to calculate model checksum:', error);
+            return null;
         }
     }
 }

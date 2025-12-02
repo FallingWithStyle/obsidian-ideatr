@@ -63,17 +63,17 @@ describe('TutorialManager', () => {
     describe('resetTutorials - overwrite=false (auto-load)', () => {
         it('should skip existing files silently when overwrite is false', async () => {
             const existingFile = new TFile();
-            existingFile.path = 'tutorials/00-Index.md';
+            existingFile.path = 'Tutorials/00-Index.md';
             existingFile.name = '00-Index.md';
 
             const tutorialDir = new TFolder();
-            tutorialDir.path = 'tutorials';
+            tutorialDir.path = 'Tutorials';
             (tutorialDir as any).children = [existingFile];
 
             // Mock vault methods
             (mockVault.getAbstractFileByPath as any).mockImplementation((filePath: string) => {
-                if (filePath === 'tutorials') return tutorialDir;
-                if (filePath === 'tutorials/00-Index.md') return existingFile;
+                if (filePath === 'Tutorials') return tutorialDir;
+                if (filePath === 'Tutorials/00-Index.md') return existingFile;
                 return null;
             });
 
@@ -97,11 +97,11 @@ describe('TutorialManager', () => {
 
         it('should create missing files when overwrite is false', async () => {
             const tutorialDir = new TFolder();
-            tutorialDir.path = 'tutorials';
+            tutorialDir.path = 'Tutorials';
             (tutorialDir as any).children = [];
 
             mockVault.getAbstractFileByPath = vi.fn((filePath: string) => {
-                if (filePath === 'tutorials') return tutorialDir;
+                if (filePath === 'Tutorials') return tutorialDir;
                 return null;
             });
 
@@ -114,20 +114,20 @@ describe('TutorialManager', () => {
             const result = await tutorialManager.resetTutorials(false);
 
             expect(result).toBe(true);
-            expect(mockVault.create).toHaveBeenCalledWith('tutorials/00-Index.md', '# Index');
+            expect(mockVault.create).toHaveBeenCalledWith('Tutorials/00-Index.md', '# Index');
         });
 
         it('should handle "file already exists" error silently when overwrite is false', async () => {
             const existingFile = new TFile();
-            existingFile.path = 'tutorials/00-Index.md';
+            existingFile.path = 'Tutorials/00-Index.md';
 
             let callCount = 0;
             (mockVault.getAbstractFileByPath as any).mockImplementation((filePath: string) => {
                 callCount++;
-                if (filePath === 'tutorials') return new TFolder();
+                if (filePath === 'Tutorials') return new TFolder();
                 // First call returns null (file not found), but create will fail
                 // After create fails, should find the file
-                if (filePath === 'tutorials/00-Index.md' && callCount > 2) return existingFile;
+                if (filePath === 'Tutorials/00-Index.md' && callCount > 2) return existingFile;
                 return null;
             });
 
@@ -151,16 +151,16 @@ describe('TutorialManager', () => {
     describe('resetTutorials - overwrite=true (manual reset)', () => {
         it('should overwrite existing files when overwrite is true', async () => {
             const existingFile = new TFile();
-            existingFile.path = 'tutorials/00-Index.md';
+            existingFile.path = 'Tutorials/00-Index.md';
             existingFile.name = '00-Index.md';
 
             const tutorialDir = new TFolder();
-            tutorialDir.path = 'tutorials';
+            tutorialDir.path = 'Tutorials';
             (tutorialDir as any).children = [existingFile];
 
             mockVault.getAbstractFileByPath = vi.fn((filePath: string) => {
-                if (filePath === 'tutorials') return tutorialDir;
-                if (filePath === 'tutorials/00-Index.md') return existingFile;
+                if (filePath === 'Tutorials') return tutorialDir;
+                if (filePath === 'Tutorials/00-Index.md') return existingFile;
                 return null;
             });
 
@@ -181,11 +181,11 @@ describe('TutorialManager', () => {
 
         it('should create new files when overwrite is true', async () => {
             const tutorialDir = new TFolder();
-            tutorialDir.path = 'tutorials';
+            tutorialDir.path = 'Tutorials';
             (tutorialDir as any).children = [];
 
             mockVault.getAbstractFileByPath = vi.fn((filePath: string) => {
-                if (filePath === 'tutorials') return tutorialDir;
+                if (filePath === 'Tutorials') return tutorialDir;
                 return null;
             });
 
@@ -200,20 +200,20 @@ describe('TutorialManager', () => {
             const result = await tutorialManager.resetTutorials(true);
 
             expect(result).toBe(true);
-            expect(mockVault.create).toHaveBeenCalledWith('tutorials/00-Index.md', '# Index');
+            expect(mockVault.create).toHaveBeenCalledWith('Tutorials/00-Index.md', '# Index');
         });
 
         it('should handle "file already exists" error and update when overwrite is true', async () => {
             const existingFile = new TFile();
-            existingFile.path = 'tutorials/00-Index.md';
+            existingFile.path = 'Tutorials/00-Index.md';
 
             let callCount = 0;
             (mockVault.getAbstractFileByPath as any).mockImplementation((filePath: string) => {
                 callCount++;
-                if (filePath === 'tutorials') return new TFolder();
+                if (filePath === 'Tutorials') return new TFolder();
                 // Initially returns null, but file exists
                 // On later calls (after create fails), return the file
-                if (filePath === 'tutorials/00-Index.md' && callCount > 2) return existingFile;
+                if (filePath === 'Tutorials/00-Index.md' && callCount > 2) return existingFile;
                 return null;
             });
 
@@ -235,11 +235,11 @@ describe('TutorialManager', () => {
 
         it('should show notice when files are reset successfully', async () => {
             const tutorialDir = new TFolder();
-            tutorialDir.path = 'tutorials';
+            tutorialDir.path = 'Tutorials';
             (tutorialDir as any).children = [];
 
             (mockVault.getAbstractFileByPath as any).mockImplementation((filePath: string) => {
-                if (filePath === 'tutorials') return tutorialDir;
+                if (filePath === 'Tutorials') return tutorialDir;
                 return null;
             });
 
@@ -269,15 +269,15 @@ describe('TutorialManager', () => {
             };
 
             const existingFile = new TFile();
-            existingFile.path = 'tutorials/00-Index.md';
+            existingFile.path = 'Tutorials/00-Index.md';
 
             const tutorialDir = new TFolder();
-            tutorialDir.path = 'tutorials';
+            tutorialDir.path = 'Tutorials';
             (tutorialDir as any).children = [existingFile];
 
             (mockVault.getAbstractFileByPath as any).mockImplementation((filePath: string) => {
-                if (filePath === 'tutorials') return tutorialDir;
-                if (filePath === 'tutorials/00-Index.md') return existingFile;
+                if (filePath === 'Tutorials') return tutorialDir;
+                if (filePath === 'Tutorials/00-Index.md') return existingFile;
                 return null;
             });
 
@@ -301,11 +301,11 @@ describe('TutorialManager', () => {
     describe('error handling', () => {
         it('should handle folder creation errors gracefully', async () => {
             const tutorialDir = new TFolder();
-            tutorialDir.path = 'tutorials';
+            tutorialDir.path = 'Tutorials';
             let callCount = 0;
             (mockVault.getAbstractFileByPath as any).mockImplementation((filePath: string) => {
                 callCount++;
-                if (filePath === 'tutorials' && callCount > 1) return tutorialDir;
+                if (filePath === 'Tutorials' && callCount > 1) return tutorialDir;
                 return null;
             });
             (mockVault.createFolder as any).mockRejectedValue(new Error('Folder already exists'));
@@ -366,10 +366,10 @@ describe('TutorialManager', () => {
     describe('tutorialsExistInVault', () => {
         it('should return true when index file exists', async () => {
             const indexFile = new TFile();
-            indexFile.path = 'tutorials/00-Index.md';
+            indexFile.path = 'Tutorials/00-Index.md';
 
             (mockVault.getAbstractFileByPath as any).mockImplementation((filePath: string) => {
-                if (filePath === 'tutorials/00-Index.md') return indexFile;
+                if (filePath === 'Tutorials/00-Index.md') return indexFile;
                 return null;
             });
 

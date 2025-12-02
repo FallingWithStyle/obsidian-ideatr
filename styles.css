@@ -467,8 +467,17 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
 .model-status-indicator {
   display: inline-flex;
   align-items: center;
-  margin-left: auto;
   gap: 4px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Ensure Setting controlEl displays items inline */
+.setting-item .setting-item-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-direction: row;
 }
 
 .model-status-icon {

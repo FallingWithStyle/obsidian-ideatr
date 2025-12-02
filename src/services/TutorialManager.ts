@@ -15,7 +15,27 @@ export class TutorialManager {
      * Get the tutorial directory path in the vault
      */
     private getTutorialVaultPath(): string {
-        return 'tutorials';
+        return 'Tutorials';
+    }
+
+    /**
+     * Check if tutorials exist in either case (for backward compatibility)
+     */
+    private async findTutorialFolder(): Promise<TFolder | null> {
+        const capitalizedPath = 'Tutorials';
+        const lowercasePath = 'tutorials';
+        
+        const capitalizedDir = this.app.vault.getAbstractFileByPath(capitalizedPath);
+        if (capitalizedDir instanceof TFolder) {
+            return capitalizedDir;
+        }
+        
+        const lowercaseDir = this.app.vault.getAbstractFileByPath(lowercasePath);
+        if (lowercaseDir instanceof TFolder) {
+            return lowercaseDir;
+        }
+        
+        return null;
     }
 
     /**
@@ -51,9 +71,8 @@ export class TutorialManager {
         // If no tutorials found in plugin dir, try reading from vault as fallback
         // (in case they were manually placed there)
         if (tutorials.size === 0) {
-            const vaultPath = this.getTutorialVaultPath();
             try {
-                const tutorialDir = this.app.vault.getAbstractFileByPath(vaultPath);
+                const tutorialDir = await this.findTutorialFolder();
                 if (tutorialDir instanceof TFolder && tutorialDir.children) {
                     for (const child of tutorialDir.children) {
                         if (child instanceof TFile && child.name.endsWith('.md')) {
@@ -185,13 +204,15 @@ export class TutorialManager {
      */
     async deleteTutorials(): Promise<boolean> {
         try {
-            const vaultPath = this.getTutorialVaultPath();
-            const tutorialDir = this.app.vault.getAbstractFileByPath(vaultPath);
+            // Check for tutorials in either case (for backward compatibility)
+            const tutorialDir = await this.findTutorialFolder();
             
             if (!tutorialDir) {
                 new Notice('No tutorial files found to delete.');
                 return false;
             }
+            
+            const vaultPath = tutorialDir.path;
 
             // Get all files in the tutorial directory
             const files: TFile[] = [];
@@ -217,9 +238,8 @@ export class TutorialManager {
 
             // Try to delete the directory if it's empty
             try {
-                const dir = this.app.vault.getAbstractFileByPath(vaultPath);
-                if (dir instanceof TFolder && (!dir.children || dir.children.length === 0)) {
-                    await this.app.vault.delete(dir, true);
+                if (tutorialDir instanceof TFolder && (!tutorialDir.children || tutorialDir.children.length === 0)) {
+                    await this.app.vault.delete(tutorialDir, true);
                 }
             } catch {
                 // Directory might not be empty or deletion might fail, that's okay
@@ -235,12 +255,19 @@ export class TutorialManager {
     }
 
     /**
-     * Check if tutorials exist in vault
+     * Check if tutorials exist in vault (checks both capitalized and lowercase for backward compatibility)
      */
     async tutorialsExistInVault(): Promise<boolean> {
-        const vaultPath = this.getTutorialVaultPath();
-        const indexFile = this.app.vault.getAbstractFileByPath(`${vaultPath}/00-Index.md`);
-        return indexFile instanceof TFile;
+        const capitalizedPath = 'Tutorials/00-Index.md';
+        const lowercasePath = 'tutorials/00-Index.md';
+        
+        const capitalizedIndex = this.app.vault.getAbstractFileByPath(capitalizedPath);
+        if (capitalizedIndex instanceof TFile) {
+            return true;
+        }
+        
+        const lowercaseIndex = this.app.vault.getAbstractFileByPath(lowercasePath);
+        return lowercaseIndex instanceof TFile;
     }
 
     /**

@@ -11,7 +11,12 @@ export class TutorialService {
      * Open the tutorial index
      */
     async openIndex(): Promise<void> {
-        const indexPaths = ['tutorials/00-Index.md', 'Ideatr/tutorials/00-Index.md'];
+        const indexPaths = [
+            'Tutorials/00-Index.md',
+            'tutorials/00-Index.md', // backward compatibility
+            'Ideatr/Tutorials/00-Index.md',
+            'Ideatr/tutorials/00-Index.md',
+        ];
         
         for (const indexPath of indexPaths) {
             const file = this.app.vault.getAbstractFileByPath(indexPath);
@@ -43,7 +48,12 @@ export class TutorialService {
      * Check if tutorial files are available
      */
     async areTutorialsAvailable(): Promise<boolean> {
-        const indexPaths = ['tutorials/00-Index.md', 'Ideatr/tutorials/00-Index.md'];
+        const indexPaths = [
+            'Tutorials/00-Index.md',
+            'tutorials/00-Index.md', // backward compatibility
+            'Ideatr/Tutorials/00-Index.md',
+            'Ideatr/tutorials/00-Index.md',
+        ];
         
         for (const indexPath of indexPaths) {
             const file = this.app.vault.getAbstractFileByPath(indexPath);

@@ -32,6 +32,11 @@ export class LlamaService implements ILLMService {
     private modelManager: ModelManager;
     private pluginDir: string | null = null;
     private processHealthMonitor: ProcessHealthMonitor;
+    // Event handlers for cleanup
+    private stdoutHandler: ((data: Buffer) => void) | null = null;
+    private stderrHandler: ((data: Buffer) => void) | null = null;
+    private closeHandler: ((code: number | null, signal: NodeJS.Signals | null) => void) | null = null;
+    private errorHandler: ((error: Error) => void) | null = null;
 
     private constructor(settings: IdeatrSettings, pluginDir?: string) {
         this.settings = settings;
@@ -310,8 +315,18 @@ export class LlamaService implements ILLMService {
             let exitCode: number | null = null;
             let errorMessage: string = '';
             // Accumulate all stderr output for detailed logging on crash
+            // Limit buffer size to prevent unbounded memory growth
+            const MAX_BUFFER_SIZE = 1000; // Keep last 1000 lines
             const stderrBuffer: string[] = [];
             const stdoutBuffer: string[] = [];
+
+            const addToBuffer = (buffer: string[], line: string) => {
+                buffer.push(line);
+                // Keep only recent entries to prevent unbounded growth
+                if (buffer.length > MAX_BUFFER_SIZE) {
+                    buffer.shift();
+                }
+            };
 
             Logger.debug('Starting server process with args:', [
                 '-m', modelPath,
@@ -321,9 +336,10 @@ export class LlamaService implements ILLMService {
                 '--parallel', String(this.settings.concurrency)
             ]);
 
-            this.serverProcess.stdout?.on('data', (data) => {
+            // Store handlers so we can remove them later
+            this.stdoutHandler = (data: Buffer) => {
                 const output = data.toString();
-                stdoutBuffer.push(output);
+                addToBuffer(stdoutBuffer, output);
                 Logger.debug('[Llama Server stdout]', output.trim());
                 // Check for server listening (but model may still be loading)
                 if (output.includes('HTTP server listening') ||
@@ -341,11 +357,11 @@ export class LlamaService implements ILLMService {
                     Logger.debug('Server is ready! (Model fully loaded)');
                     new Notice('Llama AI Server Started');
                 }
-            });
+            };
 
-            this.serverProcess.stderr?.on('data', (data) => {
+            this.stderrHandler = (data: Buffer) => {
                 const errorOutput = data.toString();
-                stderrBuffer.push(errorOutput);
+                addToBuffer(stderrBuffer, errorOutput);
                 const outputLines = errorOutput.split('\n').filter((line: string) => line.trim());
 
                 // llama.cpp outputs all messages to stderr, including informational ones
@@ -430,9 +446,13 @@ export class LlamaService implements ILLMService {
                         serverStartError = new Error(`Server startup error: ${errorOutput.trim()}`);
                     }
                 }
-            });
+            };
 
-            this.serverProcess.on('close', (code, signal) => {
+            this.serverProcess.stdout?.on('data', this.stdoutHandler);
+            this.serverProcess.stderr?.on('data', this.stderrHandler);
+
+            // Store close handler for cleanup
+            this.closeHandler = (code: number | null, signal: NodeJS.Signals | null) => {
                 Logger.debug('Server process closed event fired', { code, signal });
                 processExited = true;
                 exitCode = code;
@@ -498,16 +518,27 @@ export class LlamaService implements ILLMService {
                         serverStartError = new Error('Server process was terminated (killed)');
                     }
                 }
-            });
+            };
 
-            // Check for immediate spawn errors
-            this.serverProcess.on('error', (error) => {
-                console.error('[LlamaService] Failed to spawn server process:', error);
+            this.serverProcess.on('close', this.closeHandler);
+
+            // Store error handler for cleanup
+            this.errorHandler = (error: Error) => {
+                Logger.error('[LlamaService] Failed to spawn server process:', error);
+                Logger.error('[LlamaService] Spawn error details:', {
+                    binaryPath: binaryPath,
+                    modelPath: modelPath,
+                    errorName: error.name,
+                    errorMessage: error.message,
+                    errorStack: error.stack
+                });
                 serverStartError = error;
                 this.serverProcess = null;
                 this.loadingState = 'not-loaded';
                 new Notice('Failed to start Llama AI Server - check binary path');
-            });
+            };
+
+            this.serverProcess.on('error', this.errorHandler);
 
             // Wait a bit for startup
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -570,7 +601,14 @@ export class LlamaService implements ILLMService {
             }
 
         } catch (error) {
-            console.error('[LlamaService] Failed to start Llama server:', error);
+            Logger.error('[LlamaService] Failed to start Llama server:', error);
+            Logger.error('[LlamaService] Startup error details:', {
+                binaryPath: binaryPath,
+                modelPath: modelPath,
+                errorName: error instanceof Error ? error.name : 'Unknown',
+                errorMessage: error instanceof Error ? error.message : String(error),
+                errorStack: error instanceof Error ? error.stack : undefined
+            });
             this.loadingState = 'not-loaded';
             this.serverProcess = null;
 
@@ -590,6 +628,27 @@ export class LlamaService implements ILLMService {
         if (this.serverProcess) {
             Logger.debug('Stopping Llama server...');
             this.clearIdleTimer();
+            
+            // Remove event listeners to prevent memory leaks
+            if (this.stdoutHandler && this.serverProcess.stdout) {
+                this.serverProcess.stdout.removeListener('data', this.stdoutHandler);
+            }
+            if (this.stderrHandler && this.serverProcess.stderr) {
+                this.serverProcess.stderr.removeListener('data', this.stderrHandler);
+            }
+            if (this.closeHandler) {
+                this.serverProcess.removeListener('close', this.closeHandler);
+            }
+            if (this.errorHandler) {
+                this.serverProcess.removeListener('error', this.errorHandler);
+            }
+            
+            // Clear handler references
+            this.stdoutHandler = null;
+            this.stderrHandler = null;
+            this.closeHandler = null;
+            this.errorHandler = null;
+            
             this.serverProcess.kill();
             this.serverProcess = null;
             this.processHealthMonitor.setProcess(null);

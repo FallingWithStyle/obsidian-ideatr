@@ -73,10 +73,10 @@ const TUTORIAL_MAP: Record<TutorialTopic, { file: string; anchor?: string }> = {
 export function getTutorialPath(topic: TutorialTopic): string {
     const mapping = TUTORIAL_MAP[topic];
     if (!mapping) {
-        return 'tutorials/00-Index.md';
+        return 'Tutorials/00-Index.md';
     }
     const anchor = mapping.anchor ? `#${mapping.anchor.replace('#', '')}` : '';
-    return `tutorials/${mapping.file}${anchor}`;
+    return `Tutorials/${mapping.file}${anchor}`;
 }
 
 /**
@@ -84,15 +84,20 @@ export function getTutorialPath(topic: TutorialTopic): string {
  */
 export async function openTutorial(app: App, topic: TutorialTopic): Promise<void> {
     const tutorialPath = getTutorialPath(topic);
+    const mapping = TUTORIAL_MAP[topic];
     
     // Try to find the tutorial file
     // First, check if it's in the plugin directory (for bundled tutorials)
     // Then check if it's in the vault root or a tutorials folder
+    // Check both capitalized and lowercase for backward compatibility
     
     const possiblePaths = [
-        tutorialPath,
+        tutorialPath, // Tutorials/XX-File.md (capitalized)
+        tutorialPath.replace('Tutorials/', 'tutorials/'), // tutorials/XX-File.md (lowercase, backward compat)
         `Ideatr/${tutorialPath}`,
-        `Ideatr/tutorials/${TUTORIAL_MAP[topic].file}`,
+        `Ideatr/${tutorialPath.replace('Tutorials/', 'tutorials/')}`,
+        `Ideatr/Tutorials/${mapping.file}`,
+        `Ideatr/tutorials/${mapping.file}`,
     ];
 
     for (const path of possiblePaths) {
@@ -103,8 +108,13 @@ export async function openTutorial(app: App, topic: TutorialTopic): Promise<void
         }
     }
 
-    // If file not found, try to open the index
-    const indexPaths = ['tutorials/00-Index.md', 'Ideatr/tutorials/00-Index.md'];
+    // If file not found, try to open the index (check both cases)
+    const indexPaths = [
+        'Tutorials/00-Index.md',
+        'tutorials/00-Index.md', // backward compatibility
+        'Ideatr/Tutorials/00-Index.md',
+        'Ideatr/tutorials/00-Index.md',
+    ];
     for (const indexPath of indexPaths) {
         const indexFile = app.vault.getAbstractFileByPath(indexPath);
         if (indexFile && indexFile instanceof TFile) {

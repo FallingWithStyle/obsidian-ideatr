@@ -114,31 +114,6 @@ export class FirstLaunchSetupModal extends Modal {
             const headerTitle = header.createDiv({ cls: 'model-header-title' });
             headerTitle.createEl('h3', { text: config.name });
             headerTitle.createEl('span', { text: config.badge, cls: 'model-badge' });
-            
-            // Download status and checksum indicator (will be populated asynchronously)
-            const statusIndicator = header.createDiv({ cls: 'model-status-indicator' });
-            statusIndicator.createSpan({ cls: 'model-status-text', text: 'Checking...' });
-            
-            // Check download status and verify integrity
-            (async () => {
-                const modelManager = new ModelManager(modelKey);
-                const isDownloaded = await modelManager.isModelDownloaded();
-                
-                if (isDownloaded) {
-                    // Verify integrity
-                    const isValid = await modelManager.verifyModelIntegrity();
-                    statusIndicator.empty();
-                    const statusIcon = statusIndicator.createSpan({ 
-                        cls: `model-status-icon ${isValid ? 'model-status-valid' : 'model-status-invalid'}`,
-                        attr: { title: isValid ? 'File verified' : 'File verification failed' }
-                    });
-                    statusIcon.innerHTML = isValid 
-                        ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
-                        : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-                } else {
-                    statusIndicator.empty();
-                }
-            })();
 
             // Description
             container.createEl('p', { text: config.description, cls: 'model-description' });
@@ -168,12 +143,15 @@ export class FirstLaunchSetupModal extends Modal {
                 cls: 'model-best-for'
             });
 
-            // Select button
-            new Setting(container)
-                .addButton(btn => btn
-                    .setButtonText(`Select ${config.name}`)
-                    .setCta()
-                    .onClick(async () => {
+            // Select button with checksum indicator
+            const selectButtonSetting = new Setting(container);
+            
+            selectButtonSetting
+                .addButton(btn => {
+                    btn
+                        .setButtonText(`Select ${config.name}`)
+                        .setCta()
+                        .onClick(async () => {
                         const modelKeyTyped = modelKey as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
                         
                         // Check system compatibility
@@ -199,7 +177,56 @@ export class FirstLaunchSetupModal extends Modal {
                         
                         this.settings.localModel = modelKeyTyped;
                         await this.startDownload(modelKey);
-                    }));
+                    });
+                    
+                    // Add status indicator to the left of button
+                    // Insert it before the button in the controlEl
+                    const controlEl = selectButtonSetting.controlEl;
+                    if (controlEl) {
+                        // Create indicator and insert it at the beginning
+                        const statusIndicator = document.createElement('div');
+                        statusIndicator.className = 'model-status-indicator';
+                        const checkingText = document.createElement('span');
+                        checkingText.className = 'model-status-text';
+                        checkingText.textContent = 'Checking...';
+                        statusIndicator.appendChild(checkingText);
+                        
+                        // Insert at the beginning of controlEl (before the button)
+                        controlEl.insertBefore(statusIndicator, controlEl.firstChild);
+                        
+                        // Check download status and verify integrity
+                        (async () => {
+                            try {
+                                const modelManager = new ModelManager(modelKey);
+                                const isDownloaded = await modelManager.isModelDownloaded();
+                                
+                                if (isDownloaded) {
+                                    // Verify integrity
+                                    const isValid = await modelManager.verifyModelIntegrity();
+                                    statusIndicator.innerHTML = '';
+                                    const statusIcon = document.createElement('span');
+                                    statusIcon.className = `model-status-icon ${isValid ? 'model-status-valid' : 'model-status-invalid'}`;
+                                    statusIcon.title = isValid ? 'File verified' : 'File verification failed';
+                                    statusIcon.innerHTML = isValid 
+                                        ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+                                        : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+                                    statusIndicator.appendChild(statusIcon);
+                                } else {
+                                    statusIndicator.innerHTML = '';
+                                }
+                            } catch (error) {
+                                // If verification fails due to error, show error icon
+                                console.error('Error verifying model integrity:', error);
+                                statusIndicator.innerHTML = '';
+                                const statusIcon = document.createElement('span');
+                                statusIcon.className = 'model-status-icon model-status-invalid';
+                                statusIcon.title = 'Verification error';
+                                statusIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+                                statusIndicator.appendChild(statusIcon);
+                            }
+                        })();
+                    }
+                });
         }
     }
 
