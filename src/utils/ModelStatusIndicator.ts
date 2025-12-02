@@ -1,3 +1,4 @@
+import type { App } from 'obsidian';
 import type { ILLMService } from '../types/classification';
 import type { IdeatrSettings } from '../settings';
 import { MODELS } from '../services/ModelManager';
@@ -166,19 +167,32 @@ function getCloudProviderStatus(settings: IdeatrSettings): ModelStatus {
 
 /**
  * Create a status indicator element
+ * @param llmService - The LLM service to check status for
+ * @param settings - Plugin settings
+ * @param _app - Optional Obsidian App instance (for potential future use with Obsidian's icon system)
  */
 export function createModelStatusIndicator(
     llmService: ILLMService | undefined,
-    settings: IdeatrSettings
+    settings: IdeatrSettings,
+    _app?: App
 ): HTMLElement {
     const status = getModelStatus(llmService, settings);
     const container = document.createElement('div');
     container.className = 'ideatr-model-status-indicator';
     
-    // Status dot
-    const dot = document.createElement('div');
-    dot.className = `ideatr-model-status-dot ideatr-model-status-${status.status}`;
-    container.appendChild(dot);
+    // Lightbulb icon using SVG for consistent styling
+    const iconEl = document.createElement('span');
+    iconEl.className = `ideatr-model-status-icon ideatr-model-status-${status.status}`;
+    
+    // Use SVG lightbulb icon (matches the sidebar icon)
+    iconEl.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21h6"></path>
+            <path d="M12 3a6 6 0 0 0 0 12c1.657 0 3-1.343 3-3V9a3 3 0 0 0-3-3 3 3 0 0 0-3 3v3c0 1.657 1.343 3 3 3z"></path>
+        </svg>
+    `;
+    
+    container.appendChild(iconEl);
 
     // Tooltip with model info
     const tooltip = document.createElement('div');

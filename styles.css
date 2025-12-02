@@ -83,20 +83,20 @@
 }
 
 .ideatr-ideate-button {
-  background-color: #d4af37;
-  color: #1a1a1a;
-  border-color: #b8941f;
+  background-color: #d4af37 !important;
+  color: #1a1a1a !important;
+  border-color: #b8941f !important;
   font-weight: 600;
 }
 
 .ideatr-ideate-button:hover {
-  background-color: #c9a52a;
-  border-color: #a0821a;
+  background-color: #c9a52a !important;
+  border-color: #a0821a !important;
 }
 
 .ideatr-ideate-button:active {
-  background-color: #b8941f;
-  border-color: #8a6f16;
+  background-color: #b8941f !important;
+  border-color: #8a6f16 !important;
 }
 
 .ideatr-ideate-button-disabled {
@@ -291,35 +291,51 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
   cursor: help;
 }
 
-.ideatr-model-status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 0 2px var(--background-primary);
+.ideatr-model-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
   transition: all 0.2s ease;
 }
 
-.ideatr-model-status-dot:hover {
+.ideatr-model-status-icon:hover {
   transform: scale(1.2);
+}
+
+.ideatr-model-status-icon svg {
+  width: 100%;
+  height: 100%;
+  transition: all 0.2s ease;
 }
 
 /* Status colors */
 .ideatr-model-status-connected {
-  background-color: #4caf50;
-  box-shadow: 0 0 0 2px var(--background-primary), 0 0 4px rgba(76, 175, 80, 0.5);
+  color: #4caf50;
+}
+
+.ideatr-model-status-connected svg {
+  filter: drop-shadow(0 0 2px rgba(76, 175, 80, 0.6));
 }
 
 .ideatr-model-status-loading {
-  background-color: #ffc107;
-  box-shadow: 0 0 0 2px var(--background-primary), 0 0 4px rgba(255, 193, 7, 0.5);
+  color: #ffc107;
   animation: pulse-yellow 2s ease-in-out infinite;
+}
+
+.ideatr-model-status-loading svg {
+  filter: drop-shadow(0 0 2px rgba(255, 193, 7, 0.6));
 }
 
 .ideatr-model-status-not-connected,
 .ideatr-model-status-error {
-  background-color: #f44336;
-  box-shadow: 0 0 0 2px var(--background-primary), 0 0 4px rgba(244, 67, 54, 0.5);
+  color: #f44336;
+}
+
+.ideatr-model-status-not-connected svg,
+.ideatr-model-status-error svg {
+  filter: drop-shadow(0 0 2px rgba(244, 67, 54, 0.6));
 }
 
 @keyframes pulse-yellow {
@@ -344,12 +360,32 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
   border-radius: 4px;
   font-size: 12px;
   color: var(--text-normal);
-  white-space: nowrap;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.2s ease;
-  z-index: 1000;
+  z-index: 10000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 150px;
+}
+
+/* Adjust tooltip position when in title container (right side) */
+.ideatr-capture-title-container .ideatr-model-status-indicator {
+  position: relative;
+}
+
+.ideatr-capture-title-container .ideatr-model-status-indicator:hover .ideatr-model-status-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.ideatr-capture-title-container .ideatr-model-status-tooltip::after {
+  left: auto;
+  right: 8px;
+  transform: none;
 }
 
 .ideatr-model-status-tooltip::after {
@@ -364,4 +400,37 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
 
 .ideatr-model-status-indicator:hover .ideatr-model-status-tooltip {
   opacity: 1;
+}
+
+/* Status bar specific styling */
+.status-bar-item .ideatr-model-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+  position: relative;
+}
+
+.status-bar-item .ideatr-model-status-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.status-bar-item .ideatr-model-status-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Adjust tooltip position for status bar (show above) */
+.status-bar-item .ideatr-model-status-tooltip {
+  bottom: auto;
+  top: 100%;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.status-bar-item .ideatr-model-status-tooltip::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--background-modifier-border);
 }
