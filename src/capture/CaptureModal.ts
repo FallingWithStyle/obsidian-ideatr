@@ -18,6 +18,7 @@ import { ClassificationResultsModal } from '../views/ClassificationResultsModal'
 import { Logger } from '../utils/logger';
 import { createHelpIcon } from '../utils/HelpIcon';
 import { createModelStatusIndicator } from '../utils/ModelStatusIndicator';
+import { createLightbulbIcon } from '../utils/iconUtils';
 
 /**
  * Format keyboard shortcut for display (e.g., "cmd+enter" -> "⌘ Enter")
@@ -185,14 +186,8 @@ export class CaptureModal extends Modal {
                 style: 'font-size: 0.85em; color: var(--text-muted); margin: 0; display: flex; align-items: center; gap: 0.4em;'
             }
         });
-        // Add SVG lightbulb icon (matches the model status indicator icon)
-        const lightbulbIcon = document.createElement('span');
-        lightbulbIcon.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-                <path d="M9 21h6"></path>
-                <path d="M12 3a6 6 0 0 0 0 12c1.657 0 3-1.343 3-3V9a3 3 0 0 0-3-3 3 3 0 0 0-3 3v3c0 1.657 1.343 3 3 3z"></path>
-            </svg>
-        `;
+        // Add lightbulb icon (matches the sidebar icon exactly using Obsidian's icon system)
+        const lightbulbIcon = createLightbulbIcon();
         lightbulbIcon.style.color = 'var(--text-muted)';
         helpParagraph.appendChild(lightbulbIcon);
         helpParagraph.appendText(' Tip: Access other Ideatr features via Command Palette (search "Ideatr")');

@@ -4,6 +4,7 @@ import type { IdeatrSettings } from '../settings';
 import { MODELS } from '../services/ModelManager';
 import { LlamaService } from '../services/LlamaService';
 import { HybridLLM } from '../services/HybridLLM';
+import { createStatusIcon } from './iconUtils';
 
 /**
  * Connection status for the AI model
@@ -180,18 +181,8 @@ export function createModelStatusIndicator(
     const container = document.createElement('div');
     container.className = 'ideatr-model-status-indicator';
     
-    // Lightbulb icon using SVG for consistent styling
-    const iconEl = document.createElement('span');
-    iconEl.className = `ideatr-model-status-icon ideatr-model-status-${status.status}`;
-    
-    // Use SVG lightbulb icon (matches the sidebar icon)
-    iconEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21h6"></path>
-            <path d="M12 3a6 6 0 0 0 0 12c1.657 0 3-1.343 3-3V9a3 3 0 0 0-3-3 3 3 0 0 0-3 3v3c0 1.657 1.343 3 3 3z"></path>
-        </svg>
-    `;
-    
+    // Status icon with appropriate color based on connection status
+    const iconEl = createStatusIcon(status.status, `ideatr-model-status-icon ideatr-model-status-${status.status}`);
     container.appendChild(iconEl);
 
     // Tooltip with model info

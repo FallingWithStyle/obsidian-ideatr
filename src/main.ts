@@ -15,6 +15,8 @@ import { ErrorLogService } from './services/ErrorLogService';
 import { TutorialManager } from './services/TutorialManager';
 import { createModelStatusIndicator } from './utils/ModelStatusIndicator';
 import { MemoryMonitor } from './utils/MemoryMonitor';
+import { IDEATR_ICON_ID, IDEATR_ICON_GREEN, IDEATR_ICON_YELLOW, IDEATR_ICON_RED, createPNGIconSVG } from './utils/iconUtils';
+import { PURPLE_ICON_BASE64, GREEN_ICON_BASE64, YELLOW_ICON_BASE64, RED_ICON_BASE64 } from './utils/iconData';
 import * as path from 'path';
 
 /**
@@ -40,6 +42,17 @@ export default class IdeatrPlugin extends Plugin {
 
     async onload() {
         await this.loadSettings();
+
+        // Global error handlers for leak detection
+        process.on('unhandledRejection', (reason, promise) => {
+            console.error('Ideatr: Unhandled Rejection at:', promise, 'reason:', reason);
+            Logger.error('Unhandled Rejection:', reason);
+        });
+
+        process.on('uncaughtException', (error) => {
+            console.error('Ideatr: Uncaught Exception:', error);
+            Logger.error('Uncaught Exception:', error);
+        });
 
         // Initialize Logger with app instance and debug mode setting
         await Logger.initialize(this.app, this.settings.debugMode);
@@ -130,16 +143,55 @@ export default class IdeatrPlugin extends Plugin {
                     callback: debugMainCallback
                 });
                 Logger.debug('Registered debug command directly in main.ts');
-                
+
                 // Note: Obsidian stores commands internally and they may not be immediately
                 // accessible via this.commands. The command is registered, but verification
                 // would require accessing Obsidian's internal command registry which is not
                 // part of the public API. The command will appear in the command palette.
             }
 
-            // Add ribbon icon
-            this.addRibbonIcon('lightbulb', 'Capture Idea', () => {
+            // Register custom Ideatr icons (purple for primary, colored for status)
+            this.addIcon(IDEATR_ICON_ID, createPNGIconSVG(`data:image/png;base64,${PURPLE_ICON_BASE64}`));
+            this.addIcon(IDEATR_ICON_GREEN, createPNGIconSVG(`data:image/png;base64,${GREEN_ICON_BASE64}`));
+            this.addIcon(IDEATR_ICON_YELLOW, createPNGIconSVG(`data:image/png;base64,${YELLOW_ICON_BASE64}`));
+            this.addIcon(IDEATR_ICON_RED, createPNGIconSVG(`data:image/png;base64,${RED_ICON_BASE64}`));
+            
+            // Use IDEATR_ICON_ID constant to ensure consistency across ribbon and other icons
+            this.addRibbonIcon(IDEATR_ICON_ID, 'Capture Idea', () => {
                 this.openCaptureModal();
+            });
+
+            // Add Force Kill command
+            this.addCommand({
+                id: 'force-kill-server',
+                name: 'Force Kill AI Server',
+                callback: () => {
+                    if (this.localLLMService) {
+                        this.localLLMService.stopServer();
+                        new Notice('AI Server stopped (Force Kill)');
+                    }
+                }
+            });
+
+            // Add Memory Report command
+            this.addCommand({
+                id: 'show-memory-report',
+                name: 'Show Memory Report',
+                callback: () => {
+                    if (this.memoryMonitor) {
+                        const report = this.memoryMonitor.getReport();
+                        console.log(report);
+                        // Also show a simplified notice
+                        const usage = this.memoryMonitor.getCurrentUsage();
+                        if (usage) {
+                            new Notice(`Heap: ${usage.heapUsedMB.toFixed(0)}MB | Ext: ${usage.externalMB.toFixed(0)}MB`);
+                        } else {
+                            new Notice('Memory report logged to console');
+                        }
+                    } else {
+                        new Notice('Memory monitoring is not enabled (requires Debug Mode)');
+                    }
+                }
             });
 
             Logger.debug('All commands registered successfully');
