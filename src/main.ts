@@ -131,13 +131,10 @@ export default class IdeatrPlugin extends Plugin {
                 });
                 Logger.debug('Registered debug command directly in main.ts');
                 
-                // Verify the command was actually registered
-                const registeredCommands = (this as any).commands || [];
-                const debugCmd = registeredCommands.find((c: any) => c.id === 'ideatr-debug-main');
-                Logger.debug('Verified debug command registration:', debugCmd ? 'FOUND' : 'NOT FOUND');
-                if (debugCmd) {
-                    Logger.debug('Debug command callback type:', typeof debugCmd.callback);
-                }
+                // Note: Obsidian stores commands internally and they may not be immediately
+                // accessible via this.commands. The command is registered, but verification
+                // would require accessing Obsidian's internal command registry which is not
+                // part of the public API. The command will appear in the command palette.
             }
 
             // Add ribbon icon
