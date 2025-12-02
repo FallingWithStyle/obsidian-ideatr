@@ -222,6 +222,51 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         containerEl.createEl('h2', { text: 'Ideatr Settings' });
 
+        // Beta notice
+        const betaNotice = containerEl.createDiv({ cls: 'ideatr-beta-notice' });
+        betaNotice.style.cssText = 'background: var(--background-modifier-border); padding: 1em; border-radius: 4px; margin-bottom: 1.5em; border-left: 3px solid var(--text-accent);';
+        
+        const betaTitle = betaNotice.createEl('strong', { text: '⚠️ Ideatr is in Beta' });
+        betaTitle.style.cssText = 'display: block; margin-bottom: 0.5em; color: var(--text-accent);';
+        
+        const betaText = betaNotice.createEl('p', { 
+            text: 'Ideatr is currently in beta. AI technology involves many moving parts, so things might not work as expected 100% of the time. We\'d love to hear from you!'
+        });
+        betaText.style.cssText = 'margin: 0.5em 0;';
+        
+        const betaActions = betaNotice.createDiv();
+        betaActions.style.cssText = 'margin-top: 0.75em; display: flex; gap: 0.5em; flex-wrap: wrap;';
+        
+        const reportButton = betaActions.createEl('a', { 
+            text: '📝 Report Bug or Request Feature',
+            href: '#ideatr-feedback-section'
+        });
+        reportButton.style.cssText = 'color: var(--text-accent); text-decoration: none; cursor: pointer;';
+        reportButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Scroll to feedback section after a short delay to ensure it's rendered
+            setTimeout(() => {
+                const feedbackSection = containerEl.querySelector('#ideatr-feedback-section');
+                if (feedbackSection) {
+                    feedbackSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        });
+        
+        const roadmapLink = betaActions.createEl('a', { 
+            text: '🗺️ View Planned Features',
+            href: 'https://github.com/FallingWithStyle/obsidian-ideatr#roadmap',
+            attr: { target: '_blank', rel: 'noopener' }
+        });
+        roadmapLink.style.cssText = 'color: var(--text-accent); text-decoration: none;';
+        
+        const githubLink = betaActions.createEl('a', { 
+            text: '🐛 GitHub Issues',
+            href: 'https://github.com/FallingWithStyle/obsidian-ideatr/issues',
+            attr: { target: '_blank', rel: 'noopener' }
+        });
+        githubLink.style.cssText = 'color: var(--text-accent); text-decoration: none;';
+
         // Initialize sections
         const llmSection = new LLMSettingsSection(this.app, this.plugin, this);
         const cloudAISection = new CloudAISettingsSection(this.app, this.plugin, this);
@@ -259,7 +304,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         projectElevationSection.display(containerEl);
 
         // Feedback Section
-        const feedbackTitle = containerEl.createDiv({ cls: 'settings-section-title' });
+        const feedbackTitle = containerEl.createDiv({ cls: 'settings-section-title', attr: { id: 'ideatr-feedback-section' } });
         feedbackTitle.createEl('h2', { text: 'Feedback & Support' });
         feedbackSection.display(containerEl);
 

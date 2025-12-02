@@ -2,6 +2,13 @@
 
 Welcome to the Ideatr tutorials! These guides will help you get the most out of Ideatr.
 
+> **⚠️ Ideatr is in Beta**
+> 
+> Ideatr is currently in beta. AI technology involves many moving parts, so things might not work as expected 100% of the time. We'd love to hear from you!
+> 
+> - **Report bugs or request features**: Use the "Submit Feedback" button in **Settings → Ideatr → Feedback & Support**, or visit [GitHub Issues](https://github.com/FallingWithStyle/obsidian-ideatr/issues)
+> - **View planned features**: Check out our [Roadmap](https://github.com/FallingWithStyle/obsidian-ideatr#roadmap) to see what's coming next
+
 ## Getting Started
 
 - [[01-Getting-Started|Getting Started]] - Quick start guide and first steps

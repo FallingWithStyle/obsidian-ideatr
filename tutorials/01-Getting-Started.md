@@ -2,6 +2,13 @@
 
 Welcome to Ideatr! This guide will help you get started with capturing and managing your ideas.
 
+> **⚠️ Ideatr is in Beta**
+> 
+> Ideatr is currently in beta. AI technology involves many moving parts, so things might not work as expected 100% of the time. We'd love to hear from you!
+> 
+> - **Report bugs or request features**: Use the "Submit Feedback" button in **Settings → Ideatr → Feedback & Support**, or visit [GitHub Issues](https://github.com/FallingWithStyle/obsidian-ideatr/issues)
+> - **View planned features**: Check out our [Roadmap](https://github.com/FallingWithStyle/obsidian-ideatr#roadmap) to see what's coming next
+
 ## What is Ideatr?
 
 Ideatr is a powerful idea management system for Obsidian that helps you:
