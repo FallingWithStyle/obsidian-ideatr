@@ -143,7 +143,7 @@ export class CaptureModal extends Modal {
         titleContainer.createEl('h2', { text: 'Capture Idea' });
         
         // Add model status indicator
-        const statusIndicator = createModelStatusIndicator(this.llmService, this.settings);
+        const statusIndicator = createModelStatusIndicator(this.llmService, this.settings, this.app);
         titleContainer.appendChild(statusIndicator);
 
         // Input textarea
@@ -180,12 +180,22 @@ export class CaptureModal extends Modal {
         const helpText = buttonContainer.createEl('div', {
             cls: 'ideatr-help-text'
         });
-        helpText.createEl('p', {
-            text: '💡 Tip: Access other Ideatr features via Command Palette (search "Ideatr")',
+        const helpParagraph = helpText.createEl('p', {
             attr: {
-                style: 'font-size: 0.85em; color: var(--text-muted); margin: 0;'
+                style: 'font-size: 0.85em; color: var(--text-muted); margin: 0; display: flex; align-items: center; gap: 0.4em;'
             }
         });
+        // Add SVG lightbulb icon (matches the model status indicator icon)
+        const lightbulbIcon = document.createElement('span');
+        lightbulbIcon.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                <path d="M9 21h6"></path>
+                <path d="M12 3a6 6 0 0 0 0 12c1.657 0 3-1.343 3-3V9a3 3 0 0 0-3-3 3 3 0 0 0-3 3v3c0 1.657 1.343 3 3 3z"></path>
+            </svg>
+        `;
+        lightbulbIcon.style.color = 'var(--text-muted)';
+        helpParagraph.appendChild(lightbulbIcon);
+        helpParagraph.appendText(' Tip: Access other Ideatr features via Command Palette (search "Ideatr")');
 
         // Button group (right side)
         const buttonGroup = buttonContainer.createEl('div', {
@@ -236,12 +246,6 @@ export class CaptureModal extends Modal {
         // Add help icon
         const saveHelpIcon = createHelpIcon(this.app, 'save-button', 'Learn about the Save button');
         saveContainer.appendChild(saveHelpIcon);
-
-        // Cancel button
-        const cancelButton = buttonGroup.createEl('button', {
-            text: 'Cancel'
-        });
-        cancelButton.addEventListener('click', () => this.close());
 
         // Focus input
         this.inputEl.focus();
@@ -382,44 +386,18 @@ export class CaptureModal extends Modal {
             // Success notification
             new Notice('Idea captured!');
 
-            // Trigger validation in background (non-blocking)
-            // Store category for later use in validation
-            let ideaCategory: IdeaCategory = '';
-
-            // Hide input and show classification UI if autoClassify is enabled
-            if (this.settings.autoClassify) {
-                this.classificationAbortController = new AbortController();
-                this.showClassificationInProgress(this.isFirstClassification);
-                this.isFirstClassification = false;
-                
-                // Trigger classification
-                this.classificationService.classifyIdea(idea.text)
-                    .then(classification => {
-                        if (this.classificationAbortController?.signal.aborted) {
-                            return; // Classification was cancelled
-                        }
-                        ideaCategory = classification.category;
-                        // Automatically accept classification without showing confirmation modal
-                        this.acceptClassification(classification, file);
-                        // Trigger validation after classification (to get category)
-                        this.triggerValidation(file, idea.text, ideaCategory);
-                    })
-                    .catch(error => {
-                        if (this.classificationAbortController?.signal.aborted) {
-                            return; // Classification was cancelled
-                        }
-                        console.error('Classification failed:', error);
-                        this.handleClassificationError(error, file, idea.text);
-                    });
-            } else {
-                // No classification, trigger validation immediately
-                this.triggerValidation(file, idea.text, '');
-                // Just close
-                this.close();
-                if (this.onSuccess) {
-                    this.onSuccess();
-                }
+            // Close modal immediately - don't wait for AI processing
+            this.close();
+            if (this.onSuccess) {
+                this.onSuccess();
             }
+
+            // Process AI tasks in background (non-blocking)
+            // This runs after the modal is closed, so the user can continue working
+            this.processBackgroundTasks(file, idea.text).catch(error => {
+                Logger.warn('Background processing failed:', error);
+                // Don't show error to user - it's background processing
+            });
         } catch (error) {
             this.showError('Failed to save idea. Please try again.');
             console.error('Error creating idea file:', error);
@@ -833,6 +811,37 @@ Response:`;
         if (this.onSuccess) {
             this.onSuccess();
         }
+    }
+
+    /**
+     * Process AI tasks in the background after file is saved
+     * This includes classification (if autoClassify is enabled) and validation
+     */
+    private async processBackgroundTasks(file: TFile, ideaText: string): Promise<void> {
+        let ideaCategory: IdeaCategory = '';
+
+        // Step 1: Classify if autoClassify is enabled
+        if (this.settings.autoClassify && this.classificationService.isAvailable()) {
+            try {
+                const classification = await this.classificationService.classifyIdea(ideaText);
+                ideaCategory = classification.category;
+                
+                // Update file with classification results (merge with duplicates)
+                const allRelated = [...new Set([...classification.related, ...this.duplicatePaths])];
+                await this.fileManager.updateIdeaFrontmatter(file, {
+                    category: classification.category,
+                    tags: classification.tags,
+                    related: allRelated
+                });
+            } catch (error) {
+                Logger.warn('Background classification failed:', error);
+                // Continue with validation even if classification fails
+            }
+        }
+
+        // Step 2: Trigger validation in background (non-blocking)
+        // This includes domain checks, web search, and name variant generation
+        await this.triggerValidation(file, ideaText, ideaCategory);
     }
 
     /**
