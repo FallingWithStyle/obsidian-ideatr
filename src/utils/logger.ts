@@ -6,7 +6,7 @@ import type { App, Vault } from 'obsidian';
  * - Debug mode is enabled in settings (primary method)
  * - Debug flag file exists in vault root (secondary, for developers)
  * 
- * To enable debug mode via file: Create `.ideatr-debug` in your vault root
+ * To enable debug mode via file: Create `.ideatr-debug` or `.ideatr-debug.md` in your vault root
  * Error logs are always shown (use console.error directly for critical errors)
  */
 export class Logger {
@@ -14,7 +14,10 @@ export class Logger {
     private static debugMode: boolean = false;
     private static debugFileChecked: boolean = false;
     private static debugFileExists: boolean = false;
-    private static readonly DEBUG_FILE_NAME = '.ideatr-debug';
+    private static readonly DEBUG_FILE_NAMES = ['.ideatr-debug', '.ideatr-debug.md'];
+    private static checkPromise: Promise<void> | null = null;
+    private static lastRecheckTime: number = 0;
+    private static readonly RECHECK_INTERVAL_MS = 5000; // Recheck every 5 seconds
 
     /**
      * Initialize the logger with app instance and debug mode setting
@@ -22,6 +25,9 @@ export class Logger {
     static initialize(app: App | null, debugMode: boolean = false): void {
         Logger.app = app;
         Logger.debugMode = debugMode;
+        // Reset check state to allow rechecking
+        Logger.debugFileChecked = false;
+        Logger.debugFileExists = false;
         // Check for debug file asynchronously (non-blocking)
         if (app?.vault) {
             Logger.checkDebugFile(app.vault).catch(() => {
@@ -31,22 +37,80 @@ export class Logger {
     }
 
     /**
+     * Force recheck of debug file (useful if file was created after plugin load)
+     */
+    static forceRecheckDebugFile(): void {
+        if (Logger.app?.vault) {
+            Logger.debugFileChecked = false;
+            Logger.debugFileExists = false;
+            Logger.checkDebugFile(Logger.app.vault).catch(() => {
+                // Silently fail
+            });
+        }
+    }
+
+    /**
      * Check if debug flag file exists in vault root
      * This is a simple way for developers to enable debug mode without changing settings
+     * Checks for both `.ideatr-debug` and `.ideatr-debug.md`
      */
     private static async checkDebugFile(vault: Vault): Promise<void> {
+        // If already checked and we have a pending promise, wait for it
+        if (Logger.debugFileChecked && Logger.checkPromise) {
+            await Logger.checkPromise;
+            return;
+        }
+
+        // If already checked, return early
         if (Logger.debugFileChecked) {
             return;
         }
 
-        try {
-            const debugFile = vault.getAbstractFileByPath(Logger.DEBUG_FILE_NAME);
-            Logger.debugFileExists = debugFile !== null;
-        } catch {
-            Logger.debugFileExists = false;
-        } finally {
-            Logger.debugFileChecked = true;
+        // Create a promise for this check
+        Logger.checkPromise = (async () => {
+            try {
+                // Check for both possible file names
+                for (const fileName of Logger.DEBUG_FILE_NAMES) {
+                    const debugFile = vault.getAbstractFileByPath(fileName);
+                    if (debugFile !== null) {
+                        Logger.debugFileExists = true;
+                        Logger.debugFileChecked = true;
+                        Logger.checkPromise = null;
+                        return;
+                    }
+                }
+                Logger.debugFileExists = false;
+            } catch {
+                Logger.debugFileExists = false;
+            } finally {
+                Logger.debugFileChecked = true;
+                Logger.checkPromise = null;
+            }
+        })();
+
+        await Logger.checkPromise;
+    }
+
+    /**
+     * Synchronously check if debug file exists (for immediate use)
+     */
+    private static checkDebugFileSync(): boolean {
+        if (!Logger.app?.vault) {
+            return false;
         }
+
+        try {
+            // Check for both possible file names synchronously
+            for (const fileName of Logger.DEBUG_FILE_NAMES) {
+                const debugFile = Logger.app.vault.getAbstractFileByPath(fileName);
+                if (debugFile !== null) {
+                    return true;
+                }
+            }
+        } catch {
+            // Silently fail
+        }
+        return false;
     }
 
     /**
@@ -59,18 +123,33 @@ export class Logger {
         }
 
         // Secondary: Check for debug flag file (developer convenience)
-        // Re-check file if not yet checked (for cases where vault loads after initialization)
+        // If not yet checked, do a synchronous check first for immediate result
         if (!Logger.debugFileChecked && Logger.app?.vault) {
+            const exists = Logger.checkDebugFileSync();
+            Logger.debugFileExists = exists;
+            Logger.debugFileChecked = true;
+            // Also trigger async check to ensure we catch any edge cases
             Logger.checkDebugFile(Logger.app.vault).catch(() => {
                 // Silently fail
             });
+            return exists;
         }
 
-        if (Logger.debugFileExists) {
-            return true;
+        // If already checked, use cached result
+        // Periodically recheck in case file was created/removed after plugin load
+        if (Logger.app?.vault) {
+            const now = Date.now();
+            if (now - Logger.lastRecheckTime > Logger.RECHECK_INTERVAL_MS) {
+                const currentlyExists = Logger.checkDebugFileSync();
+                if (currentlyExists !== Logger.debugFileExists) {
+                    // File state changed, update cache
+                    Logger.debugFileExists = currentlyExists;
+                }
+                Logger.lastRecheckTime = now;
+            }
         }
 
-        return false;
+        return Logger.debugFileExists;
     }
 
     /**
