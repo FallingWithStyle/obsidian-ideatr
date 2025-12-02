@@ -111,11 +111,15 @@ export class TFile {
     name: string = '';
     stat: { mtime: number } = { mtime: Date.now() };
 }
+export class TFolder {
+    path: string = '';
+    name: string = '';
+    children: (TFile | TFolder)[] = [];
+}
 export class Vault {
     getMarkdownFiles(): TFile[] { return []; }
     read(file: TFile): Promise<string> { return Promise.resolve(''); }
     modify(file: TFile, content: string): Promise<void> { return Promise.resolve(); }
-    getAbstractFileByPath(path: string): TFile | null { return null; }
     create(path: string, content: string): Promise<TFile> { return Promise.resolve(new TFile()); }
     createFolder(path: string): Promise<void> { return Promise.resolve(); }
     rename(file: TFile, newPath: string): Promise<void> { 
@@ -126,6 +130,8 @@ export class Vault {
     on(event: string, callback: (file: TFile) => void): () => void { return () => {}; }
     process(file: TFile, processor: (content: string) => string): Promise<void> { return Promise.resolve(); }
     cachedRead(file: TFile): Promise<string> { return Promise.resolve(''); }
+    delete(file: TFile | TFolder, force?: boolean): Promise<void> { return Promise.resolve(); }
+    getAbstractFileByPath(path: string): TFile | TFolder | null { return null; }
 }
 export class Workspace {
     getActiveFile(): TFile | null { return null; }
