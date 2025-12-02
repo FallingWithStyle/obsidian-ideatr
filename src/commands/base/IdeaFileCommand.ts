@@ -54,6 +54,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
     protected async getActiveIdeaFile(): Promise<TFile | null> {
         const file = this.context.app.workspace.getActiveFile();
         if (!file) {
+            this.debug('No active file found');
             new Notice('No active note. Please open an idea file.');
             return null;
         }
@@ -86,10 +87,10 @@ export abstract class IdeaFileCommand extends BaseCommand {
     ): Promise<void> {
         const content = await this.context.app.vault.read(file);
         const parsed = this.context.frontmatterParser.parse(content);
-        
+
         const updated = { ...parsed.frontmatter, ...updates };
         const newContent = this.context.frontmatterParser.build(updated, parsed.body);
-        
+
         await this.context.app.vault.modify(file, newContent);
     }
 
@@ -112,6 +113,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
      */
     protected checkLLMAvailability(): boolean {
         if (!this.context.llmService.isAvailable()) {
+            this.debug('LLM service not available');
             new Notice('AI service is not configured. Please set up AI in settings.');
             return false;
         }

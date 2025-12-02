@@ -42,8 +42,8 @@ export class ProjectElevationSettingsSection extends BaseSettingsSection {
                 }));
 
         new Setting(containerEl)
-            .setName('Create Devra Metadata')
-            .setDesc('Create .devra.json metadata file for future Devra integration (currently stubbed)')
+            .setName('Create Project Metadata')
+            .setDesc('Create project metadata file for future project management integrations (planned expansion)')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.elevationCreateDevraMetadata)
                 .onChange(async (value) => {

@@ -273,13 +273,20 @@ export class LlamaService implements ILLMService {
             this.serverProcess.stdout?.on('data', (data) => {
                 const output = data.toString();
                 Logger.debug('[Llama Server]', output.trim());
-                // Check for server ready messages (various formats)
+                // Check for server listening (but model may still be loading)
                 if (output.includes('HTTP server listening') ||
                     output.includes('server is listening') ||
                     output.includes('listening on http')) {
+                    // Server is listening but model may still be loading
+                    this.loadingState = 'loading';
+                    Logger.debug('Server HTTP endpoint is listening (model may still be loading)');
+                }
+                // Check for model fully loaded - this is when server is truly ready
+                if (output.includes('main: model loaded') ||
+                    output.includes('model loaded')) {
                     this.isServerReady = true;
                     this.loadingState = 'ready';
-                    Logger.debug('Server is ready!');
+                    Logger.debug('Server is ready! (Model fully loaded)');
                     new Notice('Llama AI Server Started');
                 }
             });
@@ -315,13 +322,21 @@ export class LlamaService implements ILLMService {
                     }
                 }
 
-                // Check for server ready messages in stderr (llama.cpp outputs info to stderr)
+                // Check for server listening in stderr (llama.cpp outputs info to stderr)
+                // Note: Server listening doesn't mean model is loaded yet
                 if (errorOutput.includes('HTTP server is listening') ||
                     errorOutput.includes('server is listening on http') ||
                     errorOutput.includes('main: server is listening')) {
+                    // Server is listening but model may still be loading
+                    this.loadingState = 'loading';
+                    Logger.debug('Server HTTP endpoint is listening (model may still be loading)');
+                }
+                // Check for model fully loaded - this is when server is truly ready
+                if (errorOutput.includes('main: model loaded') ||
+                    errorOutput.includes('model loaded')) {
                     this.isServerReady = true;
                     this.loadingState = 'ready';
-                    Logger.debug('Server is ready!');
+                    Logger.debug('Server is ready! (Model fully loaded)');
                     new Notice('Llama AI Server Started');
                 }
                 // Check for common startup errors (but not info messages)
@@ -795,12 +810,18 @@ export class LlamaService implements ILLMService {
         }
 
         // If server process exists but not ready, wait for it
+        // Model loading can take 30-60 seconds for large models, so wait up to 2 minutes
         if (this.serverProcess && !this.isServerReady) {
-            Logger.debug('Server process exists but not ready, waiting...');
+            Logger.debug('Server process exists but not ready, waiting for model to load...');
             let attempts = 0;
-            while (!this.isServerReady && attempts < 50) {
+            const maxAttempts = 1200; // 2 minutes (1200 * 100ms)
+            while (!this.isServerReady && attempts < maxAttempts) {
                 await new Promise(resolve => setTimeout(resolve, 100));
                 attempts++;
+                // Log progress every 10 seconds
+                if (attempts % 100 === 0) {
+                    Logger.debug(`Still waiting for model to load... (${attempts / 10}s)`);
+                }
             }
             if (this.isServerReady) {
                 return true;
@@ -815,14 +836,19 @@ export class LlamaService implements ILLMService {
             Logger.debug('Ensuring server is ready...');
             // startServer() now uses getEffectiveBinaryPath() and getEffectiveModelPath() directly
             await this.startServer();
-            // Wait for server to be ready
+            // Wait for server to be ready (model loading can take 30-60 seconds)
             let attempts = 0;
-            while (!this.isServerReady && attempts < 50) {
+            const maxAttempts = 1200; // 2 minutes (1200 * 100ms)
+            while (!this.isServerReady && attempts < maxAttempts) {
                 await new Promise(resolve => setTimeout(resolve, 100));
                 attempts++;
+                // Log progress every 10 seconds
+                if (attempts % 100 === 0) {
+                    Logger.debug(`Waiting for model to load... (${attempts / 10}s)`);
+                }
             }
             if (!this.isServerReady) {
-                throw new Error('Server started but did not become ready in time');
+                throw new Error('Server started but model did not load in time (2 minutes)');
             }
         }
 

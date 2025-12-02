@@ -28,7 +28,7 @@ Validation is the process of checking whether your idea is viable, unique, and w
 **Settings:**
 - Enable/disable in **Settings → Ideatr → Domain Settings**
 - Auto-check on capture (optional)
-- Configure Prospectr integration (if available)
+- Configure domain checking service integration (planned expansion)
 
 ### Existence Search
 

@@ -111,8 +111,34 @@ export class FirstLaunchSetupModal extends Modal {
 
             // Header with name and badge
             const header = container.createDiv({ cls: 'model-header' });
-            header.createEl('h3', { text: config.name });
-            header.createEl('span', { text: config.badge, cls: 'model-badge' });
+            const headerTitle = header.createDiv({ cls: 'model-header-title' });
+            headerTitle.createEl('h3', { text: config.name });
+            headerTitle.createEl('span', { text: config.badge, cls: 'model-badge' });
+            
+            // Download status and checksum indicator (will be populated asynchronously)
+            const statusIndicator = header.createDiv({ cls: 'model-status-indicator' });
+            statusIndicator.createSpan({ cls: 'model-status-text', text: 'Checking...' });
+            
+            // Check download status and verify integrity
+            (async () => {
+                const modelManager = new ModelManager(modelKey);
+                const isDownloaded = await modelManager.isModelDownloaded();
+                
+                if (isDownloaded) {
+                    // Verify integrity
+                    const isValid = await modelManager.verifyModelIntegrity();
+                    statusIndicator.empty();
+                    const statusIcon = statusIndicator.createSpan({ 
+                        cls: `model-status-icon ${isValid ? 'model-status-valid' : 'model-status-invalid'}`,
+                        attr: { title: isValid ? 'File verified' : 'File verification failed' }
+                    });
+                    statusIcon.innerHTML = isValid 
+                        ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+                        : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+                } else {
+                    statusIndicator.empty();
+                }
+            })();
 
             // Description
             container.createEl('p', { text: config.description, cls: 'model-description' });

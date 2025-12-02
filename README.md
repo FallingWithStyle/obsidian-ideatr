@@ -90,7 +90,7 @@ You can switch models anytime in **Settings → AI Configuration → Local AI Mo
 - **Status Management**: Track ideas through lifecycle (captured → validated → promoted → archived)
 - **Archive/Unarchive**: Organize ideas with archive functionality
 - **Codename Generation**: Generate memorable codenames for ideas
-- **Project Elevation**: Promote ideas to full projects with folder structure and Devra metadata
+- **Project Elevation**: Promote ideas to full projects with folder structure and project metadata (planned expansion for project management integration)
 
 ### Views & Visualization
 - **Dashboard View**: Comprehensive table view with:
@@ -207,7 +207,7 @@ Access settings via **Obsidian Settings → Ideatr**:
 
 - **LLM Settings**: Configure local Llama server or cloud AI providers
 - **Cloud AI Settings**: Set up API keys for cloud providers
-- **Domain Settings**: Configure domain checking (Prospectr integration available)
+- **Domain Settings**: Configure domain checking (planned expansion for domain checking service)
 - **Web Search Settings**: Configure Google/DuckDuckGo search
 - **Name Variant Settings**: Configure variant generation options
 - **Scaffold Settings**: Configure scaffold templates
@@ -225,8 +225,8 @@ Access settings via **Obsidian Settings → Ideatr**:
 1. Press your configured hotkey (default: `Cmd/Ctrl + I`) or click the lightbulb icon
 2. Type your idea in the modal
 3. Choose your capture method:
-   - **Save Button** (⌘ Enter / Ctrl+Enter): Saves the raw idea text as-is
-   - **Ideate Button** (⌥ Enter / Alt+Enter): Saves and automatically processes with AI:
+   - **Save Button** (⌥ Enter / Alt+Enter): Saves the raw idea text as-is
+   - **Ideate Button** (⌘ Enter / Ctrl+Enter): Saves and automatically processes with AI:
      - Auto-classifies with category and tags
      - Generates a title/subject line
      - Expands with related ideas, questions, and next steps
@@ -313,7 +313,7 @@ Your idea text goes here...
 3. Ideatr:
    - Moves the file from `Ideas/` to `Projects/`
    - Creates starter folder structure
-   - Prepares Devra-friendly metadata (`.devra.json`)
+   - Prepares project metadata (`.devra.json`) for future project management integrations
    - Updates idea status to "elevated"
 
 ## Project Structure
@@ -381,8 +381,8 @@ Your idea text goes here...
 - **ProjectElevationService**: Project promotion logic
 
 ### Integration Points
-- **Devra** (optional): Project elevation and metadata
-- **Prospectr** (optional): Domain checking service
+- **Project Management Integration** (planned): Project elevation and metadata for downstream project management tools
+- **Domain Checking Service** (planned): Domain availability checking service integration
 - **Web Search APIs**: Google Custom Search, DuckDuckGo
 
 ## Development
@@ -496,7 +496,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Related Projects (coming soon(tm))
 
-- **Devra**: Downstream project management and execution tool
-- **Prospectr**: Domain checking and availability service
+- **Project Management Tool**: Downstream project management and execution tool (planned expansion)
+- **Domain Checking Service**: Domain checking and availability service (planned expansion)
 
 ---

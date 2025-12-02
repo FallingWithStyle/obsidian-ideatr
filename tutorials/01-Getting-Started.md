@@ -29,8 +29,8 @@ You can always change your AI settings later in **Settings → Ideatr → AI Con
 1. Press your configured hotkey (default: `Cmd/Ctrl + I`) or click the lightbulb icon in the ribbon
 2. Type your idea in the modal
 3. Choose your capture method:
-   - **Save Button** (⌘ Enter): Saves the raw idea text as-is
-   - **Ideate Button** (⌥ Enter): Saves and automatically processes with AI (classifies with category/tags, generates title, expands)
+   - **Save Button** (⌥ Enter): Saves the raw idea text as-is
+   - **Ideate Button** (⌘ Enter): Saves and automatically processes with AI (classifies with category/tags, generates title, expands)
 
 ### 3. Where Are Ideas Stored?
 

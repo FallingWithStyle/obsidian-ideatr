@@ -8,7 +8,7 @@ import { Logger } from '../../utils/logger';
  * Provides common error handling and utility methods
  */
 export abstract class BaseCommand {
-    constructor(protected readonly context: CommandContext) {}
+    constructor(protected readonly context: CommandContext) { }
 
     /**
      * Execute the command
@@ -19,8 +19,8 @@ export abstract class BaseCommand {
      * Handle errors consistently across all commands
      */
     protected handleError(error: unknown, context?: string, userAction?: string): void {
-        console.error(`Failed to ${context || 'execute command'}:`, error);
-        
+        Logger.error(`Failed to ${context || 'execute command'}:`, error);
+
         if (this.context.errorLogService) {
             const errorObj = error instanceof Error ? error : new Error(String(error));
             this.context.errorLogService.logError(errorObj, context, userAction);
@@ -29,7 +29,7 @@ export abstract class BaseCommand {
         if (error instanceof UserFacingError) {
             new Notice(error.userMessage);
         } else {
-            const message = context 
+            const message = context
                 ? `Failed to ${context}. Please try again or check console for details.`
                 : 'Failed to execute command. Please try again or check console for details.';
             new Notice(message);

@@ -18,7 +18,7 @@ describe('CommandRegistry', () => {
 
     beforeEach(() => {
         registeredCommands = [];
-        
+
         mockPlugin = {
             addCommand: vi.fn((command) => {
                 registeredCommands.push(command);
@@ -57,7 +57,7 @@ describe('CommandRegistry', () => {
             {} as any, // exportService
             {} as any, // importService
             {} as any, // searchService
-            {} as any, // llmService
+            { isAvailable: () => true } as any, // llmService
             { logError: vi.fn() } as any, // errorLogService
             fileOrganizer
         );
@@ -210,8 +210,8 @@ describe('CommandRegistry', () => {
         it('should register all expected commands', () => {
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
-            // Count all registered commands (should be 30 based on current implementation)
-            expect(registeredCommands.length).toBe(30);
+            // Count all registered commands (should be 31 based on current implementation)
+            expect(registeredCommands.length).toBe(31);
         });
 
         it('should create command instances when callbacks are invoked', () => {

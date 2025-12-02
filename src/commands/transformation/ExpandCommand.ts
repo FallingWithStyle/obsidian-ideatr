@@ -28,6 +28,7 @@ export class ExpandCommand extends IdeaFileCommand {
 
         // Check if LLM service supports expansion
         if (!this.context.llmService.expandIdea) {
+            this.debug('LLM service does not support expandIdea');
             new Notice('Idea expansion is not supported by the current AI provider.');
             return;
         }

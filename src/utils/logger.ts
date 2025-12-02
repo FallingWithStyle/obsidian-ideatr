@@ -20,9 +20,9 @@ export class Logger {
     /**
      * Initialize the logger with app instance and debug mode setting
      */
-    static async initialize(app: App | null, debugMode: boolean = false): Promise<void> {
+    static async initialize(app: App | null, debugMode: boolean = true): Promise<void> {
         Logger.app = app;
-        Logger.debugMode = debugMode;
+        Logger.debugMode = debugMode; // Use parameter (defaults to true for troubleshooting)
         // Reset check state to allow rechecking
         Logger.debugFileChecked = false;
         Logger.debugFileExists = false;

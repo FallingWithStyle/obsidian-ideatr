@@ -13,7 +13,7 @@ export interface DomainCheckResult {
 }
 
 /**
- * Prospectr Service interface
+ * Domain Checking Service interface
  */
 export interface IProspectrService {
     /**
@@ -27,7 +27,7 @@ export interface IProspectrService {
     checkDomainsAvailability(domains: string[]): Promise<DomainCheckResult[]>;
 
     /**
-     * Check if Prospectr service is available
+     * Check if domain checking service is available
      */
     isAvailable(): boolean;
 }
@@ -60,7 +60,7 @@ export class DomainError extends Error {
 }
 
 export class ProspectrUnavailableError extends DomainError {
-    constructor(message: string = 'Prospectr service is not available') {
+    constructor(message: string = 'Domain checking service is not available') {
         super(message);
         this.name = 'ProspectrUnavailableError';
     }

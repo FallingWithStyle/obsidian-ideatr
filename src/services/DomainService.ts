@@ -4,8 +4,8 @@ import { Logger } from '../utils/logger';
 /**
  * DomainService - Orchestrates domain extraction and availability checking
  * 
- * Uses ProspectrService for domain availability checks (optional integration).
- * Gracefully handles Prospectr unavailability by returning error status in results.
+ * Uses domain checking service for availability checks (optional integration, planned expansion).
+ * Gracefully handles service unavailability by returning error status in results.
  */
 export class DomainService implements IDomainService {
     private prospectrService: IProspectrService;
@@ -60,7 +60,7 @@ export class DomainService implements IDomainService {
     /**
      * Check domain availability for an idea
      * 
-     * Extracts domains from text and checks availability using ProspectrService.
+     * Extracts domains from text and checks availability using domain checking service.
      * Only checks domains that are explicitly mentioned in the text.
      * 
      * @param text - Idea text to extract domains from
@@ -73,13 +73,13 @@ export class DomainService implements IDomainService {
             return [];
         }
 
-        // Use ProspectrService to check availability (optional integration)
+        // Use domain checking service to check availability (optional integration, planned expansion)
         if (!this.prospectrService.isAvailable()) {
             // Return results indicating domain checking is not available
             return domains.map(domain => ({
                 domain,
                 available: false,
-                error: 'Prospectr service is not available',
+                error: 'Domain checking service is not available',
                 checkedAt: new Date().toISOString()
             }));
         }

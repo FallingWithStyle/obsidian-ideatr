@@ -46,7 +46,7 @@ export class DomainCheckCommand extends IdeaFileCommand {
         const prospectrService = (this.context.domainService as any).prospectrService;
         if (!prospectrService || !prospectrService.isAvailable()) {
             if (this.context.settings.enableProspectr) {
-                new Notice('Domain checking is not configured. Please set up Prospectr in settings.');
+                new Notice('Domain checking is not configured. Please set up the domain checking service in settings.');
             } else {
                 new Notice('Domain checking is not available.');
             }

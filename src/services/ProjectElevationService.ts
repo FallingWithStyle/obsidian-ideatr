@@ -172,13 +172,13 @@ export class ProjectElevationService implements IProjectElevationService {
             await this.vault.create(`${projectPath}/README.md`, updatedContent);
             createdPaths.push(`${projectPath}/README.md`);
 
-            // Create Devra metadata file
+            // Create project metadata file
             try {
                 await this.handleDevraIntegration(projectPath, ideaFile);
                 createdPaths.push(`${projectPath}/.devra.json`);
             } catch (error) {
-                warnings.push('Failed to create Devra metadata file (non-fatal)');
-                Logger.warn('Devra integration failed:', error);
+                warnings.push('Failed to create project metadata file (non-fatal)');
+                Logger.warn('Project metadata integration failed:', error);
             }
 
             // Delete original file (last step)
@@ -279,10 +279,10 @@ export class ProjectElevationService implements IProjectElevationService {
     }
 
     /**
-     * Handle Devra integration (stubbed)
+     * Handle project metadata integration (stubbed)
      */
     private async handleDevraIntegration(projectPath: string, ideaFile: IdeaFile): Promise<void> {
-        // Only create Devra metadata if enabled in settings
+        // Only create project metadata if enabled in settings
         if (!this.settings.elevationCreateDevraMetadata) {
             return;
         }

@@ -25,8 +25,8 @@ export class DomainSettingsSection extends BaseSettingsSection {
 
         if (this.plugin.settings.enableProspectr) {
             new Setting(containerEl)
-                .setName('Prospectr URL')
-                .setDesc('URL of the Prospectr service for domain checking')
+                .setName('Domain Checking Service URL')
+                .setDesc('URL of the domain checking service (planned expansion)')
                 .addText(text => text
                     .setPlaceholder('http://localhost:3000')
                     .setValue(this.plugin.settings.prospectrUrl)

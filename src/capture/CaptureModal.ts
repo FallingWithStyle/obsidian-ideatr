@@ -224,7 +224,7 @@ export class CaptureModal extends Modal {
             this.ideateButton.addClass('ideatr-ideate-button-disabled');
             this.ideateButton.setAttribute('title', 'Ideate (AI service not available. Please configure AI in settings.)');
         } else {
-            const ideateShortcut = formatShortcut(this.settings.captureIdeateShortcut || 'ctrl+enter');
+            const ideateShortcut = formatShortcut(this.settings.captureIdeateShortcut || 'cmd+enter');
             this.ideateButton.setAttribute('title', `Ideate (${ideateShortcut})`);
             this.ideateButton.addEventListener('click', () => this.handleIdeate());
         }
@@ -239,7 +239,7 @@ export class CaptureModal extends Modal {
             text: 'Save',
             cls: 'mod-cta'
         });
-        const saveShortcut = formatShortcut(this.settings.captureSaveShortcut || 'cmd+enter');
+        const saveShortcut = formatShortcut(this.settings.captureSaveShortcut || 'alt+enter');
         this.saveButton.setAttribute('title', `Save (${saveShortcut})`);
         this.saveButton.addEventListener('click', () => this.handleSubmit());
         
@@ -253,7 +253,7 @@ export class CaptureModal extends Modal {
         // Handle keyboard shortcuts
         this.inputEl.addEventListener('keydown', (e) => {
             // Check Ideate shortcut
-            const ideateShortcut = this.settings.captureIdeateShortcut || 'ctrl+enter';
+            const ideateShortcut = this.settings.captureIdeateShortcut || 'cmd+enter';
             if (matchesShortcut(e, ideateShortcut)) {
                 e.preventDefault();
                 if (this.llmService?.isAvailable() && this.ideateButton && !this.ideateButton.disabled) {
@@ -263,7 +263,7 @@ export class CaptureModal extends Modal {
             }
             
             // Check Save shortcut
-            const saveShortcut = this.settings.captureSaveShortcut || 'cmd+enter';
+            const saveShortcut = this.settings.captureSaveShortcut || 'alt+enter';
             if (matchesShortcut(e, saveShortcut)) {
                 e.preventDefault();
                 this.handleSubmit();

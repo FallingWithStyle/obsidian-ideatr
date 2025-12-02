@@ -37,8 +37,8 @@ Welcome to the Ideatr tutorials! These guides will help you get the most out of 
 ### Keyboard Shortcuts
 
 - **Capture**: `Cmd/Ctrl + I` (default)
-- **Save**: `Cmd/Ctrl + Enter` (in capture modal)
-- **Ideate**: `Alt/Option + Enter` (in capture modal)
+- **Save**: `Alt/Option + Enter` (in capture modal)
+- **Ideate**: `Cmd/Ctrl + Enter` (in capture modal)
 - **Command Palette**: `Cmd/Ctrl + P`
 
 ### Getting Help

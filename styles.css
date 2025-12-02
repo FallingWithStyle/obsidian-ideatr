@@ -434,3 +434,52 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
   border-top-color: transparent;
   border-bottom-color: var(--background-modifier-border);
 }
+
+/* Model Status Indicators (for download verification) */
+.model-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 4px;
+}
+
+.model-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.model-status-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.model-status-valid {
+  color: #4caf50;
+}
+
+.model-status-invalid {
+  color: #f44336;
+}
+
+.model-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.model-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Settings section status indicator */
+.setting-item-description .model-status-icon {
+  margin-left: 6px;
+  vertical-align: middle;
+}

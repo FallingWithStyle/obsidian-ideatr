@@ -105,14 +105,14 @@ Ideas progress through several stages:
 3. Ideatr:
    - Moves file from `Ideas/` to `Projects/`
    - Creates starter folder structure
-   - Prepares Devra-friendly metadata (`.devra.json`)
+   - Prepares project metadata (`.devra.json`) for future project management integrations
    - Updates idea status to "elevated"
 
 **Settings:**
 - Enable/disable in **Settings → Ideatr → Project Elevation Settings**
 - Configure projects directory (default: `Projects/`)
 - Configure default folders
-- Enable Devra metadata creation
+- Enable project metadata creation (planned expansion for project management integration)
 
 ## Lifecycle Best Practices
 

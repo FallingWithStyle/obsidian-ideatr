@@ -4,7 +4,7 @@ Understanding when to use the **Save** button vs the **Ideate** button is key to
 
 ## Save vs Ideate: When to Use Each
 
-### Save Button (⌘ Enter / Ctrl+Enter)
+### Save Button (⌥ Enter / Alt+Enter)
 
 Use **Save** when you want to:
 - Capture a quick idea without processing
@@ -18,7 +18,7 @@ Use **Save** when you want to:
 - Sets basic frontmatter (type, status, created date)
 - No AI processing
 
-### Ideate Button (⌥ Enter / Alt+Enter)
+### Ideate Button (⌘ Enter / Ctrl+Enter)
 
 Use **Ideate** when you want to:
 - Immediately enrich your idea with AI
@@ -48,7 +48,7 @@ Use **Ideate** when you want to:
 ### Keyboard Shortcuts
 
 Both buttons have customizable keyboard shortcuts:
-- Default: `Cmd/Ctrl + Enter` for Save, `Alt/Option + Enter` for Ideate
+- Default: `Alt/Option + Enter` for Save, `Cmd/Ctrl + Enter` for Ideate
 - Customize in **Settings → Ideatr → Capture Modal Settings**
 - Tooltips show shortcuts when you hover over buttons
 

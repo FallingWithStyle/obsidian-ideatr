@@ -26,7 +26,7 @@ export interface IdeatrSettings {
     // Domain checking settings
     enableDomainCheck: boolean;
     autoCheckDomains: boolean;
-    enableProspectr: boolean; // Feature flag to show/hide Prospectr references
+    enableProspectr: boolean; // Feature flag to show/hide domain checking service references
     prospectrUrl: string;
     domainCheckTimeout: number; // milliseconds
 
@@ -76,7 +76,7 @@ export interface IdeatrSettings {
     // Project elevation settings
     enableElevation: boolean; // Enable project elevation feature
     elevationProjectsDirectory: string; // Directory for elevated projects (default: "Projects")
-    elevationCreateDevraMetadata: boolean; // Create Devra metadata file on elevation
+    elevationCreateDevraMetadata: boolean; // Create project metadata file on elevation (for future project management integration)
     elevationDefaultFolders: string; // Comma-separated list of default folders (e.g., "docs,notes,assets")
 
     // AI Model Management
@@ -123,7 +123,7 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
     // Domain checking
     enableDomainCheck: true,
     autoCheckDomains: false, // Manual by default (user can enable auto)
-    enableProspectr: false, // Hidden by default until Prospectr is live
+    enableProspectr: false, // Hidden by default until domain checking service is available
     prospectrUrl: 'http://localhost:3000',
     domainCheckTimeout: 10000, // 10 seconds
 
@@ -173,7 +173,7 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
     // Project elevation
     enableElevation: true,
     elevationProjectsDirectory: 'Projects',
-    elevationCreateDevraMetadata: true, // Create .devra.json metadata file
+    elevationCreateDevraMetadata: true, // Create .devra.json metadata file (for future project management integration)
     elevationDefaultFolders: 'docs,notes,assets', // Default folders to create
 
     // AI Model Management
@@ -203,8 +203,8 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
 
     // Capture Modal Keyboard Shortcuts
     captureIdeaHotkey: 'cmd+i', // Default: Cmd+I (Mac) or Ctrl+I (Windows/Linux) - users can customize
-    captureSaveShortcut: 'cmd+enter', // Default: Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) - users can customize
-    captureIdeateShortcut: 'alt+enter' // Default: Alt+Enter (works on both Mac and Windows/Linux)
+    captureSaveShortcut: 'alt+enter', // Default: Alt+Enter (Mac) or Alt+Enter (Windows/Linux) - users can customize
+    captureIdeateShortcut: 'cmd+enter' // Default: Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
 };
 
 export class IdeatrSettingTab extends PluginSettingTab {
@@ -238,92 +238,6 @@ export class IdeatrSettingTab extends PluginSettingTab {
         // Display sections
         llmSection.display(containerEl);
         cloudAISection.display(containerEl);
-
-        // Legacy LLM Provider setting (for backward compatibility)
-        containerEl.createEl('h3', { text: 'Legacy Settings' });
-        new Setting(containerEl)
-            .setName('LLM Provider (Legacy)')
-            .setDesc('Select the AI provider for classification (legacy setting)')
-            .addDropdown(dropdown => dropdown
-                .addOption('llama', 'Llama.cpp (Local)')
-                .addOption('none', 'None (Disable AI)')
-                .setValue(this.plugin.settings.llmProvider)
-                .onChange(async (value) => {
-                    this.plugin.settings.llmProvider = value as 'llama' | 'none';
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
-            .setName('Llama Server URL')
-            .setDesc('URL of your local Llama.cpp server (e.g., http://127.0.0.1:8080)')
-            .addText(text => text
-                .setPlaceholder('http://127.0.0.1:8080')
-                .setValue(this.plugin.settings.llamaServerUrl)
-                .onChange(async (value) => {
-                    this.plugin.settings.llamaServerUrl = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
-            .setName('Llama Server Binary')
-            .setDesc('Absolute path to the llama-server executable')
-            .addText(text => text
-                .setPlaceholder('/path/to/llama-server')
-                .setValue(this.plugin.settings.llamaBinaryPath)
-                .onChange(async (value) => {
-                    this.plugin.settings.llamaBinaryPath = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
-            .setName('Model Path')
-            .setDesc('Absolute path to the .gguf model file')
-            .addText(text => text
-                .setPlaceholder('/path/to/model.gguf')
-                .setValue(this.plugin.settings.modelPath)
-                .onChange(async (value) => {
-                    this.plugin.settings.modelPath = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl)
-            .setName('Server Port')
-            .setDesc('Port to run the local server on')
-            .addText(text => text
-                .setPlaceholder('8080')
-                .setValue(String(this.plugin.settings.llamaServerPort))
-                .onChange(async (value) => {
-                    const numValue = Number(value);
-                    if (!isNaN(numValue)) {
-                        this.plugin.settings.llamaServerPort = numValue;
-                        this.plugin.settings.llamaServerUrl = `http://127.0.0.1:${numValue}`;
-                        await this.plugin.saveSettings();
-                    }
-                }));
-
-        new Setting(containerEl)
-            .setName('API Timeout (ms)')
-            .setDesc('Maximum time to wait for AI response')
-            .addText(text => text
-                .setPlaceholder('5000')
-                .setValue(String(this.plugin.settings.llmTimeout))
-                .onChange(async (value) => {
-                    const numValue = Number(value);
-                    if (!isNaN(numValue)) {
-                        this.plugin.settings.llmTimeout = numValue;
-                        await this.plugin.saveSettings();
-                    }
-                }));
-
-        new Setting(containerEl)
-            .setName('Auto-Classify')
-            .setDesc('Automatically classify ideas upon capture')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.autoClassify)
-                .onChange(async (value) => {
-                    this.plugin.settings.autoClassify = value;
-                    await this.plugin.saveSettings();
-                }));
 
         // Validation Tools Section
         const validationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
