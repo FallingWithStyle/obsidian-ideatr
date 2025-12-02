@@ -45,7 +45,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
                     button.setDisabled(true);
                     button.setButtonText('Resetting...');
                     try {
-                        const success = await this.tutorialManager.resetTutorials();
+                        const success = await this.tutorialManager.resetTutorials(true); // overwrite=true
                         if (success) {
                             // Refresh settings to update status
                             setTimeout(() => this.refresh(), 1000);

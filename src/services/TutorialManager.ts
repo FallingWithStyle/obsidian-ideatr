@@ -76,8 +76,9 @@ export class TutorialManager {
 
     /**
      * Reset tutorials - copy from plugin directory to vault
+     * @param overwrite - If true, overwrite existing files. If false, skip existing files silently.
      */
-    async resetTutorials(): Promise<boolean> {
+    async resetTutorials(overwrite: boolean = false): Promise<boolean> {
         try {
             const tutorialFiles = await this.getBundledTutorialFiles();
             
@@ -123,20 +124,58 @@ export class TutorialManager {
                 const existingFile = this.app.vault.getAbstractFileByPath(filePath);
                 
                 if (existingFile && existingFile instanceof TFile) {
-                    // Update existing file
-                    await this.app.vault.modify(existingFile, content);
+                    // File already exists
+                    if (overwrite) {
+                        // User explicitly requested reset - overwrite the file
+                        await this.app.vault.modify(existingFile, content);
+                        copiedCount++;
+                    }
+                    // If overwrite is false, skip silently (for auto-load scenario)
                 } else {
-                    // Create new file
-                    await this.app.vault.create(filePath, content);
+                    // File doesn't exist, create it
+                    try {
+                        await this.app.vault.create(filePath, content);
+                        copiedCount++;
+                    } catch (createError) {
+                        // Handle case where file exists but wasn't found by getAbstractFileByPath
+                        // (could be a race condition or timing issue)
+                        const errorMessage = createError instanceof Error ? createError.message : String(createError);
+                        if (errorMessage.includes('already exists') || errorMessage.includes('File already exists')) {
+                            // File exists but wasn't detected - if overwrite is true, try to update it
+                            if (overwrite) {
+                                const foundFile = this.app.vault.getAbstractFileByPath(filePath);
+                                if (foundFile && foundFile instanceof TFile) {
+                                    await this.app.vault.modify(foundFile, content);
+                                    copiedCount++;
+                                }
+                            }
+                            // Otherwise skip silently
+                        } else {
+                            // Different error, re-throw it
+                            throw createError;
+                        }
+                    }
                 }
-                copiedCount++;
             }
 
-            new Notice(`Tutorials reset successfully! ${copiedCount} files restored.`);
+            if (copiedCount > 0) {
+                new Notice(`Tutorials reset successfully! ${copiedCount} files restored.`);
+            } else if (overwrite) {
+                // User clicked reset but no files were copied (all already existed and were skipped)
+                new Notice('All tutorial files already exist. No changes made.');
+            }
             return true;
         } catch (error) {
-            console.error('Error resetting tutorials:', error);
-            new Notice(`Failed to reset tutorials: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            // Don't log "file already exists" as an error - it's handled gracefully above
+            if (!errorMessage.includes('already exists') && !errorMessage.includes('File already exists')) {
+                console.error('Error resetting tutorials:', error);
+                if (overwrite) {
+                    // Only show error notice if user explicitly requested reset
+                    new Notice(`Failed to reset tutorials: ${errorMessage}`);
+                }
+            }
+            // For auto-load (overwrite=false), fail silently
             return false;
         }
     }
