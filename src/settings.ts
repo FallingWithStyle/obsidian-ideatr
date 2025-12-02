@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab } from 'obsidian';
 import type IdeatrPlugin from './main';
 import { LLMSettingsSection } from './settings/sections/LLMSettingsSection';
 import { CloudAISettingsSection } from './settings/sections/CloudAISettingsSection';

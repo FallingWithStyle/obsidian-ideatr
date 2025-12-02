@@ -115,6 +115,31 @@ export default class IdeatrPlugin extends Plugin {
 
             CommandRegistry.registerAll(this, this.pluginContext.commandContext);
 
+            // DEBUG: Add a test command directly in main.ts (only in debug mode)
+            if (Logger.isDebugEnabled()) {
+                const debugMainCallback = async () => {
+                    console.log('[Ideatr DEBUG MAIN] Command callback invoked!');
+                    console.log('[Ideatr DEBUG MAIN] Stack trace:', new Error().stack);
+                    Logger.info('DEBUG MAIN: Command executed successfully');
+                    new Notice('Ideatr Debug (Main) command executed - check console');
+                };
+                Logger.debug('Debug main callback type:', typeof debugMainCallback);
+                this.addCommand({
+                    id: 'ideatr-debug-main',
+                    name: 'Ideatr Debug (Main)',
+                    callback: debugMainCallback
+                });
+                Logger.debug('Registered debug command directly in main.ts');
+                
+                // Verify the command was actually registered
+                const registeredCommands = (this as any).commands || [];
+                const debugCmd = registeredCommands.find((c: any) => c.id === 'ideatr-debug-main');
+                Logger.debug('Verified debug command registration:', debugCmd ? 'FOUND' : 'NOT FOUND');
+                if (debugCmd) {
+                    Logger.debug('Debug command callback type:', typeof debugCmd.callback);
+                }
+            }
+
             // Add ribbon icon
             this.addRibbonIcon('lightbulb', 'Capture Idea', () => {
                 this.openCaptureModal();

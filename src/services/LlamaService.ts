@@ -47,6 +47,46 @@ export class LlamaService implements ILLMService {
     }
 
     /**
+     * Get recommended timeout based on model size and task type
+     * Larger models need more time, especially for complex tasks like expansion
+     */
+    private getRecommendedTimeout(taskType: 'classification' | 'completion' | 'expansion' = 'completion'): number {
+        const modelKey = this.settings.localModel || 'phi-3.5-mini';
+        const modelConfig = MODELS[modelKey];
+        
+        if (!modelConfig) {
+            // Fallback to default if model not found
+            return this.settings.llmTimeout;
+        }
+
+        // Base timeout on model size (MB)
+        // Small models (<5GB): 10-15s base
+        // Medium models (5-10GB): 20-30s base
+        // Large models (10-20GB): 30-45s base
+        // Very large models (>20GB): 60-90s base
+        let baseTimeout: number;
+        if (modelConfig.sizeMB < 5000) {
+            baseTimeout = 15000; // 15s for small models
+        } else if (modelConfig.sizeMB < 10000) {
+            baseTimeout = 30000; // 30s for medium models
+        } else if (modelConfig.sizeMB < 20000) {
+            baseTimeout = 45000; // 45s for large models
+        } else {
+            baseTimeout = 90000; // 90s for very large models
+        }
+
+        // Adjust for task complexity
+        // Expansion tasks are more complex and need more time
+        const taskMultiplier = taskType === 'expansion' ? 1.5 : taskType === 'completion' ? 1.2 : 1.0;
+        
+        const recommendedTimeout = Math.round(baseTimeout * taskMultiplier);
+        
+        // Use the higher of user setting or recommended timeout
+        // But respect user's setting if they've explicitly set a higher value
+        return Math.max(this.settings.llmTimeout, recommendedTimeout);
+    }
+
+    /**
      * Get or create singleton instance
      * Ensures only one LlamaService instance exists to prevent multiple server processes
      */
@@ -269,10 +309,22 @@ export class LlamaService implements ILLMService {
             let processExited = false;
             let exitCode: number | null = null;
             let errorMessage: string = '';
+            // Accumulate all stderr output for detailed logging on crash
+            const stderrBuffer: string[] = [];
+            const stdoutBuffer: string[] = [];
+
+            Logger.debug('Starting server process with args:', [
+                '-m', modelPath,
+                '--port', String(this.settings.llamaServerPort),
+                '--ctx-size', '2048',
+                '--n-gpu-layers', '99',
+                '--parallel', String(this.settings.concurrency)
+            ]);
 
             this.serverProcess.stdout?.on('data', (data) => {
                 const output = data.toString();
-                Logger.debug('[Llama Server]', output.trim());
+                stdoutBuffer.push(output);
+                Logger.debug('[Llama Server stdout]', output.trim());
                 // Check for server listening (but model may still be loading)
                 if (output.includes('HTTP server listening') ||
                     output.includes('server is listening') ||
@@ -293,6 +345,7 @@ export class LlamaService implements ILLMService {
 
             this.serverProcess.stderr?.on('data', (data) => {
                 const errorOutput = data.toString();
+                stderrBuffer.push(errorOutput);
                 const outputLines = errorOutput.split('\n').filter((line: string) => line.trim());
 
                 // llama.cpp outputs all messages to stderr, including informational ones
@@ -315,10 +368,10 @@ export class LlamaService implements ILLMService {
                     if (isError && (line.toLowerCase().includes('error') ||
                         line.toLowerCase().includes('failed') ||
                         line.toLowerCase().includes('fatal'))) {
-                        console.error('[Llama Server]', line.trim());
+                        Logger.error('[Llama Server stderr]', line.trim());
                     } else {
                         // Most llama.cpp output is informational, log at debug level
-                        Logger.debug('[Llama Server]', line.trim());
+                        Logger.debug('[Llama Server stderr]', line.trim());
                     }
                 }
 
@@ -379,18 +432,70 @@ export class LlamaService implements ILLMService {
                 }
             });
 
-            this.serverProcess.on('close', (code) => {
-                Logger.debug('Server exited with code', code);
+            this.serverProcess.on('close', (code, signal) => {
+                Logger.debug('Server process closed event fired', { code, signal });
                 processExited = true;
                 exitCode = code;
+                
+                // Log detailed information about the exit
+                const fullStderr = stderrBuffer.join('');
+                const fullStdout = stdoutBuffer.join('');
+                
+                Logger.error('[LlamaService] Server process exited', {
+                    exitCode: code,
+                    signal: signal,
+                    wasKilled: code === null,
+                    stderrLength: fullStderr.length,
+                    stdoutLength: fullStdout.length,
+                    binaryPath: binaryPath,
+                    modelPath: modelPath
+                });
+
+                // If process was killed or exited with error, log full output
+                if (code === null || (code !== 0 && code !== null)) {
+                    if (fullStderr.length > 0) {
+                        Logger.error('[LlamaService] Full stderr output from crashed server:');
+                        Logger.error('--- BEGIN STDERR ---');
+                        const stderrLines = fullStderr.split('\n');
+                        for (const line of stderrLines) {
+                            if (line.trim()) {
+                                Logger.error(line.trim());
+                            }
+                        }
+                        Logger.error('--- END STDERR ---');
+                    }
+                    
+                    if (fullStdout.length > 0) {
+                        Logger.debug('[LlamaService] Full stdout output from crashed server:');
+                        Logger.debug('--- BEGIN STDOUT ---');
+                        const stdoutLines = fullStdout.split('\n');
+                        for (const line of stdoutLines) {
+                            if (line.trim()) {
+                                Logger.debug(line.trim());
+                            }
+                        }
+                        Logger.debug('--- END STDOUT ---');
+                    }
+
+                    // If we don't have an error message yet, use the stderr output
+                    if (!errorMessage && fullStderr.length > 0) {
+                        errorMessage = fullStderr.trim();
+                    }
+                }
+
                 this.serverProcess = null;
                 this.isServerReady = false;
                 this.loadingState = 'not-loaded';
                 this.lastUseTime = 0;
                 if (code !== 0 && code !== null) {
-                    console.error(`[LlamaService] Server exited with error code ${code}`);
+                    Logger.error(`[LlamaService] Server exited with error code ${code}`);
                     if (!serverStartError) {
                         serverStartError = new Error(`Server process exited with code ${code}`);
+                    }
+                } else if (code === null) {
+                    Logger.error(`[LlamaService] Server process was killed (SIGKILL or similar)`);
+                    if (!serverStartError) {
+                        serverStartError = new Error('Server process was terminated (killed)');
                     }
                 }
             });
@@ -926,8 +1031,12 @@ export class LlamaService implements ILLMService {
                 }
 
                 // Use requestUrl instead of fetch to bypass CORS restrictions in Electron
+                // Use dynamic timeout based on model size for completion
+                // Check if this is an expansion task by looking at n_predict (expansion uses more tokens)
+                const isExpansion = (options?.n_predict || 256) > 1000;
+                const timeout = this.getRecommendedTimeout(isExpansion ? 'expansion' : 'completion');
                 const timeoutPromise = new Promise<never>((_, reject) => {
-                    setTimeout(() => reject(new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`)), this.settings.llmTimeout);
+                    setTimeout(() => reject(new APITimeoutError(`API request timed out after ${timeout}ms`)), timeout);
                 });
 
                 let response;

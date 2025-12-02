@@ -35,6 +35,44 @@ export class Logger {
         if (Logger.isDebugEnabled()) {
             console.log('[Ideatr] Logger initialized in DEBUG mode');
         }
+        
+        // Log deploy timestamp if available (async, non-blocking)
+        Logger.logDeployTimestamp().catch(() => {
+            // Silently fail
+        });
+    }
+
+    /**
+     * Log the deploy timestamp if available
+     */
+    private static async logDeployTimestamp(): Promise<void> {
+        try {
+            if (!Logger.app?.vault) {
+                return;
+            }
+
+            // The deploy-timestamp.json file is in the plugin directory
+            // Path: .obsidian/plugins/ideatr/deploy-timestamp.json
+            const timestampPath = '.obsidian/plugins/ideatr/deploy-timestamp.json';
+            
+            // Check if file exists
+            const exists = await Logger.app.vault.adapter.exists(timestampPath);
+            if (!exists) {
+                Logger.debug('Deploy timestamp file not found (this is normal for first deploy)');
+                return;
+            }
+
+            // Read the file
+            const content = await Logger.app.vault.adapter.read(timestampPath);
+            const timestampData = JSON.parse(content);
+            
+            const deployedAt = timestampData.deployedAtReadable || timestampData.deployedAt;
+            console.log(`[Ideatr] Last deployed: ${deployedAt}`);
+            Logger.info(`Last deployed: ${deployedAt}`);
+        } catch (error) {
+            // Silently fail - deploy timestamp is optional
+            Logger.debug('Could not read deploy timestamp:', error);
+        }
     }
 
     /**
@@ -95,7 +133,11 @@ export class Logger {
     /**
      * Check if debug mode is enabled
      */
-    private static isDebugEnabled(): boolean {
+    /**
+     * Check if debug mode is enabled
+     * Public method to allow other parts of the codebase to check debug status
+     */
+    static isDebugEnabled(): boolean {
         // Primary: Check explicit debug mode setting (user-controlled)
         if (Logger.debugMode) {
             return true;

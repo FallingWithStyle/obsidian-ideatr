@@ -226,6 +226,26 @@ describe('CommandRegistry', () => {
             }).not.toThrow();
         });
 
+        it('should log when callback is invoked', async () => {
+            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+            
+            CommandRegistry.registerAll(mockPlugin, mockContext);
+
+            const expandCommand = registeredCommands.find(cmd => cmd.id === 'expand-idea');
+            expect(expandCommand).toBeDefined();
+            expect(expandCommand?.callback).toBeDefined();
+
+            // Invoke the callback
+            await expandCommand?.callback();
+
+            // Check that the callback was invoked
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('[Ideatr] Callback invoked for: Expand Idea')
+            );
+
+            consoleSpy.mockRestore();
+        });
+
         it('should register commands with unique IDs', () => {
             CommandRegistry.registerAll(mockPlugin, mockContext);
 

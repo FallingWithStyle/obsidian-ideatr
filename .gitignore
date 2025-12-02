@@ -8,4 +8,5 @@ coverage
 .idea
 binaries/
 .ideatr-debug
+deploy-timestamp.json
 

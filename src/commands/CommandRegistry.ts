@@ -1,4 +1,5 @@
 import type { Plugin } from 'obsidian';
+import { Notice } from 'obsidian';
 import { CommandContext } from './base/CommandContext';
 import { CaptureCommand } from './capture/CaptureCommand';
 import { DomainCheckCommand } from './validation/DomainCheckCommand';
@@ -40,34 +41,91 @@ import { Logger } from '../utils/logger';
 export class CommandRegistry {
     /**
      * Create a command callback that safely executes a command
+     * Obsidian supports both sync and async callbacks
      */
-    private static createCommandCallback(commandName: string, operation: () => Promise<void>): () => Promise<void> {
-        return async () => {
-            // Use console.log here to ensure it always shows, even if Logger isn't working
+    private static createCommandCallback(commandName: string, operation: () => Promise<void>): () => void | Promise<void> {
+        // Return an async function that Obsidian can call
+        // Obsidian should handle the Promise automatically
+        const callback = async () => {
+            // Use console.log for critical invocation logging (always visible)
             console.log(`[Ideatr] Callback invoked for: ${commandName}`);
+            Logger.info(`Callback invoked for: ${commandName}`);
+            Logger.debug(`Callback stack trace:`, new Error().stack);
             try {
+                Logger.debug(`About to call operation for: ${commandName}`);
                 await CommandRegistry.safeExecute(commandName, operation);
+                Logger.debug(`Operation completed for: ${commandName}`);
             } catch (error) {
                 console.error(`[Ideatr] Callback error for ${commandName}:`, error);
                 Logger.error(`Callback error for ${commandName}:`, error);
             }
         };
+        
+        // Verify the callback is a function
+        if (typeof callback !== 'function') {
+            console.error(`[Ideatr] ERROR: Callback for ${commandName} is not a function! Type: ${typeof callback}`);
+            Logger.error(`Callback for ${commandName} is not a function! Type: ${typeof callback}`);
+        }
+        
+        return callback;
     }
 
     /**
      * Safely execute a command with error handling
      */
     private static async safeExecute(commandName: string, operation: () => Promise<void>): Promise<void> {
-        // Use console.log here to ensure it always shows, even if Logger isn't working
+        // Use console.log for critical start logging (always visible)
         console.log(`[Ideatr] Starting command: ${commandName}`);
         Logger.info(`Starting command: ${commandName}`);
+        
+        // Show visual loading indicator with spinner
+        // Create notice first - this should always work
+        let loadingNotice: Notice | null = null;
         try {
+            loadingNotice = new Notice(`⏳ Processing ${commandName}...`, 0); // 0 = don't auto-hide
+            console.log(`[Ideatr] Created loading notice for: ${commandName}`);
+            Logger.debug(`Created loading notice for: ${commandName}`);
+            
+            // Try to add spinner styling (optional enhancement)
+            try {
+                const noticeEl = (loadingNotice as any).noticeEl as HTMLElement;
+                if (noticeEl) {
+                    // Add spinner class for CSS animation
+                    const spinnerSpan = noticeEl.createSpan({ cls: 'ideatr-loading-spinner' });
+                    spinnerSpan.textContent = '⏳';
+                    spinnerSpan.style.marginRight = '6px';
+                    spinnerSpan.style.display = 'inline-block';
+                }
+            } catch (spinnerError) {
+                // If we can't access notice element, that's okay - the emoji will still show
+                Logger.debug(`Could not add spinner to notice (non-critical):`, spinnerError);
+            }
+        } catch (noticeError) {
+            // If Notice creation fails, log it but continue
+            console.error(`[Ideatr] Failed to create loading notice for ${commandName}:`, noticeError);
+            Logger.error(`Failed to create loading notice for ${commandName}:`, noticeError);
+        }
+        
+        try {
+            Logger.debug(`Executing operation for: ${commandName}`);
             await operation();
             console.log(`[Ideatr] Finished command: ${commandName}`);
             Logger.info(`Finished command: ${commandName}`);
+            
+            // Hide loading notice and show success
+            if (loadingNotice) {
+                loadingNotice.hide();
+            }
+            new Notice(`✓ ${commandName} completed`, 2000);
         } catch (error) {
             console.error(`[Ideatr] Command '${commandName}' failed:`, error);
             Logger.error(`Command '${commandName}' failed:`, error);
+            
+            // Hide loading notice (error notice will be shown by BaseCommand.handleError)
+            if (loadingNotice) {
+                loadingNotice.hide();
+            }
+            
             // We don't show a Notice here because BaseCommand.handleError might have already shown one.
             // But if the constructor failed, BaseCommand wasn't instantiated.
             // So we should check if it's a critical failure that wasn't handled.
@@ -79,12 +137,16 @@ export class CommandRegistry {
      * Register all commands with the plugin
      */
     static registerAll(plugin: Plugin, context: CommandContext): void {
+        console.log('[Ideatr] Registering commands...');
+        
         // Capture commands
+        const captureCallback = CommandRegistry.createCommandCallback('Capture Idea', () => new CaptureCommand(context).execute());
         plugin.addCommand({
             id: 'capture-idea',
             name: 'Capture Idea',
-            callback: CommandRegistry.createCommandCallback('Capture Idea', () => new CaptureCommand(context).execute())
+            callback: captureCallback
         });
+        console.log('[Ideatr] Registered: Capture Idea');
 
         // Validation commands
         plugin.addCommand({
@@ -118,11 +180,14 @@ export class CommandRegistry {
         });
 
         // Transformation commands
+        const nameVariantCallback = CommandRegistry.createCommandCallback('Generate Name Variants', () => new NameVariantCommand(context).execute());
+        Logger.debug('Created nameVariantCallback, type:', typeof nameVariantCallback);
         plugin.addCommand({
             id: 'generate-name-variants',
             name: 'Generate Name Variants',
-            callback: CommandRegistry.createCommandCallback('Generate Name Variants', () => new NameVariantCommand(context).execute())
+            callback: nameVariantCallback
         });
+        Logger.debug('Registered: Generate Name Variants');
 
         plugin.addCommand({
             id: 'generate-scaffold',
@@ -136,11 +201,15 @@ export class CommandRegistry {
             callback: CommandRegistry.createCommandCallback('Generate Mutations', () => new MutationCommand(context).execute())
         });
 
+        const expandCallback = CommandRegistry.createCommandCallback('Expand Idea', () => new ExpandCommand(context).execute());
+        Logger.debug('Created expandCallback, type:', typeof expandCallback, 'is function:', typeof expandCallback === 'function');
         plugin.addCommand({
             id: 'expand-idea',
             name: 'Expand Idea',
-            callback: CommandRegistry.createCommandCallback('Expand Idea', () => new ExpandCommand(context).execute())
+            callback: expandCallback
         });
+        Logger.debug('Registered: Expand Idea, callback stored:', typeof expandCallback);
+        console.log('[Ideatr] Registered: Expand Idea');
 
         plugin.addCommand({
             id: 'reorganize-idea',
@@ -272,6 +341,22 @@ export class CommandRegistry {
             name: 'Show Idea Statistics',
             callback: CommandRegistry.createCommandCallback('Show Idea Statistics', () => new IdeaStatsCommand(context).execute())
         });
+
+        // DEBUG: Add a test command via CommandRegistry (only in debug mode)
+        if (Logger.isDebugEnabled()) {
+            const debugCallback = CommandRegistry.createCommandCallback('Ideatr Debug (Registry)', async () => {
+                console.log('[Ideatr DEBUG REGISTRY] Command operation executed!');
+                Logger.info('DEBUG REGISTRY: Command executed successfully');
+                new Notice('Ideatr Debug (Registry) command executed - check console');
+            });
+            Logger.debug('Debug registry callback type:', typeof debugCallback);
+            plugin.addCommand({
+                id: 'ideatr-debug-registry',
+                name: 'Ideatr Debug (Registry)',
+                callback: debugCallback
+            });
+            Logger.debug('Registered debug command via CommandRegistry');
+        }
     }
 }
 

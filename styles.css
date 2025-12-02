@@ -221,9 +221,12 @@
 
 /* Fix z-index for frontmatter dropdowns to prevent them from appearing over modals */
 /* Obsidian modals typically use z-index around 1000-2000, so frontmatter dropdowns should be lower */
+/* IMPORTANT: Only target frontmatter-specific elements, NOT the command palette */
 
 /* Target Obsidian's frontmatter properties panel dropdowns and suggestions */
 /* Set a lower z-index to ensure they don't appear over modals */
+/* Only target elements that are direct descendants of metadata-properties to avoid affecting command palette */
+.metadata-properties > .suggestion-container,
 .metadata-properties .suggestion-container,
 .metadata-properties .suggestion,
 .metadata-properties .dropdown,
@@ -244,12 +247,43 @@
   z-index: 999 !important;
 }
 
+/* Explicitly exclude command palette from our z-index rules */
+/* Command palette uses .prompt class - ensure it's never affected */
+.prompt,
+.prompt *,
+.prompt .suggestion-container,
+.prompt .suggestion,
+.prompt .suggestion-item,
+.prompt .suggestion-list,
+.prompt .suggestion-content,
+.prompt-results,
+.prompt-results *,
+.prompt-input-container,
+.prompt-input {
+  z-index: auto !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure command palette modal and all its children are above everything */
+.modal-container:has(.prompt),
+.modal-container:has(.prompt) .prompt,
+.modal-container:has(.prompt) .prompt * {
+  z-index: 3000 !important;
+  pointer-events: auto !important;
+}
+
 /* Ensure modals and modal overlays are above frontmatter dropdowns */
 .modal-container,
 .modal,
 .modal-container-overlay,
 .modal-bg {
   z-index: 2000 !important;
+}
+
+/* Command palette needs to be on top and fully functional */
+.modal-container .prompt,
+.prompt {
+  z-index: 3000 !important;
 }
 
 /* Ensure modal content is also above frontmatter dropdowns */
@@ -274,14 +308,8 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
   z-index: 500 !important;
 }
 
-/* Sibling selectors for dropdowns that appear after metadata-properties */
-/* These might be appended to the DOM in different locations */
-.metadata-properties ~ .suggestion-container,
-.metadata-properties ~ .suggestion,
-.metadata-properties ~ .dropdown,
-.metadata-properties ~ .menu {
-  z-index: 999 !important;
-}
+/* REMOVED: Sibling selectors were too broad and interfered with command palette */
+/* If needed, use more specific selectors that only target frontmatter-related elements */
 
 /* Model Status Indicator */
 .ideatr-model-status-indicator {
@@ -482,4 +510,19 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
 .setting-item-description .model-status-icon {
   margin-left: 6px;
   vertical-align: middle;
+}
+
+/* Loading spinner for command execution */
+.ideatr-loading-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
