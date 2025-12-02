@@ -13,6 +13,8 @@ import { PluginContext } from './core/PluginContext';
 import { NameVariantService } from './services/NameVariantService';
 import { ErrorLogService } from './services/ErrorLogService';
 import { TutorialManager } from './services/TutorialManager';
+import { createModelStatusIndicator } from './utils/ModelStatusIndicator';
+import { MemoryMonitor } from './utils/MemoryMonitor';
 import * as path from 'path';
 
 /**
@@ -23,12 +25,15 @@ export default class IdeatrPlugin extends Plugin {
     private localLLMService!: LlamaService;
     private modelManager!: ModelManager;
     private pluginContext!: PluginContext;
-    
+    private statusBarItem!: HTMLElement;
+    private statusUpdateInterval?: number;
+    private memoryMonitor?: MemoryMonitor;
+
     // Public properties for settings modal access
     get nameVariantService(): NameVariantService {
         return this.pluginContext.nameVariantService;
     }
-    
+
     get errorLogService(): ErrorLogService {
         return this.pluginContext.errorLogService;
     }
@@ -62,6 +67,9 @@ export default class IdeatrPlugin extends Plugin {
         const { context, localLLMService: localLLM } = await ServiceInitializer.initialize(this.app, this, this.settings);
         this.pluginContext = context;
         this.localLLMService = localLLM;
+
+        // Add status indicator to status bar
+        this.addStatusBarIndicator();
 
         // Auto-copy tutorials to vault if they're available in plugin directory but not in vault
         await this.ensureTutorialsAvailable();
@@ -110,6 +118,13 @@ export default class IdeatrPlugin extends Plugin {
             console.error('Error registering commands:', error);
             console.error('Error details:', error instanceof Error ? error.stack : error);
         }
+
+        // Start memory monitoring if debug mode is enabled
+        if (this.settings.debugMode) {
+            this.memoryMonitor = new MemoryMonitor();
+            this.memoryMonitor.startMonitoring(60000); // Monitor every minute
+            Logger.debug('Memory monitoring started');
+        }
     }
 
     openCaptureModal() {
@@ -138,9 +153,30 @@ export default class IdeatrPlugin extends Plugin {
 
     onunload() {
         Logger.debug('Unloading Ideatr plugin');
-        if (this.localLLMService) {
-            this.localLLMService.stopServer();
+
+        // Clear status update interval
+        if (this.statusUpdateInterval) {
+            clearInterval(this.statusUpdateInterval);
+            this.statusUpdateInterval = undefined;
         }
+
+        // Stop memory monitoring if enabled
+        if (this.memoryMonitor) {
+            Logger.debug('Memory report before unload:');
+            Logger.debug(this.memoryMonitor.getReport());
+            this.memoryMonitor.stopMonitoring();
+            this.memoryMonitor = undefined;
+        }
+
+        // Cleanup HybridLLM if it has cleanup method
+        if (this.pluginContext?.llmService) {
+            (this.pluginContext.llmService as any).cleanup?.();
+        }
+
+        // Stop local LLM service using singleton destroy
+        LlamaService.destroyInstance();
+
+        Logger.debug('Ideatr plugin unloaded successfully');
     }
 
     async loadSettings() {
@@ -149,6 +185,45 @@ export default class IdeatrPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+
+        // Update LlamaService singleton with new settings
+        if (this.localLLMService) {
+            this.localLLMService.updateSettings(this.settings);
+        }
+    }
+
+    /**
+     * Add status indicator to the status bar
+     */
+    private addStatusBarIndicator(): void {
+        this.statusBarItem = this.addStatusBarItem();
+        this.updateStatusBarIndicator();
+
+        // Update status indicator every 5 seconds
+        this.statusUpdateInterval = window.setInterval(() => {
+            this.updateStatusBarIndicator();
+        }, 5000);
+    }
+
+    /**
+     * Update the status bar indicator with current model status
+     */
+    private updateStatusBarIndicator(): void {
+        if (!this.statusBarItem) return;
+
+        // Clear existing content
+        this.statusBarItem.innerHTML = '';
+
+        // Create and append new status indicator
+        const statusIndicator = createModelStatusIndicator(
+            this.pluginContext.llmService,
+            this.settings,
+            this.app
+        );
+
+        // Keep tooltip for status bar - it will show on hover
+        // The title attribute provides a native fallback tooltip
+        this.statusBarItem.appendChild(statusIndicator);
     }
 
     /**
@@ -158,16 +233,16 @@ export default class IdeatrPlugin extends Plugin {
         try {
             // Get plugin directory
             const vaultBasePath = (this.app.vault.adapter as any).basePath || this.app.vault.configDir;
-            const configDir = path.isAbsolute(this.app.vault.configDir) 
-                ? this.app.vault.configDir 
+            const configDir = path.isAbsolute(this.app.vault.configDir)
+                ? this.app.vault.configDir
                 : path.join(vaultBasePath, this.app.vault.configDir);
             const pluginDir = path.resolve(path.join(configDir, 'plugins', this.manifest.id));
-            
+
             const tutorialManager = new TutorialManager(this.app, pluginDir);
-            
+
             // Check if tutorials exist in vault
             const tutorialsInVault = await tutorialManager.tutorialsExistInVault();
-            
+
             // If not in vault, but available in plugin directory, copy them
             if (!tutorialsInVault) {
                 const bundledAvailable = await tutorialManager.bundledTutorialsAvailable();

@@ -68,7 +68,7 @@ export class HybridLLM implements ILLMService {
         if (this.localLLM.isAvailable() && this.localLLM.ensureReady) {
             return await this.localLLM.ensureReady();
         }
-        
+
         return false;
     }
 
@@ -168,17 +168,17 @@ export class HybridLLM implements ILLMService {
 
         // Parse JSON response with multiple strategies
         let parseError: Error | null = null;
-        
+
         // Strategy 1: Direct extraction and repair
         try {
             const repaired = extractAndRepairJSON(response, true);
             const mutations = JSON.parse(repaired) as Mutation[];
-            
+
             // Validate mutations array
             if (!Array.isArray(mutations)) {
                 throw new Error('Response is not an array');
             }
-            
+
             // Filter and validate each mutation
             const validMutations = mutations
                 .filter((m: any) => m && typeof m === 'object' && (m.text || m.title || m.description))
@@ -187,17 +187,17 @@ export class HybridLLM implements ILLMService {
                     description: m.description || '',
                     differences: Array.isArray(m.differences) ? m.differences : [],
                 } as Mutation));
-            
+
             if (validMutations.length > 0) {
                 return validMutations;
             }
-            
+
             throw new Error('No valid mutations found in response');
         } catch (error) {
             parseError = error instanceof Error ? error : new Error(String(error));
             Logger.warn('Strategy 1 failed, trying alternative approaches:', parseError.message);
         }
-        
+
         // Strategy 2: Try parsing without repair first (in case it's already valid)
         try {
             // Try to find and extract just the JSON array
@@ -212,7 +212,7 @@ export class HybridLLM implements ILLMService {
                             description: m.description || '',
                             differences: Array.isArray(m.differences) ? m.differences : [],
                         } as Mutation));
-                    
+
                     if (validMutations.length > 0) {
                         Logger.debug('Strategy 2 succeeded: extracted valid JSON array');
                         return validMutations;
@@ -222,16 +222,16 @@ export class HybridLLM implements ILLMService {
         } catch (error) {
             Logger.warn('Strategy 2 failed:', error instanceof Error ? error.message : String(error));
         }
-        
+
         // Strategy 3: Fallback extraction (existing logic)
         try {
             Logger.debug('Raw response (first 500 chars):', response.substring(0, 500));
-            
+
             // Fallback: Try to extract individual mutation objects from the response
             try {
                 const mutationObjects: Mutation[] = [];
                 let i = 0;
-                
+
                 // Find all potential JSON objects by looking for opening braces
                 while (i < response.length) {
                     if (response[i] === '{') {
@@ -241,29 +241,29 @@ export class HybridLLM implements ILLMService {
                         let escapeNext = false;
                         let start = i;
                         let end = i;
-                        
+
                         for (let j = i; j < response.length; j++) {
                             const char = response[j];
-                            
+
                             if (escapeNext) {
                                 escapeNext = false;
                                 continue;
                             }
-                            
+
                             if (char === '\\') {
                                 escapeNext = true;
                                 continue;
                             }
-                            
+
                             if (char === '"' && !escapeNext) {
                                 inString = !inString;
                                 continue;
                             }
-                            
+
                             if (inString) {
                                 continue;
                             }
-                            
+
                             if (char === '{') {
                                 braceCount++;
                             } else if (char === '}') {
@@ -274,7 +274,7 @@ export class HybridLLM implements ILLMService {
                                 }
                             }
                         }
-                        
+
                         if (braceCount === 0 && end > start) {
                             // Found a complete object, try to parse it
                             const objStr = response.substring(start, end);
@@ -318,7 +318,7 @@ export class HybridLLM implements ILLMService {
                         i++;
                     }
                 }
-                
+
                 if (mutationObjects.length > 0) {
                     Logger.debug(`Extracted ${mutationObjects.length} mutations from malformed JSON`);
                     return mutationObjects;
@@ -329,7 +329,7 @@ export class HybridLLM implements ILLMService {
         } catch (error) {
             Logger.warn('Strategy 3 failed:', error instanceof Error ? error.message : String(error));
         }
-        
+
         // Strategy 4: Try to extract individual objects and build array manually
         try {
             // Look for all JSON objects in the response
@@ -360,7 +360,7 @@ export class HybridLLM implements ILLMService {
         } catch (error) {
             Logger.warn('Strategy 4 failed:', error instanceof Error ? error.message : String(error));
         }
-        
+
         // All strategies failed - log detailed error information
         console.error('All parsing strategies failed. Response length:', response.length);
         const responsePreview = response.substring(0, 1000);
@@ -371,12 +371,12 @@ export class HybridLLM implements ILLMService {
         } catch (repairError) {
             console.error('Could not repair JSON:', repairError);
         }
-        
+
         // Create a more informative error message
         const errorMessage = response.length === 0
             ? 'LLM returned an empty response. The model may have stopped generating or encountered an error.'
             : `Failed to parse mutations from LLM response: ${parseError?.message || 'Unknown error'}. The response may be malformed or incomplete.`;
-        
+
         const error = new Error(errorMessage) as Error & { responseLength?: number; responsePreview?: string };
         error.responseLength = response.length;
         error.responsePreview = responsePreview;
@@ -495,8 +495,8 @@ export class HybridLLM implements ILLMService {
             s => !reorganizedSections.includes(s)
         );
         const sectionsReorganized = originalSections.filter(
-            s => reorganizedSections.includes(s) && 
-                 reorganizedSections.indexOf(s) !== originalSections.indexOf(s)
+            s => reorganizedSections.includes(s) &&
+                reorganizedSections.indexOf(s) !== originalSections.indexOf(s)
         );
 
         return {
@@ -519,5 +519,20 @@ export class HybridLLM implements ILLMService {
         return sections;
     }
 
+    /**
+     * Cleanup both local and cloud providers
+     * Called on plugin unload
+     */
+    cleanup(): void {
+        Logger.debug('HybridLLM cleanup started');
+
+        // Local LLM cleanup is handled by singleton destroy
+        // Just cleanup cloud provider if it has cleanup method
+        if (this.cloudLLM) {
+            (this.cloudLLM as any).cleanup?.();
+        }
+
+        Logger.debug('HybridLLM cleanup completed');
+    }
 }
 
