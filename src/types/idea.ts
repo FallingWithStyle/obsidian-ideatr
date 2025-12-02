@@ -9,6 +9,7 @@ export interface IdeaFrontmatter {
     type: 'idea';
     status: 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted';
     created: string; // ISO 8601 date (YYYY-MM-DD)
+    id: number; // Plain integer ID for linking
     category: string; // Empty string for Day 0, populated by AI later
     tags: string[];  // Empty array for Day 0, populated by AI later
     related: string[]; // Empty array for Day 0, populated later

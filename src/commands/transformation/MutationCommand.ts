@@ -81,6 +81,7 @@ export class MutationCommand extends IdeaFileCommand {
 type: idea
 status: captured
 created: ${new Date().toISOString().split('T')[0]}
+id: 0
 category: ${content.frontmatter.category || ''}
 tags: ${JSON.stringify(content.frontmatter.tags || [])}
 related: ${JSON.stringify([file.path])}

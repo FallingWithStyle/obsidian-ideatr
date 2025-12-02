@@ -31,6 +31,7 @@ export class FrontmatterParser implements IFrontmatterParser {
         let type: string | null = null;
         let status: string | null = null;
         let created: string | null = null;
+        let id: number = 0;
         let category = '';
 
         for (const line of lines) {
@@ -41,6 +42,12 @@ export class FrontmatterParser implements IFrontmatterParser {
                 status = trimmed.substring(7).trim();
             } else if (trimmed.startsWith('created:')) {
                 created = trimmed.substring(8).trim();
+            } else if (trimmed.startsWith('id:')) {
+                const idValue = trimmed.substring(3).trim();
+                const parsedId = parseInt(idValue, 10);
+                if (!isNaN(parsedId)) {
+                    id = parsedId;
+                }
             } else if (trimmed.startsWith('category:')) {
                 category = trimmed.substring(9).trim();
             }
@@ -53,6 +60,7 @@ export class FrontmatterParser implements IFrontmatterParser {
         frontmatter.type = type as 'idea';
         frontmatter.status = status as 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted';
         frontmatter.created = created;
+        frontmatter.id = id;
         frontmatter.category = category;
 
         // Array fields
@@ -140,6 +148,7 @@ export class FrontmatterParser implements IFrontmatterParser {
                 type: 'idea',
                 status: 'captured',
                 created: new Date().toISOString().split('T')[0],
+                id: 0,
                 category: '',
                 tags: [],
                 related: [],
@@ -175,6 +184,7 @@ export class FrontmatterParser implements IFrontmatterParser {
                 type: 'idea',
                 status: 'captured',
                 created: new Date().toISOString().split('T')[0],
+                id: 0,
                 category: '',
                 tags: [],
                 related: [],
@@ -231,6 +241,11 @@ export class FrontmatterParser implements IFrontmatterParser {
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (!dateRegex.test(frontmatter.created)) {
             return false;
+        }
+
+        // Check id is number (defaults to 0 if missing)
+        if (frontmatter.id === undefined || typeof frontmatter.id !== 'number') {
+            frontmatter.id = 0;
         }
 
         // Check category is string (can be empty)

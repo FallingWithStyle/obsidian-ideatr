@@ -94,6 +94,7 @@ export class ImportService {
             type: 'idea',
             status: item.status || 'captured',
             created: item.created || new Date().toISOString().split('T')[0],
+            id: typeof item.id === 'number' ? item.id : 0,
             category: item.category || '',
             tags: item.tags || [],
             related: item.related || [],
