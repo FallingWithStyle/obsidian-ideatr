@@ -2,6 +2,7 @@ import type { ILLMService, ClassificationResult } from '../types/classification'
 import type { Mutation, MutationOptions, ExpansionResult, ExpansionOptions, ReorganizationResult, ReorganizationOptions } from '../types/transformation';
 import { PROMPTS } from './prompts';
 import { extractAndRepairJSON } from '../utils/jsonRepair';
+import { GRAMMARS } from '../utils/grammars';
 import { Logger } from '../utils/logger';
 
 /**
@@ -144,6 +145,13 @@ export class HybridLLM implements ILLMService {
     /**
      * Generate idea mutations
      */
+    private shouldUseLocalLLM(): boolean {
+        return !(this.preferCloud && this.cloudLLM?.isAvailable());
+    }
+
+    /**
+     * Generate idea mutations
+     */
     async generateMutations(
         text: string,
         options?: MutationOptions
@@ -156,21 +164,25 @@ export class HybridLLM implements ILLMService {
             focus: options?.focus,
         });
 
-        const response = await this.complete(prompt, {
+        const isLocal = this.shouldUseLocalLLM();
+        const llmOptions: any = {
             temperature: 0.8, // Higher creativity for mutations
             n_predict: 4000, // Increased to handle longer JSON responses
-            stop: ['\n]', ']'], // Stop at end of JSON array (prefer newline before bracket for cleaner output)
-        });
+            stop: ['\n]', ']'], // Stop at end of JSON array
+        };
+
+        if (isLocal) {
+            llmOptions.grammar = GRAMMARS.mutations;
+        }
+
+        const response = await this.complete(prompt, llmOptions);
 
         // Check for empty response
         if (!response || response.trim().length === 0) {
             throw new Error('LLM returned an empty response. The model may have stopped generating or encountered an error. Please try again.');
         }
 
-        // Parse JSON response with multiple strategies
-        let parseError: Error | null = null;
-
-        // Strategy 1: Direct extraction and repair
+        // Parse JSON response
         try {
             const repaired = extractAndRepairJSON(response, true);
             const mutations = JSON.parse(repaired) as Mutation[];
@@ -195,193 +207,10 @@ export class HybridLLM implements ILLMService {
 
             throw new Error('No valid mutations found in response');
         } catch (error) {
-            parseError = error instanceof Error ? error : new Error(String(error));
-            Logger.warn('Strategy 1 failed, trying alternative approaches:', parseError.message);
+            Logger.warn('JSON parsing failed:', error);
+            Logger.debug('Raw response:', response);
+            throw new Error('Failed to parse mutations from AI response. Please try again.');
         }
-
-        // Strategy 2: Try parsing without repair first (in case it's already valid)
-        try {
-            // Try to find and extract just the JSON array
-            const arrayMatch = response.match(/\[[\s\S]*\]/);
-            if (arrayMatch) {
-                const mutations = JSON.parse(arrayMatch[0]) as Mutation[];
-                if (Array.isArray(mutations) && mutations.length > 0) {
-                    const validMutations = mutations
-                        .filter((m: any) => m && typeof m === 'object' && (m.text || m.title || m.description))
-                        .map((m: any) => ({
-                            title: m.title || m.text || '',
-                            description: m.description || '',
-                            differences: Array.isArray(m.differences) ? m.differences : [],
-                        } as Mutation));
-
-                    if (validMutations.length > 0) {
-                        Logger.debug('Strategy 2 succeeded: extracted valid JSON array');
-                        return validMutations;
-                    }
-                }
-            }
-        } catch (error) {
-            Logger.warn('Strategy 2 failed:', error instanceof Error ? error.message : String(error));
-        }
-
-        // Strategy 3: Fallback extraction (existing logic)
-        try {
-            Logger.debug('Raw response (first 500 chars):', response.substring(0, 500));
-
-            // Fallback: Try to extract individual mutation objects from the response
-            try {
-                const mutationObjects: Mutation[] = [];
-                let i = 0;
-
-                // Find all potential JSON objects by looking for opening braces
-                while (i < response.length) {
-                    if (response[i] === '{') {
-                        // Try to extract a complete object starting from this position
-                        let braceCount = 0;
-                        let inString = false;
-                        let escapeNext = false;
-                        let start = i;
-                        let end = i;
-
-                        for (let j = i; j < response.length; j++) {
-                            const char = response[j];
-
-                            if (escapeNext) {
-                                escapeNext = false;
-                                continue;
-                            }
-
-                            if (char === '\\') {
-                                escapeNext = true;
-                                continue;
-                            }
-
-                            if (char === '"' && !escapeNext) {
-                                inString = !inString;
-                                continue;
-                            }
-
-                            if (inString) {
-                                continue;
-                            }
-
-                            if (char === '{') {
-                                braceCount++;
-                            } else if (char === '}') {
-                                braceCount--;
-                                if (braceCount === 0) {
-                                    end = j + 1;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (braceCount === 0 && end > start) {
-                            // Found a complete object, try to parse it
-                            const objStr = response.substring(start, end);
-                            try {
-                                const repaired = extractAndRepairJSON(objStr, false);
-                                const obj = JSON.parse(repaired);
-                                // Validate it looks like a mutation object
-                                if (obj && typeof obj === 'object' && (obj.text || obj.title || obj.description)) {
-                                    mutationObjects.push({
-                                        title: obj.title || obj.text || '',
-                                        description: obj.description || '',
-                                        differences: Array.isArray(obj.differences) ? obj.differences : [],
-                                    } as Mutation);
-                                }
-                            } catch (e) {
-                                // Skip invalid objects
-                            }
-                            i = end;
-                        } else if (braceCount > 0 && end === start) {
-                            // Incomplete object at the end - try to repair it
-                            const objStr = response.substring(start);
-                            try {
-                                const repaired = extractAndRepairJSON(objStr, false);
-                                const obj = JSON.parse(repaired);
-                                // Validate it looks like a mutation object
-                                if (obj && typeof obj === 'object' && (obj.text || obj.title || obj.description)) {
-                                    mutationObjects.push({
-                                        title: obj.title || obj.text || '',
-                                        description: obj.description || '',
-                                        differences: Array.isArray(obj.differences) ? obj.differences : [],
-                                    } as Mutation);
-                                }
-                            } catch (e) {
-                                // Skip invalid objects
-                            }
-                            break; // Reached end of response
-                        } else {
-                            i++;
-                        }
-                    } else {
-                        i++;
-                    }
-                }
-
-                if (mutationObjects.length > 0) {
-                    Logger.debug(`Extracted ${mutationObjects.length} mutations from malformed JSON`);
-                    return mutationObjects;
-                }
-            } catch (fallbackError) {
-                Logger.warn('Strategy 3 (fallback extraction) also failed:', fallbackError);
-            }
-        } catch (error) {
-            Logger.warn('Strategy 3 failed:', error instanceof Error ? error.message : String(error));
-        }
-
-        // Strategy 4: Try to extract individual objects and build array manually
-        try {
-            // Look for all JSON objects in the response
-            const objectPattern = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
-            const matches = response.match(objectPattern);
-            if (matches && matches.length > 0) {
-                const mutationObjects: Mutation[] = [];
-                for (const match of matches) {
-                    try {
-                        const repaired = extractAndRepairJSON(match, false);
-                        const obj = JSON.parse(repaired);
-                        if (obj && typeof obj === 'object' && (obj.text || obj.title || obj.description)) {
-                            mutationObjects.push({
-                                title: obj.title || obj.text || '',
-                                description: obj.description || '',
-                                differences: Array.isArray(obj.differences) ? obj.differences : [],
-                            } as Mutation);
-                        }
-                    } catch (e) {
-                        // Skip invalid objects
-                    }
-                }
-                if (mutationObjects.length > 0) {
-                    Logger.debug(`Strategy 4 succeeded: extracted ${mutationObjects.length} mutations from individual objects`);
-                    return mutationObjects;
-                }
-            }
-        } catch (error) {
-            Logger.warn('Strategy 4 failed:', error instanceof Error ? error.message : String(error));
-        }
-
-        // All strategies failed - log detailed error information
-        console.error('All parsing strategies failed. Response length:', response.length);
-        const responsePreview = response.substring(0, 1000);
-        console.error('Response preview (first 1000 chars):', responsePreview);
-        try {
-            const repaired = extractAndRepairJSON(response, true);
-            console.error('Repaired JSON attempt (first 500 chars):', repaired.substring(0, 500));
-        } catch (repairError) {
-            console.error('Could not repair JSON:', repairError);
-        }
-
-        // Create a more informative error message
-        const errorMessage = response.length === 0
-            ? 'LLM returned an empty response. The model may have stopped generating or encountered an error.'
-            : `Failed to parse mutations from LLM response: ${parseError?.message || 'Unknown error'}. The response may be malformed or incomplete.`;
-
-        const error = new Error(errorMessage) as Error & { responseLength?: number; responsePreview?: string };
-        error.responseLength = response.length;
-        error.responsePreview = responsePreview;
-        throw error;
     }
 
     /**
