@@ -52,8 +52,9 @@ export class Logger {
             }
 
             // The deploy-timestamp.json file is in the plugin directory
-            // Path: .obsidian/plugins/ideatr/deploy-timestamp.json
-            const timestampPath = '.obsidian/plugins/ideatr/deploy-timestamp.json';
+            // Path: {configDir}/plugins/ideatr/deploy-timestamp.json
+            const configDir = Logger.app.vault.configDir;
+            const timestampPath = `${configDir}/plugins/ideatr/deploy-timestamp.json`;
             
             // Check if file exists
             const exists = await Logger.app.vault.adapter.exists(timestampPath);

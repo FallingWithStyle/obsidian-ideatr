@@ -2,8 +2,9 @@
  * FeatureRequestModal - Modal for submitting feature requests and bug reports
  */
 
-import { Modal, App, Notice } from 'obsidian';
+import { Modal, App, Notice, Platform } from 'obsidian';
 import type { ErrorLogService } from '../services/ErrorLogService';
+import { Logger } from '../utils/logger';
 
 export type RequestType = 'bug' | 'feature' | 'performance';
 
@@ -284,10 +285,17 @@ export class FeatureRequestModal extends Modal {
         const content = this.generateIssueContent();
         
         try {
-            await navigator.clipboard.writeText(content);
+            // Use Obsidian's clipboard API if available, otherwise fall back to navigator
+            if (this.app.clipboard) {
+                await this.app.clipboard.writeText(content);
+            } else if (navigator.clipboard) {
+                await navigator.clipboard.writeText(content);
+            } else {
+                throw new Error('Clipboard API not available');
+            }
             new Notice('Content copied to clipboard! Paste it into a GitHub issue.');
         } catch (error) {
-            console.error('Failed to copy to clipboard:', error);
+            Logger.error('Failed to copy to clipboard:', error);
             new Notice('Failed to copy to clipboard. Please copy manually from the preview.');
         }
     }

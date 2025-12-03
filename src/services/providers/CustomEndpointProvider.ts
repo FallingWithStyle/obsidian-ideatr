@@ -1,5 +1,6 @@
 import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
+import { requestUrl } from 'obsidian';
 import { extractAndRepairJSON } from '../../utils/jsonRepair';
 import { Logger } from '../../utils/logger';
 
@@ -66,20 +67,22 @@ export class CustomEndpointProvider implements ILLMProvider {
                 responsePath = 'choices[0].message.content';
             }
 
-            const response = await fetch(this.endpointUrl, {
+            const response = await requestUrl({
+                url: this.endpointUrl,
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                throw: false
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(`Custom endpoint error: ${errorData.error || response.statusText}`);
+            if (response.status < 200 || response.status >= 300) {
+                const errorData = (typeof response.json === 'function' ? await response.json() : response.json) || {};
+                throw new Error(`Custom endpoint error: ${errorData.error || response.statusText || 'Request failed'}`);
             }
 
-            const data = await response.json();
+            const data = typeof response.json === 'function' ? await response.json() : response.json;
             
             // Extract content based on format (responsePath was determined earlier)
             let content: string;

@@ -346,8 +346,8 @@ export class CommandRegistry {
             });
             Logger.debug('Debug registry callback type:', typeof debugCallback);
             plugin.addCommand({
-                id: 'ideatr-debug-registry',
-                name: 'Ideatr Debug (Registry)',
+                id: 'debug-registry',
+                name: 'Debug (Registry)',
                 callback: debugCallback
             });
             Logger.debug('Registered debug command via CommandRegistry');

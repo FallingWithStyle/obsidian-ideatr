@@ -1,5 +1,6 @@
 import type { ILLMProvider } from '../../types/llm-provider';
 import type { ClassificationResult } from '../../types/classification';
+import { requestUrl } from 'obsidian';
 import { extractAndRepairJSON } from '../../utils/jsonRepair';
 import { Logger } from '../../utils/logger';
 
@@ -33,7 +34,8 @@ export class OpenRouterProvider implements ILLMProvider {
         const prompt = this.constructPrompt(text);
 
         try {
-            const response = await fetch(this.baseUrl, {
+            const response = await requestUrl({
+                url: this.baseUrl,
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.apiKey}`,
@@ -49,21 +51,22 @@ export class OpenRouterProvider implements ILLMProvider {
                     }],
                     max_tokens: 256,
                     temperature: 0.1
-                })
+                }),
+                throw: false
             });
 
-            if (!response.ok) {
+            if (response.status < 200 || response.status >= 300) {
                 if (response.status === 429) {
                     throw new Error('Rate limit exceeded. Please try again later.');
                 }
                 if (response.status === 401) {
                     throw new Error('Invalid API key. Please check your OpenRouter API key.');
                 }
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(`OpenRouter API error: ${errorData.error || response.statusText}`);
+                const errorData = (typeof response.json === 'function' ? await response.json() : response.json) || {};
+                throw new Error(`OpenRouter API error: ${errorData.error || response.statusText || 'Request failed'}`);
             }
 
-            const data = await response.json();
+            const data = typeof response.json === 'function' ? await response.json() : response.json;
             const content = data.choices?.[0]?.message?.content;
             if (!content) {
                 throw new Error('No content in OpenRouter response');

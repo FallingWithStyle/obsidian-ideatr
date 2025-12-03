@@ -170,8 +170,8 @@ export default class IdeatrPlugin extends Plugin {
                 };
                 Logger.debug('Debug main callback type:', typeof debugMainCallback);
                 this.addCommand({
-                    id: 'ideatr-debug-main',
-                    name: 'Ideatr Debug (Main)',
+                    id: 'debug-main',
+                    name: 'Debug (Main)',
                     callback: debugMainCallback
                 });
                 Logger.debug('Registered debug command directly in main.ts');

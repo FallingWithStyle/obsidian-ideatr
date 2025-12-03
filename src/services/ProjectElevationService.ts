@@ -1,4 +1,4 @@
-import type { Vault, TFile } from 'obsidian';
+import type { Vault, TFile, App } from 'obsidian';
 import type { IdeaFile, IdeaFrontmatter } from '../types/idea';
 import type { IProjectElevationService, ElevationResult } from '../types/management';
 import type { IdeatrSettings } from '../settings';
@@ -12,11 +12,13 @@ import { Logger } from '../utils/logger';
  */
 export class ProjectElevationService implements IProjectElevationService {
     private vault: Vault;
+    private app?: App;
     private frontmatterParser: FrontmatterParser;
     private settings: IdeatrSettings;
 
-    constructor(vault: Vault, frontmatterParser: FrontmatterParser, settings: IdeatrSettings) {
+    constructor(vault: Vault, frontmatterParser: FrontmatterParser, settings: IdeatrSettings, app?: App) {
         this.vault = vault;
+        this.app = app;
         this.frontmatterParser = frontmatterParser;
         this.settings = settings;
     }
@@ -183,7 +185,11 @@ export class ProjectElevationService implements IProjectElevationService {
 
             // Delete original file (last step)
             try {
-                await this.vault.delete(originalFile);
+                if (this.app) {
+                    await this.app.fileManager.trashFile(originalFile);
+                } else {
+                    await this.vault.delete(originalFile);
+                }
             } catch (error) {
                 warnings.push('Failed to delete original idea file (project created successfully)');
                 Logger.warn('Failed to delete original file:', error);
@@ -315,7 +321,11 @@ export class ProjectElevationService implements IProjectElevationService {
                     // Check if it's a file (TFile) or folder
                     if ('extension' in file) {
                         // It's a file
-                        await this.vault.delete(file as TFile);
+                        if (this.app) {
+                            await this.app.fileManager.trashFile(file as TFile);
+                        } else {
+                            await this.vault.delete(file as TFile);
+                        }
                     } else {
                         // It's a folder
                         await this.vault.adapter.rmdir(path, true);

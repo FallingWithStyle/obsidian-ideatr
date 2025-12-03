@@ -233,12 +233,13 @@ export class TutorialManager {
 
             // Delete all tutorial files
             for (const file of files) {
-                await this.app.vault.delete(file);
+                await this.app.fileManager.trashFile(file);
             }
 
             // Try to delete the directory if it's empty
             try {
                 if (tutorialDir instanceof TFolder && (!tutorialDir.children || tutorialDir.children.length === 0)) {
+                    // For folders, we still use vault.delete as trashFile is for files
                     await this.app.vault.delete(tutorialDir, true);
                 }
             } catch {

@@ -174,7 +174,7 @@ export class FindAllDuplicatesCommand extends BaseCommand {
         await this.context.app.vault.modify(pair.file1, updatedContent);
 
         // Delete file2
-        await this.context.app.vault.delete(pair.file2);
+        await this.context.app.fileManager.trashFile(pair.file2);
     }
 }
 

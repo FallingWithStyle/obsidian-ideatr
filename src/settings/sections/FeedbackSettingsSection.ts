@@ -1,4 +1,4 @@
-import { Setting } from 'obsidian';
+import { Setting, Platform } from 'obsidian';
 import { BaseSettingsSection } from '../components/SettingsSection';
 import { FeatureRequestModal } from '../../views/FeatureRequestModal';
 
@@ -32,7 +32,7 @@ export class FeedbackSettingsSection extends BaseSettingsSection {
                         obsidianVersion,
                         pluginVersion: this.plugin.manifest.version,
                         platform: this.app.isMobile ? 'mobile' : 'desktop',
-                        os: navigator.platform || 'Unknown'
+                        os: Platform.isMacOS ? 'Mac' : Platform.isWin ? 'Windows' : Platform.isLinux ? 'Linux' : 'Unknown'
                     };
 
                     const modal = new FeatureRequestModal(

@@ -1,6 +1,7 @@
 import type { IWebSearchService, SearchResult } from '../types/search';
 import type { IdeatrSettings } from '../settings';
 import type { IdeaCategory } from '../types/classification';
+import { requestUrl } from 'obsidian';
 import { Logger } from '../utils/logger';
 
 /**
@@ -67,35 +68,35 @@ export class WebSearchService implements IWebSearchService {
         const engineId = this.settings.googleSearchEngineId;
         const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${engineId}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 10)}`;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(
-            () => controller.abort(),
-            this.settings.webSearchTimeout
-        );
+        // Use Promise.race for timeout handling with requestUrl
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error(`Timeout: Request exceeded ${this.settings.webSearchTimeout}ms`)), this.settings.webSearchTimeout);
+        });
 
         try {
-            const response = await fetch(url, {
-                signal: controller.signal,
-                method: 'GET'
-            });
+            const response = await Promise.race([
+                requestUrl({
+                    url: url,
+                    method: 'GET',
+                    throw: false
+                }),
+                timeoutPromise
+            ]);
 
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
+            if (response.status < 200 || response.status >= 300) {
                 if (response.status === 429) {
                     throw new Error('API rate limit exceeded');
                 }
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText || 'Request failed'}`);
             }
 
-            const data = await response.json();
+            const data = typeof response.json === 'function' ? await response.json() : response.json;
             return data.items || [];
         } catch (error) {
-            clearTimeout(timeoutId);
-            if (error instanceof Error && error.name === 'AbortError') {
-                throw new Error(`Timeout: Request exceeded ${this.settings.webSearchTimeout}ms`);
+            if (error instanceof Error && error.message.includes('Timeout')) {
+                throw error;
             }
-            throw error;
+            throw error instanceof Error ? error : new Error(String(error));
         }
     }
 

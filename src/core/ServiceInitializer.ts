@@ -147,7 +147,7 @@ export class ServiceInitializer {
                 });
             }
         );
-        const scaffoldService = new ScaffoldService(app.vault);
+        const scaffoldService = new ScaffoldService(app.vault, app);
         return { nameVariantService, scaffoldService };
     }
 
@@ -168,7 +168,8 @@ export class ServiceInitializer {
         const projectElevationService = new ProjectElevationService(
             app.vault,
             frontmatterParser,
-            settings
+            settings,
+            app
         );
         return {
             frontmatterParser, ideaRepository, embeddingService,

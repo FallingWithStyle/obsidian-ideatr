@@ -2,7 +2,7 @@ import type { IScaffoldService, ScaffoldTemplate } from '../types/transformation
 import type { IdeaCategory } from '../types/classification';
 import { templates as defaultTemplates, selectTemplate as selectDefaultTemplate } from './templates';
 import { extractIdeaNameSync } from './NameVariantService';
-import type { Vault } from 'obsidian';
+import type { Vault, App } from 'obsidian';
 import { TFile } from 'obsidian';
 import { Logger } from '../utils/logger';
 
@@ -14,10 +14,11 @@ const TEMPLATES_DIR = '.ideatr/templates';
  */
 export class ScaffoldService implements IScaffoldService {
     private vault?: Vault;
+    private app?: App;
     private customTemplates: ScaffoldTemplate[] = [];
     private allTemplates: ScaffoldTemplate[] = [];
 
-    constructor(vault?: Vault) {
+    constructor(vault?: Vault, app?: App) {
         this.vault = vault;
         this.allTemplates = [...defaultTemplates];
         if (vault) {
@@ -148,7 +149,11 @@ export class ScaffoldService implements IScaffoldService {
         const file = this.vault.getAbstractFileByPath(filepath);
         
         if (file && file instanceof TFile) {
-            await this.vault.delete(file);
+            if (this.app) {
+                await this.app.fileManager.trashFile(file);
+            } else if (this.vault) {
+                await this.vault.delete(file);
+            }
             await this.loadCustomTemplates();
         }
     }

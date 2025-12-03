@@ -177,8 +177,10 @@ export class ErrorLogService {
         // Remove email addresses
         str = str.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_REDACTED]');
 
-        // Remove vault paths
+        // Remove vault paths (configDir can vary, so match common patterns)
         str = str.replace(/\.obsidian[^"'\s]*/g, '[OBSIDIAN_CONFIG]');
+        // Also match any config directory pattern
+        str = str.replace(/[^"'\s]*\/plugins\/[^"'\s]*/g, '[PLUGIN_PATH]');
         str = str.replace(/Ideas\/[^"'\s]*/g, '[IDEA_FILE]');
         str = str.replace(/Projects\/[^"'\s]*/g, '[PROJECT_FILE]');
 
