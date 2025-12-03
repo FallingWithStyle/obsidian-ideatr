@@ -336,8 +336,19 @@ export class FirstLaunchSetupModal extends Modal {
     }
 
     private async handleApiKeySubmit(apiKey: string, provider: 'anthropic' | 'openai'): Promise<void> {
-        // Store API key and provider
-        this.settings.cloudApiKey = apiKey;
+        // Ensure cloudApiKeys exists
+        if (!this.settings.cloudApiKeys) {
+            this.settings.cloudApiKeys = {
+                anthropic: '',
+                openai: '',
+                gemini: '',
+                groq: '',
+                openrouter: ''
+            };
+        }
+        
+        // Store API key for the specific provider
+        this.settings.cloudApiKeys[provider] = apiKey;
         this.settings.cloudProvider = provider;
         this.settings.preferCloud = true;
         this.settings.llmProvider = provider;
@@ -368,8 +379,13 @@ export class FirstLaunchSetupModal extends Modal {
  * Check if this is the first launch
  */
 export function isFirstLaunch(settings: IdeatrSettings): boolean {
+    const hasAnyApiKey = settings.cloudApiKeys && 
+        Object.values(settings.cloudApiKeys).some(key => key && key.length > 0);
+    const hasLegacyApiKey = settings.cloudApiKey && settings.cloudApiKey.length > 0;
+    
     return !settings.setupCompleted &&
         !settings.modelDownloaded &&
-        !settings.cloudApiKey;
+        !hasAnyApiKey &&
+        !hasLegacyApiKey;
 }
 

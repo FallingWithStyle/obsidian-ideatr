@@ -2,10 +2,34 @@ import { Setting, Notice } from 'obsidian';
 import { BaseSettingsSection } from '../components/SettingsSection';
 import { ProviderFactory } from '../../services/providers/ProviderFactory';
 import type { CloudProviderType } from '../../types/llm-provider';
+import { getAllCloudModels, getCloudModelsByProvider, type CloudModelConfig } from '../../utils/ModelValidator';
 
 export class CloudAISettingsSection extends BaseSettingsSection {
+    private showComparison: boolean = false;
+
     display(containerEl: HTMLElement): void {
         containerEl.createEl('h3', { text: 'Cloud AI' });
+
+        // Add comparison toggle button
+        const comparisonContainer = containerEl.createDiv({ cls: 'cloud-model-comparison-container' });
+        const comparisonButton = comparisonContainer.createEl('button', {
+            text: this.showComparison ? '▼ Hide Model Comparison' : '▶ Show Model Comparison',
+            cls: 'mod-link'
+        });
+        comparisonButton.style.marginBottom = '1em';
+        comparisonButton.addEventListener('click', () => {
+            this.showComparison = !this.showComparison;
+            comparisonButton.textContent = this.showComparison ? '▼ Hide Model Comparison' : '▶ Show Model Comparison';
+            const comparisonSection = containerEl.querySelector('.cloud-model-comparison-section') as HTMLElement;
+            if (comparisonSection) {
+                comparisonSection.style.display = this.showComparison ? 'block' : 'none';
+            }
+        });
+
+        // Model comparison section (hidden by default)
+        const comparisonSection = containerEl.createDiv({ cls: 'cloud-model-comparison-section' });
+        comparisonSection.style.display = 'none';
+        this.renderModelComparison(comparisonSection);
 
         new Setting(containerEl)
             .setName('Enable Cloud AI')
@@ -29,8 +53,9 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                 }));
 
         // Check if any provider has an API key or if cloud is enabled
-        const hasAnyApiKey = this.plugin.settings.cloudApiKeys && 
-            Object.values(this.plugin.settings.cloudApiKeys).some(key => key && key.length > 0);
+        const hasAnyApiKey = (this.plugin.settings.cloudApiKeys && 
+            Object.values(this.plugin.settings.cloudApiKeys).some(key => key && key.length > 0)) ||
+            (this.plugin.settings.cloudApiKey && this.plugin.settings.cloudApiKey.length > 0);
         if (this.plugin.settings.cloudProvider !== 'none' || hasAnyApiKey) {
             new Setting(containerEl)
                 .setName('Cloud Provider')
@@ -47,9 +72,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .setValue(this.plugin.settings.cloudProvider === 'none' ? 'none' : this.plugin.settings.cloudProvider)
                         .onChange(async (value) => {
                             this.plugin.settings.cloudProvider = value as any;
-                            if (value === 'none') {
-                                this.plugin.settings.cloudApiKey = '';
-                            }
+                            // Don't clear API keys when switching - they're stored per provider
                             await this.saveSettings();
                             this.refresh();
                         });
@@ -73,15 +96,41 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         'openrouter': 'https://openrouter.ai/keys'
                     };
 
+                    // Get the API key for the current provider
+                    const currentProvider = this.plugin.settings.cloudProvider;
+                    let currentApiKey = '';
+                    if (this.plugin.settings.cloudApiKeys && 
+                        currentProvider in this.plugin.settings.cloudApiKeys) {
+                        currentApiKey = this.plugin.settings.cloudApiKeys[currentProvider as keyof typeof this.plugin.settings.cloudApiKeys] || '';
+                    }
+                    // Fallback to legacy cloudApiKey if new structure doesn't have a key for this provider
+                    if (!currentApiKey && this.plugin.settings.cloudApiKey && 
+                        this.plugin.settings.cloudProvider === currentProvider) {
+                        currentApiKey = this.plugin.settings.cloudApiKey;
+                    }
+
                     new Setting(containerEl)
                         .setName('API Key')
                         .setDesc(`Enter your ${providerNames[this.plugin.settings.cloudProvider] || 'provider'} API key`)
                         .addText(text => {
                             text.setPlaceholder('sk-...')
-                                .setValue(this.plugin.settings.cloudApiKey);
+                                .setValue(currentApiKey);
                             text.inputEl.setAttribute('type', 'password');
                             text.onChange(async (value: string) => {
-                                this.plugin.settings.cloudApiKey = value;
+                                // Ensure cloudApiKeys exists
+                                if (!this.plugin.settings.cloudApiKeys) {
+                                    this.plugin.settings.cloudApiKeys = {
+                                        anthropic: '',
+                                        openai: '',
+                                        gemini: '',
+                                        groq: '',
+                                        openrouter: ''
+                                    };
+                                }
+                                // Save to provider-specific key
+                                if (currentProvider in this.plugin.settings.cloudApiKeys) {
+                                    this.plugin.settings.cloudApiKeys[currentProvider as keyof typeof this.plugin.settings.cloudApiKeys] = value;
+                                }
                                 await this.saveSettings();
                             });
                         });
@@ -111,7 +160,13 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .addButton(button => button
                             .setButtonText('Test Connection')
                             .onClick(async () => {
-                                const apiKey = this.plugin.settings.cloudApiKey.trim();
+                                // Get the API key for the current provider
+                                const currentProvider = this.plugin.settings.cloudProvider;
+                                const apiKey = (this.plugin.settings.cloudApiKeys && 
+                                    currentProvider in this.plugin.settings.cloudApiKeys)
+                                    ? (this.plugin.settings.cloudApiKeys[currentProvider as keyof typeof this.plugin.settings.cloudApiKeys] || '').trim()
+                                    : '';
+                                
                                 if (!apiKey) {
                                     new Notice('Please enter an API key first');
                                     return;
@@ -243,6 +298,77 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                             this.plugin.settings.preferCloud = value;
                             await this.saveSettings();
                         }));
+            }
+        }
+    }
+
+    private renderModelComparison(containerEl: HTMLElement): void {
+        containerEl.empty();
+        containerEl.createEl('h4', { text: 'Cloud AI Model Comparison' });
+        containerEl.createEl('p', {
+            text: 'Compare default cloud AI models to find the best fit for your needs. All models are validated for Ideatr\'s classification and tagging tasks.',
+            cls: 'cloud-model-comparison-intro'
+        });
+
+        // Group models by provider
+        const modelsByProvider: Record<string, CloudModelConfig[]> = {
+            'Anthropic': getCloudModelsByProvider('anthropic'),
+            'OpenAI': getCloudModelsByProvider('openai'),
+            'Google Gemini': getCloudModelsByProvider('gemini'),
+            'Groq': getCloudModelsByProvider('groq')
+        };
+
+        // Render each provider's models
+        for (const [providerName, models] of Object.entries(modelsByProvider)) {
+            if (models.length === 0) continue;
+
+            const providerSection = containerEl.createDiv({ cls: 'cloud-model-provider-section' });
+            providerSection.createEl('h5', { text: providerName });
+
+            // Create a card for each model
+            for (const model of models) {
+                const modelCard = providerSection.createDiv({ cls: 'cloud-model-card' });
+                modelCard.style.cssText = 'border: 1px solid var(--background-modifier-border); border-radius: 6px; padding: 1em; margin-bottom: 1em;';
+
+                // Header with name and badge
+                const header = modelCard.createDiv({ cls: 'cloud-model-header' });
+                const headerTitle = header.createDiv({ cls: 'cloud-model-header-title' });
+                headerTitle.style.cssText = 'display: flex; align-items: center; gap: 0.5em; margin-bottom: 0.5em;';
+                headerTitle.createEl('h6', { text: model.name, attr: { style: 'margin: 0;' } });
+                const badge = headerTitle.createEl('span', { text: model.badge, cls: 'cloud-model-badge' });
+                badge.style.cssText = 'background: var(--text-accent); color: var(--text-on-accent); padding: 0.2em 0.5em; border-radius: 4px; font-size: 0.75em; font-weight: bold;';
+
+                // Description
+                modelCard.createEl('p', { text: model.description, cls: 'cloud-model-description' });
+                modelCard.querySelector('.cloud-model-description')?.setAttribute('style', 'margin: 0.5em 0; color: var(--text-muted);');
+
+                // Stats
+                const stats = modelCard.createDiv({ cls: 'cloud-model-stats' });
+                stats.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5em; margin: 0.5em 0;';
+                stats.createEl('div', { text: `⭐ Quality: ${model.quality}/5` });
+                stats.createEl('div', { text: `⚡ Speed: ${model.speed}/5` });
+                stats.createEl('div', { text: `💰 Cost: ${model.costEstimate}` });
+                stats.createEl('div', { text: `💵 Tier: ${model.cost.charAt(0).toUpperCase() + model.cost.slice(1)}` });
+
+                // Pros
+                const prosContainer = modelCard.createDiv({ cls: 'cloud-model-pros' });
+                prosContainer.style.cssText = 'margin-top: 0.5em;';
+                prosContainer.createEl('strong', { text: 'Pros: ' });
+                const prosList = prosContainer.createEl('ul', { attr: { style: 'margin: 0.25em 0; padding-left: 1.5em;' } });
+                model.pros.forEach(pro => prosList.createEl('li', { text: pro }));
+
+                // Cons
+                const consContainer = modelCard.createDiv({ cls: 'cloud-model-cons' });
+                consContainer.style.cssText = 'margin-top: 0.5em;';
+                consContainer.createEl('strong', { text: 'Cons: ' });
+                const consList = consContainer.createEl('ul', { attr: { style: 'margin: 0.25em 0; padding-left: 1.5em;' } });
+                model.cons.forEach(con => consList.createEl('li', { text: con }));
+
+                // Best for
+                const bestFor = modelCard.createDiv({ cls: 'cloud-model-best-for' });
+                bestFor.style.cssText = 'margin-top: 0.5em; padding-top: 0.5em; border-top: 1px solid var(--background-modifier-border);';
+                bestFor.createEl('strong', { text: 'Best for: ' });
+                bestFor.appendText(model.bestFor);
             }
         }
     }

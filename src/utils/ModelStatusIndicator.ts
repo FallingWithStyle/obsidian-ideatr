@@ -54,13 +54,26 @@ export function getModelStatus(
         const preferCloud = settings.preferCloud;
         
         // Determine which provider to check
-        if (preferCloud && settings.cloudProvider !== 'none' && settings.cloudApiKey.trim().length > 0) {
-            // Prefer cloud - check cloud status
-            const cloudStatus = getCloudProviderStatus(settings);
-            if (cloudStatus.status === 'connected') {
-                return cloudStatus;
+        if (preferCloud && settings.cloudProvider !== 'none') {
+            // Get the API key for the current provider
+            const hasApiKey = settings.cloudProvider === 'custom' 
+                ? (settings.customEndpointUrl && settings.customEndpointUrl.trim().length > 0)
+                : settings.cloudProvider === 'custom-model'
+                ? (settings.customModelProvider && settings.cloudApiKeys && 
+                    settings.customModelProvider in settings.cloudApiKeys &&
+                    (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] || '').trim().length > 0)
+                : (settings.cloudApiKeys && 
+                    settings.cloudProvider in settings.cloudApiKeys &&
+                    (settings.cloudApiKeys[settings.cloudProvider as keyof typeof settings.cloudApiKeys] || '').trim().length > 0);
+            
+            if (hasApiKey) {
+                // Prefer cloud - check cloud status
+                const cloudStatus = getCloudProviderStatus(settings);
+                if (cloudStatus.status === 'connected') {
+                    return cloudStatus;
+                }
+                // Fall back to local if cloud not available
             }
-            // Fall back to local if cloud not available
         }
         
         // Check local status using public getter
@@ -140,7 +153,28 @@ function getLocalModelStatus(
  * Get status for cloud provider
  */
 function getCloudProviderStatus(settings: IdeatrSettings): ModelStatus {
-    if (settings.cloudProvider === 'none' || settings.cloudApiKey.trim().length === 0) {
+    // Check if provider is configured
+    if (settings.cloudProvider === 'none') {
+        return {
+            status: 'not-connected',
+            modelName: 'Cloud AI not configured',
+            provider: 'cloud',
+            details: 'Please configure cloud AI in settings'
+        };
+    }
+    
+    // Check if API key exists for the provider (or endpoint URL for custom)
+    const hasApiKey = settings.cloudProvider === 'custom'
+        ? (settings.customEndpointUrl && settings.customEndpointUrl.trim().length > 0)
+        : settings.cloudProvider === 'custom-model'
+        ? (settings.customModelProvider && settings.cloudApiKeys && 
+            settings.customModelProvider in settings.cloudApiKeys &&
+            (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] || '').trim().length > 0)
+        : (settings.cloudApiKeys && 
+            settings.cloudProvider in settings.cloudApiKeys &&
+            (settings.cloudApiKeys[settings.cloudProvider as keyof typeof settings.cloudApiKeys] || '').trim().length > 0);
+    
+    if (!hasApiKey) {
         return {
             status: 'not-connected',
             modelName: 'Cloud AI not configured',
@@ -155,6 +189,8 @@ function getCloudProviderStatus(settings: IdeatrSettings): ModelStatus {
         providerName = `OpenRouter: ${settings.openRouterModel}`;
     } else if (settings.cloudProvider === 'custom' && settings.customEndpointUrl) {
         providerName = `Custom: ${settings.customEndpointUrl}`;
+    } else if (settings.cloudProvider === 'custom-model' && settings.customModelProvider && settings.customModel) {
+        providerName = `${settings.customModelProvider}: ${settings.customModel}`;
     }
 
     // Cloud providers are typically always ready if configured

@@ -88,10 +88,13 @@ export interface IdeatrSettings {
 
     // Cloud AI
     preferCloud: boolean; // Prefer cloud AI over local
-    cloudProvider: 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter' | 'custom' | 'none';
-    cloudApiKey: string; // API key for cloud provider
+    cloudProvider: 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter' | 'custom' | 'custom-model' | 'none';
+    cloudApiKeys: Record<'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter', string>; // API keys per provider
+    cloudApiKey?: string; // Legacy field for backward compatibility (deprecated)
     customEndpointUrl: string; // Custom endpoint URL (for self-hosted)
     openRouterModel: string; // OpenRouter model selection
+    customModelProvider?: 'anthropic' | 'openai' | 'gemini' | 'groq'; // Provider for custom model selection
+    customModel?: string; // Custom model ID for custom-model provider
 
     // File Organization
     moveArchivedToFolder: boolean; // Move archived ideas to Ideas/Archived/ directory
@@ -186,9 +189,17 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
     // Cloud AI
     preferCloud: false,
     cloudProvider: 'none',
-    cloudApiKey: '',
+    cloudApiKeys: {
+        anthropic: '',
+        openai: '',
+        gemini: '',
+        groq: '',
+        openrouter: ''
+    },
     customEndpointUrl: '',
     openRouterModel: '',
+    customModelProvider: undefined,
+    customModel: undefined,
 
     // File Organization
     moveArchivedToFolder: false, // Default: don't move files, just update status

@@ -174,21 +174,73 @@ export class ServiceInitializer {
 
         // Initialize cloud LLM if configured
         let cloudLLM: ILLMService | null = null;
-        if (settings.cloudProvider !== 'none' && settings.cloudApiKey.trim().length > 0) {
-            try {
-                const provider = ProviderFactory.createProvider(
-                    settings.cloudProvider,
-                    settings.cloudApiKey,
-                    {
-                        openRouterModel: settings.openRouterModel,
-                        customEndpointUrl: settings.customEndpointUrl
+        if (settings.cloudProvider !== 'none' && settings.cloudProvider !== 'custom' && settings.cloudProvider !== 'custom-model') {
+            // Get the API key for the current provider
+            const apiKey = (settings.cloudApiKeys && 
+                settings.cloudProvider in settings.cloudApiKeys)
+                ? (settings.cloudApiKeys[settings.cloudProvider as keyof typeof settings.cloudApiKeys] || '').trim()
+                : '';
+            
+            if (apiKey.length > 0) {
+                try {
+                    const provider = ProviderFactory.createProvider(
+                        settings.cloudProvider,
+                        apiKey,
+                        {
+                            openRouterModel: settings.openRouterModel,
+                            customEndpointUrl: settings.customEndpointUrl
+                        }
+                    );
+                    cloudLLM = new ProviderAdapter(provider);
+                    Logger.info('Cloud AI provider initialized:', provider.name);
+                } catch (error) {
+                    Logger.warn('Failed to initialize cloud provider:', error);
+                    new Notice('Failed to initialize cloud AI provider. Using local AI only.');
+                }
+            }
+        } else if (settings.cloudProvider === 'custom-model') {
+            // Custom model: use the specified provider with a custom model
+            if (settings.customModelProvider && settings.customModel) {
+                const apiKey = (settings.cloudApiKeys && 
+                    settings.customModelProvider in settings.cloudApiKeys)
+                    ? (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] || '').trim()
+                    : '';
+                
+                if (apiKey.length > 0) {
+                    try {
+                        const provider = ProviderFactory.createProvider(
+                            'custom-model',
+                            apiKey,
+                            {
+                                customModelProvider: settings.customModelProvider,
+                                customModel: settings.customModel
+                            }
+                        );
+                        cloudLLM = new ProviderAdapter(provider);
+                        Logger.info('Custom model provider initialized:', provider.name, settings.customModel);
+                    } catch (error) {
+                        Logger.warn('Failed to initialize custom model provider:', error);
+                        new Notice('Failed to initialize custom model provider. Using local AI only.');
                     }
-                );
-                cloudLLM = new ProviderAdapter(provider);
-                Logger.info('Cloud AI provider initialized:', provider.name);
-            } catch (error) {
-                Logger.warn('Failed to initialize cloud provider:', error);
-                new Notice('Failed to initialize cloud AI provider. Using local AI only.');
+                }
+            }
+        } else if (settings.cloudProvider === 'custom') {
+            // Custom endpoint doesn't need an API key
+            if (settings.customEndpointUrl && settings.customEndpointUrl.trim().length > 0) {
+                try {
+                    const provider = ProviderFactory.createProvider(
+                        'custom',
+                        '',
+                        {
+                            customEndpointUrl: settings.customEndpointUrl
+                        }
+                    );
+                    cloudLLM = new ProviderAdapter(provider);
+                    Logger.info('Cloud AI provider initialized:', provider.name);
+                } catch (error) {
+                    Logger.warn('Failed to initialize custom endpoint:', error);
+                    new Notice('Failed to initialize custom endpoint. Using local AI only.');
+                }
             }
         }
 
