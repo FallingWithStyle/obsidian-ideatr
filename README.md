@@ -454,7 +454,7 @@ npm run format
 
 ## Roadmap
 
-### Current Version: 0.8.5
+### Current Version: 0.8.6
 
 **Implemented Features:**
 

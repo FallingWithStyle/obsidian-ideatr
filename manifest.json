@@ -2,7 +2,7 @@
     "id": "ideatr",
     "name": "Ideatr",
     "repo": "FallingWithStyle/obsidian-ideatr",
-    "version": "0.8.5",
+    "version": "0.8.6",
     "minAppVersion": "0.15.0",
     "description": "Fast idea capture with intelligent classification",
     "author": "Patrick A Regan <ideatr@paraphlabs.com>",
