@@ -10,6 +10,7 @@ import { CommandContext } from '../../src/commands/base/CommandContext';
 import { DEFAULT_SETTINGS } from '../../src/settings';
 import { FrontmatterParser } from '../../src/services/FrontmatterParser';
 import { FileOrganizer } from '../../src/utils/fileOrganization';
+import { Logger } from '../../src/utils/logger';
 
 // Mock Logger to disable debug mode (so debug command is not registered)
 vi.mock('../../src/utils/logger', () => ({
@@ -239,7 +240,7 @@ describe('CommandRegistry', () => {
         });
 
         it('should log when callback is invoked', async () => {
-            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+            const loggerSpy = vi.spyOn(Logger, 'info').mockImplementation(() => {});
             
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
@@ -250,12 +251,12 @@ describe('CommandRegistry', () => {
             // Invoke the callback
             await expandCommand?.callback();
 
-            // Check that the callback was invoked
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining('[Ideatr] Callback invoked for: Expand Idea')
+            // Check that the callback was invoked (now using Logger.info instead of console.log)
+            expect(loggerSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Callback invoked for: Expand Idea')
             );
 
-            consoleSpy.mockRestore();
+            loggerSpy.mockRestore();
         });
 
         it('should register commands with unique IDs', () => {

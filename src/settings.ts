@@ -299,7 +299,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         // Validation Tools Section
         const validationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
-        validationTitle.createEl('h2', { text: 'Validation Tools' });
+        validationTitle.createEl('h2', { text: 'Validation tools' });
         const validationHelpIcon = createHelpIcon(this.app, 'validation', 'Learn about Validation Tools');
         validationTitle.appendChild(validationHelpIcon);
         // Domain checking settings hidden - functionality removed
@@ -308,7 +308,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         // Transformation Tools Section
         const transformationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
-        transformationTitle.createEl('h2', { text: 'Transformation Tools' });
+        transformationTitle.createEl('h2', { text: 'Transformation tools' });
         const transformationHelpIcon = createHelpIcon(this.app, 'transformation', 'Learn about Transformation Tools');
         transformationTitle.appendChild(transformationHelpIcon);
         nameVariantSection.display(containerEl);
@@ -319,16 +319,16 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         // Feedback Section
         const feedbackTitle = containerEl.createDiv({ cls: 'settings-section-title', attr: { id: 'ideatr-feedback-section' } });
-        feedbackTitle.createEl('h2', { text: 'Feedback & Support' });
+        feedbackTitle.createEl('h2', { text: 'Feedback & support' });
         feedbackSection.display(containerEl);
 
         // Error Logging Settings
-        containerEl.createEl('h3', { text: 'Error Logging' });
+        containerEl.createEl('h3', { text: 'Error logging' });
         errorLoggingSection.display(containerEl);
 
         // Capture Modal Settings
         const captureTitle = containerEl.createDiv({ cls: 'settings-section-title' });
-        captureTitle.createEl('h2', { text: 'Capture Modal' });
+        captureTitle.createEl('h2', { text: 'Capture modal' });
         const captureHelpIcon = createHelpIcon(this.app, 'capture-workflows', 'Learn about Capture Modal');
         captureTitle.appendChild(captureHelpIcon);
         captureModalSection.display(containerEl);

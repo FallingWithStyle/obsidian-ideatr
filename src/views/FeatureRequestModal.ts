@@ -41,7 +41,7 @@ export class FeatureRequestModal extends Modal {
         contentEl.addClass('ideatr-feedback-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Submit Feedback' });
+        contentEl.createEl('h2', { text: 'Submit feedback' });
         contentEl.createEl('p', {
             text: 'Help improve Ideatr by submitting a feature request or bug report.',
             cls: 'ideatr-feedback-description'
@@ -89,7 +89,7 @@ export class FeatureRequestModal extends Modal {
 
         // Options section
         const optionsContainer = contentEl.createEl('div', { cls: 'ideatr-feedback-options' });
-        optionsContainer.createEl('h3', { text: 'Additional Information (Optional)' });
+        optionsContainer.createEl('h3', { text: 'Additional information (optional)' });
 
         // Include system info checkbox
         const systemInfoContainer = optionsContainer.createEl('div', { cls: 'ideatr-checkbox-item' });
@@ -141,7 +141,7 @@ export class FeatureRequestModal extends Modal {
 
         // Preview section
         const previewContainer = contentEl.createEl('div', { cls: 'ideatr-feedback-preview' });
-        previewContainer.createEl('h3', { text: 'Preview' });
+        previewContainer.createEl('h3', { text: 'Preview' }); // Single word, OK as-is
         const previewTextarea = previewContainer.createEl('textarea', {
             attr: {
                 id: 'ideatr-preview',

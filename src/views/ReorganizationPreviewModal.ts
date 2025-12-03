@@ -26,7 +26,7 @@ export class ReorganizationPreviewModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Reorganized Idea Preview' });
+        contentEl.createEl('h2', { text: 'Reorganized idea preview' });
 
         const description = contentEl.createEl('p', {
             text: 'Review the reorganized idea below. A backup file has been created. Choose to accept or reject the changes:'
@@ -78,7 +78,9 @@ export class ReorganizationPreviewModal extends Modal {
             previewContainer.empty();
             const text = currentView === 'before' ? this.originalText : this.reorganization.reorganizedText;
             const preview = previewContainer.createDiv('ideatr-reorganization-content');
-            preview.innerHTML = text.replace(/\n/g, '<br>');
+            // Use textContent and CSS to preserve line breaks safely (prevents XSS)
+            preview.textContent = text;
+            preview.style.whiteSpace = 'pre-wrap';
             
             // Update tab styles
             beforeTab.classList.toggle('mod-cta', currentView === 'before');

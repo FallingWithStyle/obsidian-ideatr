@@ -144,7 +144,7 @@ export class CaptureModal extends Modal {
 
         // Title with status indicator
         const titleContainer = contentEl.createDiv({ cls: 'ideatr-capture-title-container' });
-        titleContainer.createEl('h2', { text: 'Capture Idea' });
+        titleContainer.createEl('h2', { text: 'Capture idea' });
         
         // Add model status indicator
         const statusIndicator = createModelStatusIndicator(this.llmService, this.settings, this.app);

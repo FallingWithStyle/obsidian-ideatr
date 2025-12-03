@@ -33,7 +33,7 @@ export class CodenameModal extends Modal {
         contentEl.addClass('ideatr-codename-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Generate Codename' });
+        contentEl.createEl('h2', { text: 'Generate codename' });
 
         // Description
         contentEl.createEl('p', {

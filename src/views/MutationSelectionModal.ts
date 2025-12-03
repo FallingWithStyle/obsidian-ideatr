@@ -27,7 +27,7 @@ export class MutationSelectionModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Idea Mutations' });
+        contentEl.createEl('h2', { text: 'Idea mutations' });
 
         const description = contentEl.createEl('p', {
             text: `Generated ${this.mutations.length} mutation${this.mutations.length > 1 ? 's' : ''}. Select which ones to save:`

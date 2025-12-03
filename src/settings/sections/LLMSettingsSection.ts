@@ -59,7 +59,10 @@ export class LLMSettingsSection extends BaseSettingsSection {
                         
                         // Clear existing options by manipulating the select element directly
                         const selectEl = dropdown.selectEl as HTMLSelectElement;
-                        selectEl.innerHTML = '';
+                        // Clear options safely
+                        while (selectEl.firstChild) {
+                            selectEl.removeChild(selectEl.firstChild);
+                        }
                         
                         if (downloadedModels.length === 0) {
                             // No models downloaded - show a message
@@ -160,6 +163,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             cls: `model-status-icon ${isValid ? 'model-status-valid' : 'model-status-invalid'}`,
                             attr: { title: isValid ? 'File verified' : 'File verification failed' }
                         });
+                        // Note: SVG strings are static and don't contain user input, so innerHTML is safe here
                         statusIcon.innerHTML = isValid 
                             ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
                             : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';

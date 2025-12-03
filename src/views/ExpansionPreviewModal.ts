@@ -23,7 +23,7 @@ export class ExpansionPreviewModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Expanded Idea Preview' });
+        contentEl.createEl('h2', { text: 'Expanded idea preview' });
 
         const description = contentEl.createEl('p', {
             text: 'Review the expanded idea content below. Choose to append or replace the current content:'
@@ -39,7 +39,9 @@ export class ExpansionPreviewModal extends Modal {
         
         // Render markdown preview (simplified - in production would use Obsidian's markdown renderer)
         const preview = previewContainer.createDiv('ideatr-expansion-content');
-        preview.innerHTML = this.expansion.expandedText.replace(/\n/g, '<br>');
+        // Use textContent and CSS to preserve line breaks safely (prevents XSS)
+        preview.textContent = this.expansion.expandedText;
+        preview.style.whiteSpace = 'pre-wrap';
 
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         

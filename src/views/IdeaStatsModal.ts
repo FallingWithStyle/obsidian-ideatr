@@ -33,7 +33,7 @@ export class IdeaStatsModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Idea Statistics' });
+        contentEl.createEl('h2', { text: 'Idea statistics' });
 
         // Stats grid
         const statsGrid = contentEl.createDiv('ideatr-stats-grid');

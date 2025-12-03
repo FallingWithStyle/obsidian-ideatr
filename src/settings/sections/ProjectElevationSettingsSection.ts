@@ -56,13 +56,20 @@ export class ProjectElevationSettingsSection extends BaseSettingsSection {
         elevationHelp.style.padding = '10px';
         elevationHelp.style.backgroundColor = 'var(--background-secondary)';
         elevationHelp.style.borderRadius = '4px';
-        elevationHelp.innerHTML = `
-            <strong>About Project Elevation:</strong><br>
-            Elevating an idea moves it from the Ideas/ directory to a project folder structure in ${this.plugin.settings.elevationProjectsDirectory || 'Projects'}/.
-            The original idea file becomes the project's README.md, and default folders are created automatically.
-            <br><br>
-            <strong>Note:</strong> Folder structure customization is planned for v2. Currently, the default structure is used for all projects.
-        `;
+        
+        // Build help text safely (prevents XSS from settings values)
+        const projectsDir = this.plugin.settings.elevationProjectsDirectory || 'Projects';
+        elevationHelp.createEl('strong', { text: 'About Project Elevation:' });
+        elevationHelp.createEl('br');
+        elevationHelp.createEl('span', { 
+            text: `Elevating an idea moves it from the Ideas/ directory to a project folder structure in ${projectsDir}/. The original idea file becomes the project's README.md, and default folders are created automatically.` 
+        });
+        elevationHelp.createEl('br');
+        elevationHelp.createEl('br');
+        elevationHelp.createEl('strong', { text: 'Note:' });
+        elevationHelp.createEl('span', { 
+            text: ' Folder structure customization is planned for v2. Currently, the default structure is used for all projects.' 
+        });
     }
 }
 

@@ -24,7 +24,7 @@ export class DuplicateResultsModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Duplicate Ideas Found' });
+        contentEl.createEl('h2', { text: 'Duplicate ideas found' });
 
         const description = contentEl.createEl('p', {
             text: `Found ${this.duplicates.length} potential duplicate${this.duplicates.length > 1 ? 's' : ''}. Select which ones to link in frontmatter:`

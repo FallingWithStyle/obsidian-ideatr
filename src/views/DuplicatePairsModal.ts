@@ -44,7 +44,7 @@ export class DuplicatePairsModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Duplicate Pairs Found' });
+        contentEl.createEl('h2', { text: 'Duplicate pairs found' });
 
         const description = contentEl.createEl('p', {
             text: `Found ${this.pairs.length} duplicate pair${this.pairs.length > 1 ? 's' : ''}. Select pairs and choose an action:`

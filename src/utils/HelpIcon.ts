@@ -138,7 +138,7 @@ export function createHelpIcon(
     const icon = document.createElement('span');
     icon.addClass('ideatr-help-icon');
     icon.setAttribute('aria-label', tooltip || 'Get help');
-    icon.innerHTML = '?';
+    icon.textContent = '?';
     icon.style.cursor = 'pointer';
     icon.style.display = 'inline-flex';
     icon.style.alignItems = 'center';

@@ -52,7 +52,7 @@ export class GraphView extends ItemView {
         // Create header
         const header = container.createDiv('graph-header');
         const headerTitle = header.createDiv({ cls: 'graph-title-container' });
-        headerTitle.createEl('h2', { text: 'Idea Clusters' });
+        headerTitle.createEl('h2', { text: 'Idea clusters' });
         const graphHelpIcon = createHelpIcon(this.app, 'graph-view', 'Learn about Graph View');
         headerTitle.appendChild(graphHelpIcon);
 

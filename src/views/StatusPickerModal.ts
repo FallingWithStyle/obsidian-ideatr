@@ -25,7 +25,7 @@ export class StatusPickerModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Change Idea Status' });
+        contentEl.createEl('h2', { text: 'Change idea status' });
 
         const description = contentEl.createEl('p', {
             text: `Current status: ${this.currentStatus}. Select a new status:`

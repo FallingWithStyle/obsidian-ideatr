@@ -37,7 +37,7 @@ export class ClusterAnalysisModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Cluster Analysis' });
+        contentEl.createEl('h2', { text: 'Cluster analysis' });
 
         // Cluster header
         const header = contentEl.createDiv('ideatr-cluster-header');

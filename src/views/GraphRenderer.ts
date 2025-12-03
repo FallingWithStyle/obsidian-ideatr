@@ -151,21 +151,21 @@ function updateTooltipContent(tooltip: HTMLElement, idea: GraphNode['idea']): vo
         : idea.body;
     const created = idea.frontmatter.created;
 
-    tooltip.innerHTML = `
-        <div class="ideatr-tooltip-header">
-            <strong>${filename}</strong>
-        </div>
-        <div class="ideatr-tooltip-meta">
-            <span>Category: ${category}</span>
-            <span>Created: ${created}</span>
-        </div>
-        <div class="ideatr-tooltip-tags">
-            Tags: ${tags}
-        </div>
-        <div class="ideatr-tooltip-preview">
-            ${preview || '(No content)'}
-        </div>
-    `;
+    // Clear and rebuild tooltip content safely (prevents XSS)
+    tooltip.empty();
+    
+    const header = tooltip.createDiv('ideatr-tooltip-header');
+    header.createEl('strong', { text: filename });
+    
+    const meta = tooltip.createDiv('ideatr-tooltip-meta');
+    meta.createEl('span', { text: `Category: ${category}` });
+    meta.createEl('span', { text: `Created: ${created}` });
+    
+    const tagsDiv = tooltip.createDiv('ideatr-tooltip-tags');
+    tagsDiv.textContent = `Tags: ${tags}`;
+    
+    const previewDiv = tooltip.createDiv('ideatr-tooltip-preview');
+    previewDiv.textContent = preview || '(No content)';
 }
 
 /**

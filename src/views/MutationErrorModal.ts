@@ -29,7 +29,7 @@ export class MutationErrorModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Failed to Generate Mutations' });
+        contentEl.createEl('h2', { text: 'Failed to generate mutations' });
         contentEl.addClass('ideatr-error-modal');
 
         const errorMessage = contentEl.createDiv('ideatr-error-message');

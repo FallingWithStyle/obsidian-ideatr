@@ -46,14 +46,13 @@ export class FirstLaunchSetupModal extends Modal {
         downloadOption.createEl('p', {
             text: `Download a local AI model (${modelSizeGB} GB for default model) for offline, free AI idea enhancement including classification, expansion, and more. Choose from multiple models optimized for different needs.`
         });
-        downloadOption.createEl('ul', {
+        const featuresList = downloadOption.createEl('ul', {
             cls: 'ideatr-setup-features'
-        }).innerHTML = `
-            <li>✅ Works offline</li>
-            <li>✅ Free to use</li>
-            <li>✅ No API keys needed</li>
-            <li>⚠️ Requires ${modelSizeGB} GB download (varies by model)</li>
-        `;
+        });
+        featuresList.createEl('li', { text: '✅ Works offline' });
+        featuresList.createEl('li', { text: '✅ Free to use' });
+        featuresList.createEl('li', { text: '✅ No API keys needed' });
+        featuresList.createEl('li', { text: `⚠️ Requires ${modelSizeGB} GB download (varies by model)` });
         const downloadButton = downloadOption.createEl('button', {
             text: 'Choose & Download Model',
             cls: 'mod-cta'
@@ -66,14 +65,13 @@ export class FirstLaunchSetupModal extends Modal {
         apiKeyOption.createEl('p', {
             text: 'Use a cloud AI provider (Anthropic, OpenAI, etc.) for better quality and faster responses.'
         });
-        apiKeyOption.createEl('ul', {
+        const apiFeaturesList = apiKeyOption.createEl('ul', {
             cls: 'ideatr-setup-features'
-        }).innerHTML = `
-            <li>✅ Better quality results</li>
-            <li>✅ Faster responses</li>
-            <li>✅ No local storage needed</li>
-            <li>⚠️ Requires API key (paid)</li>
-        `;
+        });
+        apiFeaturesList.createEl('li', { text: '✅ Better quality results' });
+        apiFeaturesList.createEl('li', { text: '✅ Faster responses' });
+        apiFeaturesList.createEl('li', { text: '✅ No local storage needed' });
+        apiFeaturesList.createEl('li', { text: '⚠️ Requires API key (paid)' });
         const apiKeyButton = apiKeyOption.createEl('button', {
             text: 'Enter API Key',
             cls: 'mod-cta'
@@ -174,24 +172,27 @@ export class FirstLaunchSetupModal extends Modal {
                                 if (isDownloaded) {
                                     // Verify integrity
                                     const isValid = await modelManager.verifyModelIntegrity();
-                                    statusIndicator.innerHTML = '';
+                                    statusIndicator.empty();
                                     const statusIcon = document.createElement('span');
                                     statusIcon.className = `model-status-icon ${isValid ? 'model-status-valid' : 'model-status-invalid'}`;
                                     statusIcon.title = isValid ? 'File verified' : 'File verification failed';
+                                    // Note: SVG strings are static and don't contain user input, so innerHTML is safe here
+                                    // However, we use it only for static SVG icons, not user-generated content
                                     statusIcon.innerHTML = isValid 
                                         ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
                                         : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
                                     statusIndicator.appendChild(statusIcon);
                                 } else {
-                                    statusIndicator.innerHTML = '';
+                                    statusIndicator.empty();
                                 }
                             } catch (error) {
                                 // If verification fails due to error, show error icon
                                 console.error('Error verifying model integrity:', error);
-                                statusIndicator.innerHTML = '';
+                                statusIndicator.empty();
                                 const statusIcon = document.createElement('span');
                                 statusIcon.className = 'model-status-icon model-status-invalid';
                                 statusIcon.title = 'Verification error';
+                                // Note: SVG string is static and doesn't contain user input, so innerHTML is safe here
                                 statusIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
                                 statusIndicator.appendChild(statusIcon);
                             }

@@ -136,8 +136,8 @@ export default class IdeatrPlugin extends Plugin {
             // DEBUG: Add a test command directly in main.ts (only in debug mode)
             if (Logger.isDebugEnabled()) {
                 const debugMainCallback = async () => {
-                    console.log('[Ideatr DEBUG MAIN] Command callback invoked!');
-                    console.log('[Ideatr DEBUG MAIN] Stack trace:', new Error().stack);
+                    Logger.debug('[Ideatr DEBUG MAIN] Command callback invoked!');
+                    Logger.debug('[Ideatr DEBUG MAIN] Stack trace:', new Error().stack);
                     Logger.info('DEBUG MAIN: Command executed successfully');
                     new Notice('Ideatr Debug (Main) command executed - check console');
                 };
@@ -185,7 +185,7 @@ export default class IdeatrPlugin extends Plugin {
                 callback: () => {
                     if (this.memoryMonitor) {
                         const report = this.memoryMonitor.getReport();
-                        console.log(report);
+                        Logger.debug('Memory Report:', report);
                         // Also show a simplified notice
                         const usage = this.memoryMonitor.getCurrentUsage();
                         if (usage) {
@@ -199,8 +199,7 @@ export default class IdeatrPlugin extends Plugin {
                 }
             });
 
-            Logger.debug('All commands registered successfully');
-            console.log('[Ideatr] Commands registered successfully');
+            Logger.info('All commands registered successfully');
         } catch (error) {
             console.error('[Ideatr] Error registering commands:', error);
             console.error('[Ideatr] Error details:', error instanceof Error ? error.stack : error);
@@ -349,7 +348,7 @@ export default class IdeatrPlugin extends Plugin {
         if (!this.statusBarItem) return;
 
         // Clear existing content
-        this.statusBarItem.innerHTML = '';
+        this.statusBarItem.empty();
 
         // Create and append new status indicator
         const statusIndicator = createModelStatusIndicator(

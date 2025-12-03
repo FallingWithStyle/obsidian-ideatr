@@ -68,7 +68,7 @@ export class DashboardView extends ItemView {
         // Create header
         const header = container.createDiv('dashboard-header');
         const headerTitle = header.createDiv({ cls: 'dashboard-title-container' });
-        headerTitle.createEl('h2', { text: 'Ideatr Dashboard' });
+        headerTitle.createEl('h2', { text: 'Ideatr dashboard' }); // "Ideatr" is proper noun, "dashboard" lowercase
         const dashboardHelpIcon = createHelpIcon(this.app, 'dashboard', 'Learn about the Dashboard');
         headerTitle.appendChild(dashboardHelpIcon);
 
@@ -101,7 +101,7 @@ export class DashboardView extends ItemView {
         if (this.resurfacingService) {
             const resurfacingPanel = sidePanels.createDiv('dashboard-panel resurfacing-panel');
             const resurfacingTitle = resurfacingPanel.createDiv({ cls: 'dashboard-panel-title' });
-            resurfacingTitle.createEl('h3', { text: 'Old Ideas' });
+            resurfacingTitle.createEl('h3', { text: 'Old ideas' });
             const resurfacingHelpIcon = createHelpIcon(this.app, 'resurfacing', 'Learn about Resurfacing');
             resurfacingTitle.appendChild(resurfacingHelpIcon);
             this.renderResurfacingPanel(resurfacingPanel);
@@ -110,7 +110,7 @@ export class DashboardView extends ItemView {
         // Triage inbox
         const triagePanel = sidePanels.createDiv('dashboard-panel triage-panel');
         const triageTitle = triagePanel.createDiv({ cls: 'dashboard-panel-title' });
-        triageTitle.createEl('h3', { text: 'Triage Inbox' });
+        triageTitle.createEl('h3', { text: 'Triage inbox' });
         const triageHelpIcon = createHelpIcon(this.app, 'triage-inbox', 'Learn about Triage Inbox');
         triageTitle.appendChild(triageHelpIcon);
         this.renderTriageInbox(triagePanel);

@@ -32,7 +32,7 @@ export class ClassificationResultsModal extends Modal {
         contentEl.addClass('ideatr-classification-results-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Classification Results' });
+        contentEl.createEl('h2', { text: 'Classification results' });
 
         // Category display
         const categoryContainer = contentEl.createEl('div', { cls: 'ideatr-setting-item' });

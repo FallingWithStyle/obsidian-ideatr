@@ -48,8 +48,6 @@ export class CommandRegistry {
         // Return an async function that Obsidian can call
         // Obsidian should handle the Promise automatically
         const callback = async () => {
-            // Use console.log for critical invocation logging (always visible)
-            console.log(`[Ideatr] Callback invoked for: ${commandName}`);
             Logger.info(`Callback invoked for: ${commandName}`);
             Logger.debug(`Callback stack trace:`, new Error().stack);
             try {
@@ -75,8 +73,6 @@ export class CommandRegistry {
      * Safely execute a command with error handling
      */
     private static async safeExecute(commandName: string, operation: () => Promise<void>): Promise<void> {
-        // Use console.log for critical start logging (always visible)
-        console.log(`[Ideatr] Starting command: ${commandName}`);
         Logger.info(`Starting command: ${commandName}`);
         
         // Show visual loading indicator with spinner
@@ -84,7 +80,6 @@ export class CommandRegistry {
         let loadingNotice: Notice | null = null;
         try {
             loadingNotice = new Notice(`⏳ Processing ${commandName}...`, 0); // 0 = don't auto-hide
-            console.log(`[Ideatr] Created loading notice for: ${commandName}`);
             Logger.debug(`Created loading notice for: ${commandName}`);
             
             // Try to add spinner styling (optional enhancement)
@@ -110,7 +105,6 @@ export class CommandRegistry {
         try {
             Logger.debug(`Executing operation for: ${commandName}`);
             await operation();
-            console.log(`[Ideatr] Finished command: ${commandName}`);
             Logger.info(`Finished command: ${commandName}`);
             
             // Hide loading notice and show success
@@ -138,7 +132,7 @@ export class CommandRegistry {
      * Register all commands with the plugin
      */
     static registerAll(plugin: Plugin, context: CommandContext): void {
-        console.log('[Ideatr] Registering commands...');
+        Logger.debug('Registering commands...');
         
         // Capture commands
         const captureCallback = CommandRegistry.createCommandCallback('Capture Idea', () => new CaptureCommand(context).execute());
@@ -147,7 +141,7 @@ export class CommandRegistry {
             name: 'Capture Idea',
             callback: captureCallback
         });
-        console.log('[Ideatr] Registered: Capture Idea');
+        Logger.debug('Registered: Capture Idea');
 
         // Validation commands
         // Domain checking command hidden - functionality removed
@@ -211,7 +205,6 @@ export class CommandRegistry {
             callback: expandCallback
         });
         Logger.debug('Registered: Expand Idea, callback stored:', typeof expandCallback);
-        console.log('[Ideatr] Registered: Expand Idea');
 
         plugin.addCommand({
             id: 'reorganize-idea',
@@ -347,7 +340,7 @@ export class CommandRegistry {
         // DEBUG: Add a test command via CommandRegistry (only in debug mode)
         if (Logger.isDebugEnabled()) {
             const debugCallback = CommandRegistry.createCommandCallback('Ideatr Debug (Registry)', async () => {
-                console.log('[Ideatr DEBUG REGISTRY] Command operation executed!');
+                Logger.debug('[Ideatr DEBUG REGISTRY] Command operation executed!');
                 Logger.info('DEBUG REGISTRY: Command executed successfully');
                 new Notice('Ideatr Debug (Registry) command executed - check console');
             });

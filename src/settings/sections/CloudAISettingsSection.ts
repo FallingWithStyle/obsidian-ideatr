@@ -140,7 +140,11 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     helpText.style.marginTop = '5px';
                     const providerName = providerNames[this.plugin.settings.cloudProvider] || 'provider';
                     const apiKeyUrl = apiKeyUrls[this.plugin.settings.cloudProvider] || '#';
-                    helpText.innerHTML = `<a href="${apiKeyUrl}" target="_blank">Get your ${providerName} API key</a>`;
+                    helpText.createEl('a', {
+                        href: apiKeyUrl,
+                        text: `Get your ${providerName} API key`,
+                        attr: { target: '_blank' }
+                    });
 
                     const costEstimates: Record<string, string> = {
                         'anthropic': '~$0.002 per idea (Claude 3.5 Haiku)',
