@@ -5,15 +5,17 @@ import { extractAndRepairJSON } from '../../utils/jsonRepair';
 import { Logger } from '../../utils/logger';
 
 /**
- * Groq Provider - Llama 3.3 70B
+ * Groq Provider - Supports multiple models
  */
 export class GroqProvider implements ILLMProvider {
     name = 'Groq';
     private client: Groq | null = null;
     private apiKey: string;
+    private model: string;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
+        this.model = model || 'llama-3.3-70b-versatile';
     }
 
     private getClient(): Groq {
@@ -49,7 +51,7 @@ export class GroqProvider implements ILLMProvider {
         try {
             const client = this.getClient();
             const response = await client.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
+                model: this.model,
                 messages: [{
                     role: 'user',
                     content: prompt

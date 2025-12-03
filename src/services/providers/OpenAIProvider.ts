@@ -5,15 +5,17 @@ import { extractAndRepairJSON } from '../../utils/jsonRepair';
 import { Logger } from '../../utils/logger';
 
 /**
- * OpenAI Provider - GPT-4o Mini
+ * OpenAI Provider - Supports multiple GPT models
  */
 export class OpenAIProvider implements ILLMProvider {
     name = 'OpenAI';
     private client: OpenAI | null = null;
     private apiKey: string;
+    private model: string;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
+        this.model = model || 'gpt-4o-mini';
     }
 
     private getClient(): OpenAI {
@@ -50,7 +52,7 @@ export class OpenAIProvider implements ILLMProvider {
         try {
             const client = this.getClient();
             const response = await client.chat.completions.create({
-                model: 'gpt-4o-mini',
+                model: this.model,
                 messages: [{
                     role: 'user',
                     content: prompt

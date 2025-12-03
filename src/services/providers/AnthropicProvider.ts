@@ -5,15 +5,17 @@ import { extractAndRepairJSON } from '../../utils/jsonRepair';
 import { Logger } from '../../utils/logger';
 
 /**
- * Anthropic Provider - Claude 3.5 Haiku
+ * Anthropic Provider - Supports multiple Claude models
  */
 export class AnthropicProvider implements ILLMProvider {
     name = 'Anthropic';
     private client: Anthropic | null = null;
     private apiKey: string;
+    private model: string;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
+        this.model = model || 'claude-3-5-haiku-20241022';
     }
 
     private getClient(): Anthropic {
@@ -50,7 +52,7 @@ export class AnthropicProvider implements ILLMProvider {
         try {
             const client = this.getClient();
             const response = await client.messages.create({
-                model: 'claude-3-5-haiku-20241022',
+                model: this.model,
                 max_tokens: 256,
                 messages: [{
                     role: 'user',

@@ -5,15 +5,17 @@ import { extractAndRepairJSON } from '../../utils/jsonRepair';
 import { Logger } from '../../utils/logger';
 
 /**
- * Gemini Provider - Gemini 1.5 Flash
+ * Gemini Provider - Supports multiple Gemini models
  */
 export class GeminiProvider implements ILLMProvider {
     name = 'Gemini';
     private client: GoogleGenerativeAI | null = null;
     private apiKey: string;
+    private model: string;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
+        this.model = model || 'gemini-1.5-flash';
     }
 
     private getClient(): GoogleGenerativeAI {
@@ -48,8 +50,8 @@ export class GeminiProvider implements ILLMProvider {
 
         try {
             const client = this.getClient();
-            const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
-            const result = await model.generateContent(prompt);
+            const genModel = client.getGenerativeModel({ model: this.model });
+            const result = await genModel.generateContent(prompt);
             const response = await result.response;
             const content = response.text();
 
