@@ -1,7 +1,7 @@
 import type { ILLMService, ClassificationResult, IdeaCategory } from '../types/classification';
 import type { IdeatrSettings } from '../settings';
 import { APITimeoutError, NetworkError, ClassificationError } from '../types/classification';
-import { spawn, ChildProcess, execSync } from 'child_process';
+import { execSync } from 'child_process';
 import { Notice, requestUrl } from 'obsidian';
 // @ts-ignore - MODELS will be used for chat template support
 import { ModelManager, MODELS } from './ModelManager';
@@ -12,6 +12,9 @@ import { extractAndRepairJSON } from '../utils/jsonRepair';
 import { Logger } from '../utils/logger';
 import { checkModelCompatibility, getSystemInfoString } from '../utils/systemCapabilities';
 import { ProcessHealthMonitor } from '../utils/ProcessHealthMonitor';
+import { ProcessManager } from '../utils/ProcessManager';
+import { LLM_CONSTANTS } from '../utils/constants';
+import { GRAMMARS } from '../utils/grammars';
 
 /**
  * LlamaService - Integrates with local Llama.cpp server
@@ -22,9 +25,9 @@ export class LlamaService implements ILLMService {
     private static instanceLock: boolean = false;
 
     private settings: IdeatrSettings;
-    private serverProcess: ChildProcess | null = null;
+    private processManager: ProcessManager | null = null;
     private isServerReady: boolean = false;
-    private idleTimeout: number = 15 * 60 * 1000; // 15 minutes
+    private idleTimeout: number = LLM_CONSTANTS.IDLE_TIMEOUT;
     private idleTimer: NodeJS.Timeout | null = null;
     // @ts-ignore - lastUseTime is written to but not read (used for tracking)
     private lastUseTime: number = 0;
@@ -33,11 +36,6 @@ export class LlamaService implements ILLMService {
     private pluginDir: string | null = null;
     private processHealthMonitor: ProcessHealthMonitor;
     private isCleaningUp: boolean = false; // Flag to prevent operations during cleanup
-    // Event handlers for cleanup
-    private stdoutHandler: ((data: Buffer) => void) | null = null;
-    private stderrHandler: ((data: Buffer) => void) | null = null;
-    private closeHandler: ((code: number | null, signal: NodeJS.Signals | null) => void) | null = null;
-    private errorHandler: ((error: Error) => void) | null = null;
     private healthCheckTimer: NodeJS.Timeout | null = null;
 
     private constructor(settings: IdeatrSettings, pluginDir?: string) {
@@ -68,29 +66,18 @@ export class LlamaService implements ILLMService {
         }
 
         // Model size in GB
-        const modelSizeGB = modelConfig.sizeMB / 1024;
+        const modelSizeMB = modelConfig.sizeMB;
 
-        // Calculate GPU layers based on model size
-        // For 70B models (~42GB), we need to be very conservative
-        // Metal on Apple Silicon has ~29GB recommended max working set
-        // A 70B Q4_K_M model needs ~40GB, so we can only load a fraction to GPU
-
-        if (modelSizeGB >= 40) {
-            // Very large models (70B): Load only ~30-40% to GPU, rest on CPU
-            // 80 layers total for 70B, so ~25-30 layers on GPU
-            return 25;
-        } else if (modelSizeGB >= 20) {
-            // Large models (30B-40B): Load ~50-60% to GPU
-            return 40;
-        } else if (modelSizeGB >= 10) {
-            // Medium-large models (13B-20B): Load ~70-80% to GPU
-            return 60;
-        } else if (modelSizeGB >= 5) {
-            // Medium models (7B-10B): Load most layers to GPU
-            return 75;
+        if (modelSizeMB >= LLM_CONSTANTS.SIZE_THRESHOLD.HUGE) {
+            return LLM_CONSTANTS.GPU_LAYERS.HUGE;
+        } else if (modelSizeMB >= LLM_CONSTANTS.SIZE_THRESHOLD.LARGE) {
+            return LLM_CONSTANTS.GPU_LAYERS.VERY_LARGE;
+        } else if (modelSizeMB >= LLM_CONSTANTS.SIZE_THRESHOLD.MEDIUM) {
+            return LLM_CONSTANTS.GPU_LAYERS.LARGE;
+        } else if (modelSizeMB >= LLM_CONSTANTS.SIZE_THRESHOLD.SMALL) {
+            return LLM_CONSTANTS.GPU_LAYERS.MEDIUM;
         } else {
-            // Small models (<5GB): Load all layers to GPU
-            return 99;
+            return LLM_CONSTANTS.GPU_LAYERS.SMALL;
         }
     }
 
@@ -107,54 +94,47 @@ export class LlamaService implements ILLMService {
         const modelConfig = MODELS[modelKey];
 
         if (!modelConfig) {
-            // Fallback to default if model not found
             return this.settings.llmTimeout;
         }
 
         // Estimate generation speed based on model size
-        // Smaller models are typically faster, but we use conservative estimates
-        // These are conservative estimates to ensure we have enough time
         let tokensPerSecond: number;
-        if (modelConfig.sizeMB < 5000) {
-            tokensPerSecond = 50; // Conservative: 50 tokens/sec for small models
-        } else if (modelConfig.sizeMB < 10000) {
-            tokensPerSecond = 30; // 30 tokens/sec for medium models
-        } else if (modelConfig.sizeMB < 20000) {
-            tokensPerSecond = 20; // 20 tokens/sec for large models
+        if (modelConfig.sizeMB < LLM_CONSTANTS.SIZE_THRESHOLD.SMALL) {
+            tokensPerSecond = LLM_CONSTANTS.SPEED.SMALL;
+        } else if (modelConfig.sizeMB < LLM_CONSTANTS.SIZE_THRESHOLD.MEDIUM) {
+            tokensPerSecond = LLM_CONSTANTS.SPEED.MEDIUM;
+        } else if (modelConfig.sizeMB < LLM_CONSTANTS.SIZE_THRESHOLD.LARGE) {
+            tokensPerSecond = LLM_CONSTANTS.SPEED.LARGE;
         } else {
-            tokensPerSecond = 10; // 10 tokens/sec for very large models
+            tokensPerSecond = LLM_CONSTANTS.SPEED.HUGE;
         }
 
-        // Calculate base timeout based on expected tokens
-        // Add 5 seconds overhead for prompt processing and network latency
+        // Calculate base timeout
         const generationTimeMs = (n_predict / tokensPerSecond) * 1000;
-        const overheadMs = 5000; // 5 seconds overhead
+        const overheadMs = LLM_CONSTANTS.TIMEOUT.BASE_OVERHEAD;
         let baseTimeout = Math.round(generationTimeMs + overheadMs);
 
         // Ensure minimum timeout based on model size
-        // Small models (<5GB): 15s minimum
-        // Medium models (5-10GB): 30s minimum
-        // Large models (10-20GB): 45s minimum
-        // Very large models (>20GB): 90s minimum
         let minTimeout: number;
-        if (modelConfig.sizeMB < 5000) {
-            minTimeout = 15000; // 15s for small models
-        } else if (modelConfig.sizeMB < 10000) {
-            minTimeout = 30000; // 30s for medium models
-        } else if (modelConfig.sizeMB < 20000) {
-            minTimeout = 45000; // 45s for large models
+        if (modelConfig.sizeMB < LLM_CONSTANTS.SIZE_THRESHOLD.SMALL) {
+            minTimeout = LLM_CONSTANTS.TIMEOUT.MIN.SMALL;
+        } else if (modelConfig.sizeMB < LLM_CONSTANTS.SIZE_THRESHOLD.MEDIUM) {
+            minTimeout = LLM_CONSTANTS.TIMEOUT.MIN.MEDIUM;
+        } else if (modelConfig.sizeMB < LLM_CONSTANTS.SIZE_THRESHOLD.LARGE) {
+            minTimeout = LLM_CONSTANTS.TIMEOUT.MIN.LARGE;
         } else {
-            minTimeout = 90000; // 90s for very large models
+            minTimeout = LLM_CONSTANTS.TIMEOUT.MIN.HUGE;
         }
 
         // Adjust for task complexity
-        // Expansion tasks are more complex and need more time
-        const taskMultiplier = taskType === 'expansion' ? 1.5 : taskType === 'completion' ? 1.2 : 1.0;
+        const taskMultiplier = taskType === 'expansion'
+            ? LLM_CONSTANTS.TASK_MULTIPLIER.EXPANSION
+            : taskType === 'completion'
+                ? LLM_CONSTANTS.TASK_MULTIPLIER.COMPLETION
+                : LLM_CONSTANTS.TASK_MULTIPLIER.CLASSIFICATION;
 
         const recommendedTimeout = Math.round(Math.max(baseTimeout, minTimeout) * taskMultiplier);
 
-        // Use the higher of user setting or recommended timeout
-        // But respect user's setting if they've explicitly set a higher value
         return Math.max(this.settings.llmTimeout, recommendedTimeout);
     }
 
@@ -167,24 +147,19 @@ export class LlamaService implements ILLMService {
         const modelConfig = MODELS[modelKey];
 
         if (!modelConfig) {
-            return 120000; // 2 minutes default
+            return LLM_CONSTANTS.TIMEOUT.LOADING.SMALL;
         }
 
-        // Model size in GB
-        const modelSizeGB = modelConfig.sizeMB / 1024;
+        const modelSizeMB = modelConfig.sizeMB;
 
-        if (modelSizeGB >= 40) {
-            // Very large models (70B): 5 minutes
-            return 300000; // 5 minutes
-        } else if (modelSizeGB >= 20) {
-            // Large models: 4 minutes
-            return 240000; // 4 minutes
-        } else if (modelSizeGB >= 10) {
-            // Medium-large models: 3 minutes
-            return 180000; // 3 minutes
+        if (modelSizeMB >= LLM_CONSTANTS.SIZE_THRESHOLD.HUGE) {
+            return LLM_CONSTANTS.TIMEOUT.LOADING.HUGE;
+        } else if (modelSizeMB >= LLM_CONSTANTS.SIZE_THRESHOLD.LARGE) {
+            return LLM_CONSTANTS.TIMEOUT.LOADING.LARGE;
+        } else if (modelSizeMB >= LLM_CONSTANTS.SIZE_THRESHOLD.MEDIUM) {
+            return LLM_CONSTANTS.TIMEOUT.LOADING.MEDIUM;
         } else {
-            // Small-medium models: 2 minutes
-            return 120000; // 2 minutes
+            return LLM_CONSTANTS.TIMEOUT.LOADING.SMALL;
         }
     }
 
@@ -216,7 +191,7 @@ export class LlamaService implements ILLMService {
         if (settings.keepModelLoaded) {
             this.idleTimeout = 0;
         } else {
-            this.idleTimeout = 15 * 60 * 1000;
+            this.idleTimeout = LLM_CONSTANTS.IDLE_TIMEOUT;
         }
     }
 
@@ -393,7 +368,7 @@ export class LlamaService implements ILLMService {
         }
 
         // If already running, return early
-        if (this.serverProcess) {
+        if (this.processManager?.getProcess()) {
             Logger.debug('Server already running');
             return;
         }
@@ -446,326 +421,34 @@ export class LlamaService implements ILLMService {
         }
 
         try {
-            this.serverProcess = spawn(binaryPath, [
+            this.processManager = new ProcessManager({
+                maxBufferLines: LLM_CONSTANTS.MAX_BUFFER_SIZE,
+                onStdout: (data) => this.handleStdout(data),
+                onStderr: (data) => this.handleStderr(data),
+                onClose: (code, signal) => this.handleClose(code, signal, binaryPath, modelPath),
+                onError: (error) => this.handleError(error, binaryPath, modelPath)
+            });
+
+            const args = [
                 '-m', modelPath,
                 '--port', String(this.settings.llamaServerPort),
-                '--ctx-size', '2048',
+                '--ctx-size', LLM_CONSTANTS.DEFAULT_CTX_SIZE,
                 '--n-gpu-layers', String(gpuLayers), // Adaptive based on model size
                 '--parallel', String(this.settings.concurrency)
-            ]);
+            ];
 
-            // Track process health
-            this.processHealthMonitor.setProcess(this.serverProcess);
+            Logger.debug('Starting server process with args:', args);
 
-            // Track if server failed to start
-            let serverStartError: Error | null = null;
-            let processExited = false;
-            let exitCode: number | null = null;
-            let errorMessage: string = '';
-            // Accumulate all stderr output for detailed logging on crash
-            // Limit buffer size to prevent unbounded memory growth
-            const MAX_BUFFER_SIZE = 1000; // Keep last 1000 lines
-            const stderrBuffer: string[] = [];
-            const stdoutBuffer: string[] = [];
-
-            const addToBuffer = (buffer: string[], line: string) => {
-                buffer.push(line);
-                // Keep only recent entries to prevent unbounded growth
-                if (buffer.length > MAX_BUFFER_SIZE) {
-                    buffer.shift();
-                }
-            };
-
-            Logger.debug('Starting server process with args:', [
-                '-m', modelPath,
-                '--port', String(this.settings.llamaServerPort),
-                '--ctx-size', '2048',
-                '--n-gpu-layers', String(gpuLayers),
-                '--parallel', String(this.settings.concurrency)
-            ]);
-
-            // Store handlers so we can remove them later
-            this.stdoutHandler = (data: Buffer) => {
-                // Ignore stdout if we're cleaning up
-                if (this.isCleaningUp) {
-                    return;
-                }
-
-                const output = data.toString();
-                addToBuffer(stdoutBuffer, output);
-                Logger.debug('[Llama Server stdout]', output.trim());
-                // Check for server listening (but model may still be loading)
-                if (output.includes('HTTP server listening') ||
-                    output.includes('server is listening') ||
-                    output.includes('listening on http')) {
-                    // Server is listening but model may still be loading
-                    this.loadingState = 'loading';
-                    Logger.debug('Server HTTP endpoint is listening (model may still be loading)');
-                }
-                // Check for model fully loaded - this is when server is truly ready
-                if (output.includes('main: model loaded') ||
-                    output.includes('model loaded')) {
-                    this.isServerReady = true;
-                    this.loadingState = 'ready';
-                    Logger.debug('Server is ready! (Model fully loaded)');
-                    new Notice('Llama AI Server Started');
-                }
-            };
-
-            this.stderrHandler = (data: Buffer) => {
-                // Ignore stderr if we're cleaning up
-                if (this.isCleaningUp) {
-                    return;
-                }
-
-                const errorOutput = data.toString();
-                addToBuffer(stderrBuffer, errorOutput);
-                const outputLines = errorOutput.split('\n').filter((line: string) => line.trim());
-
-                // llama.cpp outputs all messages to stderr, including informational ones
-                // Check for actual errors vs informational messages
-                const isError = outputLines.some((line: string) =>
-                    (line.toLowerCase().includes('error') ||
-                        line.toLowerCase().includes('failed') ||
-                        line.toLowerCase().includes('fatal')) &&
-                    !line.toLowerCase().includes('ggml_metal') && // Metal init messages are info
-                    !line.toLowerCase().includes('system info') &&
-                    !line.toLowerCase().includes('llama_model_loader') &&
-                    !line.toLowerCase().includes('print_info') &&
-                    !line.toLowerCase().includes('load:') &&
-                    !line.toLowerCase().includes('llama_context') &&
-                    !line.toLowerCase().includes('main:')
-                );
-
-                // Log informational messages at debug level, errors at error level
-                for (const line of outputLines) {
-                    if (isError && (line.toLowerCase().includes('error') ||
-                        line.toLowerCase().includes('failed') ||
-                        line.toLowerCase().includes('fatal'))) {
-                        Logger.error('[Llama Server stderr]', line.trim());
-                    } else {
-                        // Most llama.cpp output is informational, log at debug level
-                        Logger.debug('[Llama Server stderr]', line.trim());
-                    }
-                }
-
-                // Check for server listening in stderr (llama.cpp outputs info to stderr)
-                // Note: Server listening doesn't mean model is loaded yet
-                if (errorOutput.includes('HTTP server is listening') ||
-                    errorOutput.includes('server is listening on http') ||
-                    errorOutput.includes('main: server is listening')) {
-                    // Server is listening but model may still be loading
-                    this.loadingState = 'loading';
-                    Logger.debug('Server HTTP endpoint is listening (model may still be loading)');
-                }
-                // Check for model fully loaded - this is when server is truly ready
-                if (errorOutput.includes('main: model loaded') ||
-                    errorOutput.includes('model loaded')) {
-                    this.isServerReady = true;
-                    this.loadingState = 'ready';
-                    Logger.debug('Server is ready! (Model fully loaded)');
-                    new Notice('Llama AI Server Started');
-                }
-                // Check for common startup errors (but not info messages)
-                if (isError) {
-                    errorMessage = errorOutput.trim();
-
-                    // Check for RAM/VRAM-related errors
-                    const lowerOutput = errorOutput.toLowerCase();
-                    const isRAMError = lowerOutput.includes('failed to load model') ||
-                        lowerOutput.includes('out of memory') ||
-                        lowerOutput.includes('insufficient memory') ||
-                        lowerOutput.includes('iogpucommandbuffercallbackerroroutofmemory') ||
-                        lowerOutput.includes('command buffer') && lowerOutput.includes('failed') ||
-                        lowerOutput.includes('ggml_metal_log_allocated_size') && lowerOutput.includes('warning') ||
-                        lowerOutput.includes('recommended max working set size') ||
-                        lowerOutput.includes('vram') ||
-                        (lowerOutput.includes('reduce') && lowerOutput.includes('gpu-layers'));
-
-                    if (isRAMError) {
-                        // Get model info and system capabilities
-                        const modelConfig = this.modelManager.getModelConfig();
-                        const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
-                        const systemInfo = getSystemInfoString();
-
-                        // Create a more helpful error message
-                        let enhancedError = `Model failed to load - likely insufficient RAM/VRAM.\n\n`;
-                        enhancedError += `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n`;
-                        enhancedError += `${systemInfo}\n\n`;
-
-                        if (!compatibility.isCompatible) {
-                            enhancedError += `This model requires more RAM than your system has. `;
-                        } else {
-                            enhancedError += `Your system may not have enough free RAM to load this model. `;
-                        }
-
-                        enhancedError += `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.\n\n`;
-                        enhancedError += `Original error: ${errorOutput.trim()}`;
-
-                        errorMessage = enhancedError;
-                        serverStartError = new Error(enhancedError);
-                    } else {
-                        serverStartError = new Error(`Server startup error: ${errorOutput.trim()}`);
-                    }
-                }
-            };
-
-            this.serverProcess.stdout?.on('data', this.stdoutHandler);
-            this.serverProcess.stderr?.on('data', this.stderrHandler);
-
-            // Store close handler for cleanup
-            this.closeHandler = (code: number | null, signal: NodeJS.Signals | null) => {
-                // If we're cleaning up, don't process close events (they're expected)
-                if (this.isCleaningUp) {
-                    Logger.debug('Server process closed during cleanup (expected)');
-                    return;
-                }
-
-                Logger.debug('Server process closed event fired', { code, signal });
-                processExited = true;
-                exitCode = code;
-
-                // Log detailed information about the exit
-                const fullStderr = stderrBuffer.join('');
-                const fullStdout = stdoutBuffer.join('');
-
-                Logger.error('[LlamaService] Server process exited', {
-                    exitCode: code,
-                    signal: signal,
-                    wasKilled: code === null,
-                    stderrLength: fullStderr.length,
-                    stdoutLength: fullStdout.length,
-                    binaryPath: binaryPath,
-                    modelPath: modelPath
-                });
-
-                // If process was killed or exited with error, log full output
-                if (code === null || (code !== 0 && code !== null)) {
-                    if (fullStderr.length > 0) {
-                        Logger.error('[LlamaService] Full stderr output from crashed server:');
-                        Logger.error('--- BEGIN STDERR ---');
-                        const stderrLines = fullStderr.split('\n');
-                        for (const line of stderrLines) {
-                            if (line.trim()) {
-                                Logger.error(line.trim());
-                            }
-                        }
-                        Logger.error('--- END STDERR ---');
-                    }
-
-                    if (fullStdout.length > 0) {
-                        Logger.debug('[LlamaService] Full stdout output from crashed server:');
-                        Logger.debug('--- BEGIN STDOUT ---');
-                        const stdoutLines = fullStdout.split('\n');
-                        for (const line of stdoutLines) {
-                            if (line.trim()) {
-                                Logger.debug(line.trim());
-                            }
-                        }
-                        Logger.debug('--- END STDOUT ---');
-                    }
-
-                    // If we don't have an error message yet, use the stderr output
-                    if (!errorMessage && fullStderr.length > 0) {
-                        errorMessage = fullStderr.trim();
-                    }
-                }
-
-                this.serverProcess = null;
-                this.isServerReady = false;
-                this.loadingState = 'not-loaded';
-                this.lastUseTime = 0;
-                if (code !== 0 && code !== null) {
-                    Logger.error(`[LlamaService] Server exited with error code ${code}`);
-                    if (!serverStartError) {
-                        serverStartError = new Error(`Server process exited with code ${code}`);
-                    }
-                } else if (code === null) {
-                    Logger.error(`[LlamaService] Server process was killed (SIGKILL or similar)`);
-                    if (!serverStartError) {
-                        serverStartError = new Error('Server process was terminated (killed)');
-                    }
-                }
-            };
-
-            this.serverProcess.on('close', this.closeHandler);
-
-            // Store error handler for cleanup
-            this.errorHandler = (error: Error) => {
-                Logger.error('[LlamaService] Failed to spawn server process:', error);
-                Logger.error('[LlamaService] Spawn error details:', {
-                    binaryPath: binaryPath,
-                    modelPath: modelPath,
-                    errorName: error.name,
-                    errorMessage: error.message,
-                    errorStack: error.stack
-                });
-                serverStartError = error;
-                this.serverProcess = null;
-                this.loadingState = 'not-loaded';
-                new Notice('Failed to start Llama AI Server - check binary path');
-            };
-
-            this.serverProcess.on('error', this.errorHandler);
+            const process = this.processManager.start(binaryPath, args);
+            this.processHealthMonitor.setProcess(process);
 
             // Wait a bit for startup
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             // Check if process exited during startup
-            if (processExited) {
-                this.serverProcess = null;
+            if (!process || process.exitCode !== null) {
                 this.loadingState = 'not-loaded';
-                let errorMsg: string;
-                if (exitCode === null) {
-                    // Process was killed (SIGKILL) - likely a fatal error
-                    // Use the actual paths that were used (from variables in scope)
-                    const errorBinaryPath = binaryPath || 'not configured';
-                    const errorModelPath = modelPath || 'not configured';
-
-                    // Check if we already have a RAM-related error message
-                    if (errorMessage && (errorMessage.includes('insufficient RAM') || errorMessage.includes('requires more RAM'))) {
-                        errorMsg = errorMessage;
-                    } else {
-                        // Check if this might be a RAM issue based on model size
-                        const modelConfig = this.modelManager.getModelConfig();
-                        const compatibility = checkModelCompatibility(this.settings.localModel || 'phi-3.5-mini');
-                        const systemInfo = getSystemInfoString();
-
-                        const errorMsgLower = errorMessage.toLowerCase();
-                        if (!compatibility.isCompatible || errorMsgLower.includes('failed to load model')) {
-                            errorMsg = `Model failed to load - likely insufficient RAM/VRAM.\n\n` +
-                                `Model: ${modelConfig.name} (requires ${modelConfig.ram} RAM)\n` +
-                                `${systemInfo}\n\n` +
-                                `This model requires more RAM than your system has or there isn't enough free RAM. ` +
-                                `Consider switching to a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) in Settings → AI Configuration → Local AI Model.\n\n` +
-                                `Check the console for more details. Binary: ${errorBinaryPath}, Model: ${errorModelPath}`;
-                        } else {
-                            errorMsg = errorMessage ||
-                                'Server process was terminated during startup. This may indicate:\n' +
-                                '  • Binary or model file is corrupted\n' +
-                                '  • Insufficient system resources (memory/disk)\n' +
-                                '  • Permission issues\n' +
-                                '  • Binary architecture mismatch\n' +
-                                `Check the console for more details. Binary: ${errorBinaryPath}, Model: ${errorModelPath}`;
-                        }
-                    }
-                } else {
-                    errorMsg = errorMessage || `Server process exited during startup with code ${exitCode}`;
-                }
-                throw new Error(errorMsg);
-            }
-
-            // Check if server failed to start
-            if (serverStartError) {
-                this.serverProcess = null;
-                this.loadingState = 'not-loaded';
-                const errorMsg = errorMessage || 'Server failed to start';
-                throw new Error(errorMsg);
-            }
-
-            // If process died immediately, throw error
-            if (!this.serverProcess) {
-                throw new Error('Server process failed to start');
+                throw new Error('Server process exited immediately');
             }
 
             // Start health check
@@ -773,15 +456,8 @@ export class LlamaService implements ILLMService {
 
         } catch (error) {
             Logger.error('[LlamaService] Failed to start Llama server:', error);
-            Logger.error('[LlamaService] Startup error details:', {
-                binaryPath: binaryPath,
-                modelPath: modelPath,
-                errorName: error instanceof Error ? error.name : 'Unknown',
-                errorMessage: error instanceof Error ? error.message : String(error),
-                errorStack: error instanceof Error ? error.stack : undefined
-            });
             this.loadingState = 'not-loaded';
-            this.serverProcess = null;
+            this.processManager = null;
 
             // Show a more helpful notice if it's a RAM-related error
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -791,97 +467,154 @@ export class LlamaService implements ILLMService {
             } else {
                 new Notice('Failed to start Llama AI Server');
             }
-            throw error; // Re-throw so caller knows it failed
+            throw error;
         }
     }
 
+    private handleStdout(output: string): void {
+        if (this.isCleaningUp) return;
+
+        Logger.debug('[Llama Server stdout]', output.trim());
+
+        // Check for server listening
+        if (output.includes('HTTP server listening') ||
+            output.includes('server is listening') ||
+            output.includes('listening on http')) {
+            this.loadingState = 'loading';
+            Logger.debug('Server HTTP endpoint is listening (model may still be loading)');
+        }
+
+        // Check for model fully loaded
+        if (output.includes('main: model loaded') ||
+            output.includes('model loaded')) {
+            this.isServerReady = true;
+            this.loadingState = 'ready';
+            Logger.debug('Server is ready! (Model fully loaded)');
+            new Notice('Llama AI Server Started');
+        }
+    }
+
+    private handleStderr(errorOutput: string): void {
+        if (this.isCleaningUp) return;
+
+        const outputLines = errorOutput.split('\n').filter((line: string) => line.trim());
+
+        // Check for actual errors vs informational messages
+        const isError = outputLines.some((line: string) =>
+            (line.toLowerCase().includes('error') ||
+                line.toLowerCase().includes('failed') ||
+                line.toLowerCase().includes('fatal')) &&
+            !line.toLowerCase().includes('ggml_metal') &&
+            !line.toLowerCase().includes('system info') &&
+            !line.toLowerCase().includes('llama_model_loader') &&
+            !line.toLowerCase().includes('print_info') &&
+            !line.toLowerCase().includes('load:') &&
+            !line.toLowerCase().includes('llama_context') &&
+            !line.toLowerCase().includes('main:')
+        );
+
+        // Log messages
+        for (const line of outputLines) {
+            if (isError && (line.toLowerCase().includes('error') ||
+                line.toLowerCase().includes('failed') ||
+                line.toLowerCase().includes('fatal'))) {
+                Logger.error('[Llama Server stderr]', line.trim());
+            } else {
+                Logger.debug('[Llama Server stderr]', line.trim());
+            }
+        }
+
+        // Check for server listening in stderr
+        if (errorOutput.includes('HTTP server is listening') ||
+            errorOutput.includes('server is listening on http') ||
+            errorOutput.includes('main: server is listening')) {
+            this.loadingState = 'loading';
+            Logger.debug('Server HTTP endpoint is listening (model may still be loading)');
+        }
+
+        // Check for model fully loaded
+        if (errorOutput.includes('main: model loaded') ||
+            errorOutput.includes('model loaded')) {
+            this.isServerReady = true;
+            this.loadingState = 'ready';
+            Logger.debug('Server is ready! (Model fully loaded)');
+            new Notice('Llama AI Server Started');
+        }
+    }
+
+    private handleClose(code: number | null, signal: NodeJS.Signals | null, binaryPath: string, modelPath: string): void {
+        if (this.isCleaningUp) {
+            Logger.debug('Server process closed during cleanup (expected)');
+            return;
+        }
+
+        Logger.debug('Server process closed event fired', { code, signal });
+
+        // Log detailed information about the exit
+        const fullStderr = this.processManager?.getStderr().join('\n') || '';
+        const fullStdout = this.processManager?.getStdout().join('\n') || '';
+
+        Logger.error('[LlamaService] Server process exited', {
+            exitCode: code,
+            signal: signal,
+            wasKilled: code === null,
+            stderrLength: fullStderr.length,
+            stdoutLength: fullStdout.length,
+            binaryPath: binaryPath,
+            modelPath: modelPath
+        });
+
+        // If process was killed or exited with error, log full output
+        if (code === null || (code !== 0 && code !== null)) {
+            if (fullStderr.length > 0) {
+                Logger.error('[LlamaService] Full stderr output from crashed server:');
+                Logger.error(fullStderr);
+            }
+        }
+
+        this.processManager = null;
+        this.isServerReady = false;
+        this.loadingState = 'not-loaded';
+        this.lastUseTime = 0;
+
+        if (code !== 0 && code !== null) {
+            Logger.error(`[LlamaService] Server exited with error code ${code}`);
+        } else if (code === null) {
+            Logger.error(`[LlamaService] Server process was killed (SIGKILL or similar)`);
+        }
+    }
+
+    private handleError(error: Error, binaryPath: string, modelPath: string): void {
+        Logger.error('[LlamaService] Failed to spawn server process:', error);
+        Logger.error('[LlamaService] Spawn error details:', {
+            binaryPath: binaryPath,
+            modelPath: modelPath,
+            errorName: error.name,
+            errorMessage: error.message
+        });
+        this.processManager = null;
+        this.loadingState = 'not-loaded';
+        new Notice('Failed to start Llama AI Server - check binary path');
+    }
+
     stopServer(): void {
-        if (this.serverProcess) {
+        if (this.processManager?.getProcess()) {
             const wasLoading = this.loadingState === 'loading';
             Logger.debug('Stopping Llama server...', wasLoading ? '(model was loading)' : '');
             this.clearIdleTimer();
             this.stopHealthCheck();
 
-            // Remove event listeners to prevent memory leaks and errors during cleanup
-            try {
-                if (this.stdoutHandler && this.serverProcess.stdout) {
-                    this.serverProcess.stdout.removeListener('data', this.stdoutHandler);
-                }
-            } catch (error) {
-                Logger.debug('Error removing stdout handler:', error);
-            }
-
-            try {
-                if (this.stderrHandler && this.serverProcess.stderr) {
-                    this.serverProcess.stderr.removeListener('data', this.stderrHandler);
-                }
-            } catch (error) {
-                Logger.debug('Error removing stderr handler:', error);
-            }
-
-            try {
-                if (this.closeHandler) {
-                    this.serverProcess.removeListener('close', this.closeHandler);
-                }
-            } catch (error) {
-                Logger.debug('Error removing close handler:', error);
-            }
-
-            try {
-                if (this.errorHandler) {
-                    this.serverProcess.removeListener('error', this.errorHandler);
-                }
-            } catch (error) {
-                Logger.debug('Error removing error handler:', error);
-            }
-
-            // Clear handler references
-            this.stdoutHandler = null;
-            this.stderrHandler = null;
-            this.closeHandler = null;
-            this.errorHandler = null;
-
-            // Kill the process gracefully, then forcefully if needed
-            try {
-                // Try SIGTERM first (graceful shutdown)
-                if (this.serverProcess.killed === false) {
-                    this.serverProcess.kill('SIGTERM');
-
-                    // Wait a bit for graceful shutdown, then force kill if still running
-                    setTimeout(() => {
-                        if (this.serverProcess && !this.serverProcess.killed) {
-                            Logger.debug('Force killing server process...');
-                            try {
-                                this.serverProcess.kill('SIGKILL');
-                            } catch (error) {
-                                Logger.debug('Error force killing process:', error);
-                            }
-                        }
-                    }, 2000); // 2 second grace period
-                }
-            } catch (error) {
-                Logger.debug('Error killing server process:', error);
-                // Try force kill as fallback
-                try {
-                    if (this.serverProcess && !this.serverProcess.killed) {
-                        this.serverProcess.kill('SIGKILL');
-                    }
-                } catch (killError) {
-                    Logger.debug('Error force killing process:', killError);
-                }
-            }
-
-            this.serverProcess = null;
-            this.processHealthMonitor.setProcess(null);
-            this.isServerReady = false;
-            this.loadingState = 'not-loaded';
-            this.lastUseTime = 0;
-
-            if (wasLoading) {
-                Logger.debug('Server stopped while model was loading (plugin unload during startup)');
-            }
+            this.processManager.stop().then(() => {
+                this.processManager = null;
+                this.processHealthMonitor.setProcess(null);
+                this.isServerReady = false;
+                this.loadingState = 'not-loaded';
+                Logger.debug('Llama server stopped');
+            });
         }
     }
+
+
 
     /**
      * Comprehensive cleanup - called on plugin unload
@@ -890,37 +623,19 @@ export class LlamaService implements ILLMService {
      */
     cleanup(): void {
         Logger.debug('LlamaService cleanup started');
-
-        // Set cleanup flag to prevent new operations
         this.isCleaningUp = true;
-
-        // Clear idle timer
         this.clearIdleTimer();
+        this.stopHealthCheck();
 
-        // Stop server process (handles loading state gracefully)
-        if (this.serverProcess) {
-            const wasLoading = this.loadingState === 'loading';
-            if (wasLoading) {
-                Logger.debug('Plugin unload during model loading - stopping server gracefully...');
-            }
-            this.stopServer();
+        if (this.processManager) {
+            this.processManager.stop('SIGKILL', 1000).then(() => {
+                this.processManager = null;
+                this.processHealthMonitor.setProcess(null);
+            });
         }
 
-        // Cancel any ongoing downloads
-        try {
-            if (this.modelManager?.isDownloadInProgress()) {
-                Logger.debug('Canceling ongoing download...');
-                this.modelManager.cancelDownload();
-            }
-        } catch (error) {
-            Logger.debug('Error canceling download during cleanup:', error);
-        }
-
-        // Clear state
         this.isServerReady = false;
         this.loadingState = 'not-loaded';
-        this.lastUseTime = 0;
-
         Logger.debug('LlamaService cleanup completed');
     }
 
@@ -932,7 +647,7 @@ export class LlamaService implements ILLMService {
     }
 
     private unloadModel(): void {
-        if (this.serverProcess && !this.settings.keepModelLoaded) {
+        if (this.processManager?.isRunning() && !this.settings.keepModelLoaded) {
             Logger.debug('Unloading model due to idle timeout');
             this.stopServer();
         }
@@ -993,20 +708,18 @@ export class LlamaService implements ILLMService {
         const prompt = this.constructPrompt(text);
 
         // Retry logic for transient errors (503, connection issues)
-        const maxRetries = 2;
+        const maxRetries = LLM_CONSTANTS.MAX_RETRIES;
         let lastError: Error | null = null;
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
                 // Check if server process is still running before each retry
                 if (attempt > 0) {
-                    const isServerRunning = this.serverProcess !== null &&
-                        this.serverProcess.exitCode === null;
+                    const isServerRunning = this.processManager?.isRunning() ?? false;
 
-                    if (!isServerRunning || this.serverProcess === null) {
+                    if (!isServerRunning) {
                         Logger.warn('Server process not running, attempting restart...');
                         this.isServerReady = false;
-                        this.serverProcess = null;
                         await this.ensureReady();
                         // Wait a bit for server to be ready
                         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1042,6 +755,7 @@ export class LlamaService implements ILLMService {
                                 n_predict: 128,
                                 temperature: 0.1,
                                 stop: ['}'], // Stop generation after JSON object closes
+                                grammar: GRAMMARS.classification
                             }),
                         }),
                         timeoutPromise
@@ -1061,13 +775,11 @@ export class LlamaService implements ILLMService {
                 if (response.status < 200 || response.status >= 300) {
                     // Handle 503 Service Unavailable - server might have crashed or be loading
                     if (response.status === 503) {
-                        const isServerRunning = this.serverProcess !== null &&
-                            this.serverProcess.exitCode === null;
+                        const isServerRunning = this.processManager?.isRunning() ?? false;
 
-                        if (!isServerRunning || this.serverProcess === null) {
+                        if (!isServerRunning) {
                             Logger.warn('Server returned 503 and process is not running, will restart and retry');
                             this.isServerReady = false;
-                            this.serverProcess = null;
 
                             // If this is not the last attempt, restart and retry
                             if (attempt < maxRetries) {
@@ -1172,7 +884,7 @@ export class LlamaService implements ILLMService {
      * Check if server process exists
      */
     hasServerProcess(): boolean {
-        return this.serverProcess !== null;
+        return this.processManager?.isRunning() ?? false;
     }
 
     /**
@@ -1207,13 +919,13 @@ export class LlamaService implements ILLMService {
         }
 
         // If server is already running and ready, we're good
-        if (this.serverProcess && this.isServerReady) {
+        if (this.processManager?.isRunning() && this.isServerReady) {
             return true;
         }
 
         // If server process exists but not ready, wait for it
         // Use adaptive timeout based on model size
-        if (this.serverProcess && !this.isServerReady) {
+        if (this.processManager?.isRunning() && !this.isServerReady) {
             Logger.debug('Server process exists but not ready, waiting for model to load...');
             const timeoutMs = this.getModelLoadingTimeout();
             const maxAttempts = timeoutMs / 100; // Convert to 100ms intervals
@@ -1235,7 +947,7 @@ export class LlamaService implements ILLMService {
         }
 
         // Start server if not running
-        if (!this.serverProcess) {
+        if (!this.processManager?.isRunning()) {
             Logger.debug('Ensuring server is ready...');
             // startServer() now uses getEffectiveBinaryPath() and getEffectiveModelPath() directly
             await this.startServer();
@@ -1272,6 +984,7 @@ export class LlamaService implements ILLMService {
             temperature?: number;
             n_predict?: number;
             stop?: string[];
+            grammar?: string;
         }
     ): Promise<string> {
         if (!this.isAvailable()) {
@@ -1302,20 +1015,18 @@ export class LlamaService implements ILLMService {
         this.resetIdleTimer();
 
         // Retry logic for transient errors (503, connection issues)
-        const maxRetries = 2;
+        const maxRetries = LLM_CONSTANTS.MAX_RETRIES;
         let lastError: Error | null = null;
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
                 // Check if server process is still running before each retry
                 if (attempt > 0) {
-                    const isServerRunning = this.serverProcess !== null &&
-                        this.serverProcess.exitCode === null;
+                    const isServerRunning = this.processManager?.isRunning() ?? false;
 
-                    if (!isServerRunning || this.serverProcess === null) {
+                    if (!isServerRunning) {
                         Logger.warn('Server process not running, attempting restart...');
                         this.isServerReady = false;
-                        this.serverProcess = null;
                         await this.ensureReady();
                         // Wait a bit for server to be ready
                         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1354,6 +1065,7 @@ export class LlamaService implements ILLMService {
                                 n_predict: options?.n_predict || 256,
                                 temperature: options?.temperature ?? 0.7,
                                 stop: options?.stop || ['}'],
+                                grammar: options?.grammar
                             }),
                         }),
                         timeoutPromise
@@ -1373,13 +1085,11 @@ export class LlamaService implements ILLMService {
                 if (response.status < 200 || response.status >= 300) {
                     // Handle 503 Service Unavailable - server might have crashed or be loading
                     if (response.status === 503) {
-                        const isServerRunning = this.serverProcess !== null &&
-                            this.serverProcess.exitCode === null;
+                        const isServerRunning = this.processManager?.isRunning() ?? false;
 
-                        if (!isServerRunning || this.serverProcess === null) {
+                        if (!isServerRunning) {
                             Logger.warn('Server returned 503 and process is not running, will restart and retry');
                             this.isServerReady = false;
-                            this.serverProcess = null;
 
                             // If this is not the last attempt, restart and retry
                             if (attempt < maxRetries) {
@@ -1521,7 +1231,7 @@ Output: {`;
     private calculateMemoryLimit(): number {
         const modelConfig = this.modelManager.getModelConfig();
         // Base limit is model size + 4GB overhead to be safe
-        return modelConfig.sizeMB + 4096;
+        return modelConfig.sizeMB + LLM_CONSTANTS.MEMORY_HEADROOM_MB;
     }
 
     private startHealthCheck(): void {
@@ -1538,7 +1248,7 @@ Output: {`;
                     this.restartServer();
                 }
             }
-        }, 30000); // Check every 30s
+        }, LLM_CONSTANTS.HEALTH_CHECK_INTERVAL);
     }
 
     private stopHealthCheck(): void {
