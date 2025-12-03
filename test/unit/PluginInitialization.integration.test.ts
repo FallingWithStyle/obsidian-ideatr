@@ -23,6 +23,35 @@ describe('Plugin Initialization Integration Tests', () => {
     let mockWorkspace: Workspace;
 
     beforeEach(() => {
+        // Mock window for setInterval and other browser APIs
+        global.window = {
+            setInterval: vi.fn((fn: () => void, delay: number) => {
+                return 1 as any; // Return a mock interval ID
+            }),
+            clearInterval: vi.fn(),
+        } as any;
+
+        // Mock document for DOM operations
+        global.document = {
+            createElement: vi.fn((tag: string) => {
+                const el = {
+                    tagName: tag.toUpperCase(),
+                    className: '',
+                    classList: {
+                        add: vi.fn(),
+                        remove: vi.fn(),
+                        contains: vi.fn(),
+                    },
+                    setAttribute: vi.fn(),
+                    getAttribute: vi.fn(),
+                    appendChild: vi.fn(),
+                    textContent: '',
+                    style: {},
+                } as any;
+                return el;
+            }),
+        } as any;
+
         // Create mock app
         mockVault = new Vault();
         // Add adapter with basePath for plugin directory resolution

@@ -11,6 +11,17 @@ import { DEFAULT_SETTINGS } from '../../src/settings';
 import { FrontmatterParser } from '../../src/services/FrontmatterParser';
 import { FileOrganizer } from '../../src/utils/fileOrganization';
 
+// Mock Logger to disable debug mode (so debug command is not registered)
+vi.mock('../../src/utils/logger', () => ({
+    Logger: {
+        isDebugEnabled: vi.fn(() => false),
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+    },
+}));
+
 describe('CommandRegistry', () => {
     let mockPlugin: Plugin;
     let mockContext: CommandContext;
@@ -84,7 +95,7 @@ describe('CommandRegistry', () => {
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
             const validationCommands = [
-                { id: 'check-domains', name: 'Check Domains' },
+                // Note: 'check-domains' command is hidden/removed
                 { id: 'search-existence', name: 'Search Existence' },
                 { id: 'check-duplicates', name: 'Check Duplicates' },
                 { id: 'find-related-notes', name: 'Find Related Notes' },
@@ -210,8 +221,9 @@ describe('CommandRegistry', () => {
         it('should register all expected commands', () => {
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
-            // Count all registered commands (should be 31 based on current implementation)
-            expect(registeredCommands.length).toBe(31);
+            // Count all registered commands (should be 30 based on current implementation)
+            // Note: check-domains command was removed/hidden
+            expect(registeredCommands.length).toBe(30);
         });
 
         it('should create command instances when callbacks are invoked', () => {

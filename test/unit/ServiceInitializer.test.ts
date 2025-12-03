@@ -232,7 +232,10 @@ describe('ServiceInitializer', () => {
 
         it('should handle cloud provider initialization when configured', async () => {
             mockSettings.cloudProvider = 'openai';
-            mockSettings.cloudApiKey = 'test-key';
+            mockSettings.cloudApiKeys = {
+                ...mockSettings.cloudApiKeys,
+                openai: 'test-key'
+            };
 
             const mockProvider = {
                 name: 'OpenAI',
@@ -274,7 +277,10 @@ describe('ServiceInitializer', () => {
 
         it('should use local LLM only when cloud API key is empty', async () => {
             mockSettings.cloudProvider = 'openai';
-            mockSettings.cloudApiKey = '';
+            mockSettings.cloudApiKeys = {
+                ...mockSettings.cloudApiKeys,
+                openai: ''
+            };
 
             const result = await ServiceInitializer.initialize(mockApp, mockPlugin, mockSettings);
 

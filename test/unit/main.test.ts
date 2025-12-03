@@ -15,11 +15,20 @@ import { GraphView } from '../../src/views/GraphView';
 // Mock Obsidian globals
 global.Notice = Notice;
 
+// Mock addIcon from obsidian
+vi.mock('obsidian', async () => {
+    const actual = await vi.importActual('obsidian');
+    return {
+        ...actual,
+        addIcon: vi.fn(),
+    };
+});
+
 // Mock modules
 vi.mock('../../src/views/FirstLaunchSetupModal', () => {
     class MockFirstLaunchSetupModal {
         open = vi.fn();
-        constructor(app: any, modelManager: any, settings: any, callback: any) {}
+        constructor(app: any, modelManager: any, settings: any, callback: any) { }
     }
     return {
         FirstLaunchSetupModal: MockFirstLaunchSetupModal,
@@ -30,7 +39,7 @@ vi.mock('../../src/views/FirstLaunchSetupModal', () => {
 vi.mock('../../src/capture/CaptureModal', () => {
     class MockCaptureModal {
         open = vi.fn();
-        constructor(app: any, fileManager: any, classificationService: any, duplicateDetector: any, settings: any, domainService: any, webSearchService: any, nameVariantService: any) {}
+        constructor(app: any, fileManager: any, classificationService: any, duplicateDetector: any, settings: any, domainService: any, webSearchService: any, nameVariantService: any) { }
     }
     return {
         CaptureModal: MockCaptureModal,
@@ -77,7 +86,7 @@ vi.mock('../../src/commands/CommandRegistry', () => ({
 
 vi.mock('../../src/services/ModelManager', () => {
     class MockModelManager {
-        constructor() {}
+        constructor() { }
     }
     return {
         ModelManager: MockModelManager,
@@ -87,9 +96,11 @@ vi.mock('../../src/services/ModelManager', () => {
 vi.mock('../../src/utils/logger', () => ({
     Logger: {
         initialize: vi.fn(),
+        isDebugEnabled: vi.fn(() => false),
         debug: vi.fn(),
         info: vi.fn(),
         warn: vi.fn(),
+        error: vi.fn(),
     },
 }));
 
@@ -102,6 +113,35 @@ describe('IdeatrPlugin', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
+
+        // Mock window for setInterval and other browser APIs
+        global.window = {
+            setInterval: vi.fn((fn: () => void, delay: number) => {
+                return 1 as any; // Return a mock interval ID
+            }),
+            clearInterval: vi.fn(),
+        } as any;
+
+        // Mock document for DOM operations
+        global.document = {
+            createElement: vi.fn((tag: string) => {
+                const el = {
+                    tagName: tag.toUpperCase(),
+                    className: '',
+                    classList: {
+                        add: vi.fn(),
+                        remove: vi.fn(),
+                        contains: vi.fn(),
+                    },
+                    setAttribute: vi.fn(),
+                    getAttribute: vi.fn(),
+                    appendChild: vi.fn(),
+                    textContent: '',
+                    style: {},
+                } as any;
+                return el;
+            }),
+        } as any;
 
         mockVault = {
             getMarkdownFiles: vi.fn(() => []),
@@ -269,8 +309,9 @@ describe('IdeatrPlugin', () => {
         it('should add ribbon icon', async () => {
             await plugin.onload();
 
+            // The ribbon icon uses IDEATR_ICON_ID constant, not 'lightbulb'
             expect(plugin.addRibbonIcon).toHaveBeenCalledWith(
-                'lightbulb',
+                'ideatr-icon-purple',
                 'Capture Idea',
                 expect.any(Function)
             );
@@ -278,7 +319,7 @@ describe('IdeatrPlugin', () => {
 
         it('should handle command registration errors gracefully', async () => {
             const { CommandRegistry } = await import('../../src/commands/CommandRegistry');
-            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
             vi.mocked(CommandRegistry.registerAll).mockImplementation(() => {
                 throw new Error('Registration failed');
             });
@@ -349,15 +390,15 @@ describe('IdeatrPlugin', () => {
             (plugin as any).localLLMService = result.localLLMService;
         });
 
-        it('should stop local LLM service', () => {
-            const stopServerSpy = vi.fn();
-            (plugin as any).localLLMService = {
-                stopServer: stopServerSpy,
-            };
+        it('should stop local LLM service', async () => {
+            // Import LlamaService to spy on destroyInstance
+            const { LlamaService } = await import('../../src/services/LlamaService');
+            const destroyInstanceSpy = vi.spyOn(LlamaService, 'destroyInstance').mockImplementation(() => { });
 
             plugin.onunload();
 
-            expect(stopServerSpy).toHaveBeenCalled();
+            expect(destroyInstanceSpy).toHaveBeenCalled();
+            destroyInstanceSpy.mockRestore();
         });
 
         it('should not throw if local LLM service is not initialized', () => {
