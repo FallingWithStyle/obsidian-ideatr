@@ -457,26 +457,94 @@ npm run format
 ### Current Version: 0.8.5
 
 **Implemented Features:**
-- ✅ Core capture, classification, and idea enhancement
+
+#### Core Capture & Enhancement
+- ✅ Quick capture modal with universal hotkey
 - ✅ **Ideate Button** - One-click AI-powered idea processing and enrichment
-- ✅ Multi-provider AI support (local + cloud)
-- ✅ Validation tools (domains, existence, duplicates)
-- ✅ Transformation tools (variants, scaffolds, mutations)
-- ✅ Dashboard and Graph views
-- ✅ Batch operations
-- ✅ Analysis tools
-- ✅ Import/Export
-- ✅ Project elevation
-- ✅ Weekly digest/resurfacing
+- ✅ Automatic file creation with structured frontmatter
+- ✅ AI-powered classification (category, tags, related notes)
+- ✅ First Launch Setup wizard for guided configuration
 - ✅ Customizable keyboard shortcuts with tooltips
+
+#### AI Providers
+- ✅ Multi-provider AI support (local + cloud)
+- ✅ Local AI: Built-in Llama.cpp server with bundled binaries
+- ✅ Cloud AI: Anthropic, OpenAI, Google Gemini, Groq, OpenRouter, custom endpoints
+- ✅ Smart fallback from cloud to local AI
+- ✅ Model management UI for local models
+
+#### Validation Tools
+- ✅ Domain availability checking
+- ✅ "Does This Exist?" web search integration
+- ✅ Duplicate detection with similarity scoring
+- ✅ Related notes discovery
+- ✅ Quick Validate (runs all validation checks)
+
+#### Transformation Tools
+- ✅ Name variant generation (synonyms, short names, domain hacks, phonetic variants)
+- ✅ Scaffold generation (templates for different idea types)
+- ✅ Idea expansion (brief → detailed descriptions)
+- ✅ Idea mutations (generate variations and alternatives)
+- ✅ Idea reorganization (restructure content)
+- ✅ Guided Ideation (interactive transformation workflow)
+
+#### Lifecycle Management
+- ✅ Status management (captured → validated → promoted → archived)
+- ✅ Archive/Unarchive functionality
+- ✅ Codename generation
+- ✅ **Project Elevation** - Promote ideas to full projects with folder structure and metadata
+
+#### Views & Visualization
+- ✅ Dashboard view with advanced filtering, sorting, and pagination
+- ✅ Graph view with interactive visualization and layout algorithms
+- ✅ Clusters mini-graph in dashboard
+- ✅ Resurfacing panel for old ideas
+- ✅ Triage inbox for unclassified ideas
+
+#### Analysis & Insights
+- ✅ Idea statistics and collection overview
+- ✅ Cluster analysis (deep dive into relationships)
+- ✅ Tenuous links discovery (unexpected connections)
+- ✅ Weekly digest (automated resurfacing of old ideas)
+
+#### Batch Operations
+- ✅ Reclassify all ideas
+- ✅ Find all duplicates (comprehensive vault-wide detection)
+- ✅ Refresh all related notes (update all relationships)
+
+#### Management & Organization
+- ✅ Import/Export (JSON, CSV formats)
+- ✅ Classify current note (enhance existing notes)
+- ✅ Refresh idea (update AI enhancement and metadata)
+- ✅ Tutorials system (built-in documentation)
+- ✅ Error logging and debug features
 
 ### Future Enhancements
 
-- **v0.9+**: Enhanced mobile experience
-- **v1.0**: Background enrichment and auto-updates
-- **v1.1+**: Voice capture support
-- **v2.0+**: Advanced clustering algorithms
-- **v2.0+**: Collaborative features
+#### v0.9+ - Mobile & Polish
+- Enhanced mobile experience for Obsidian mobile
+- Improved touch interactions
+- Mobile-optimized capture modal
+
+#### v1.0 - Automation & Efficiency
+- Background enrichment and auto-updates
+- Smart notifications for old ideas and validation needs
+- Idea templates (pre-configured idea types with scaffolds)
+
+#### v1.1+ - Advanced Capture
+- Voice capture support
+- Enhanced import from external sources
+- Bulk capture workflows
+
+#### v1.2+ - Integrations
+- **Project Management Integration** - Enhanced `.devra.json` support and integration with external project management tools
+- **Domain Checking Service Integration** - Enhanced domain availability checking with service integration
+- Export to project management tools (Linear, Jira, etc.)
+
+#### v2.0+ - Advanced Features
+- Advanced clustering algorithms (improved relationship detection)
+- Collaborative features (shared idea vaults, team workflows)
+- Real-time sync and collaboration
 
 ## Support
 
