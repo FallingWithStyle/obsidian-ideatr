@@ -11,20 +11,27 @@ export class CloudAISettingsSection extends BaseSettingsSection {
             .setName('Enable Cloud AI')
             .setDesc('Use cloud AI providers for better quality and faster responses (requires API key)')
             .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.cloudProvider !== 'none' && this.plugin.settings.cloudApiKey.length > 0)
+                .setValue(this.plugin.settings.cloudProvider !== 'none')
                 .onChange(async (value) => {
                     if (value) {
+                        // Enable Cloud AI by setting a default provider if none is set
+                        if (this.plugin.settings.cloudProvider === 'none') {
+                            this.plugin.settings.cloudProvider = 'anthropic';
+                        }
                         this.plugin.settings.preferCloud = true;
                     } else {
+                        // Disable Cloud AI
                         this.plugin.settings.cloudProvider = 'none';
-                        this.plugin.settings.cloudApiKey = '';
                         this.plugin.settings.preferCloud = false;
                     }
                     await this.saveSettings();
                     this.refresh();
                 }));
 
-        if (this.plugin.settings.cloudProvider !== 'none' || this.plugin.settings.cloudApiKey.length > 0) {
+        // Check if any provider has an API key or if cloud is enabled
+        const hasAnyApiKey = this.plugin.settings.cloudApiKeys && 
+            Object.values(this.plugin.settings.cloudApiKeys).some(key => key && key.length > 0);
+        if (this.plugin.settings.cloudProvider !== 'none' || hasAnyApiKey) {
             new Setting(containerEl)
                 .setName('Cloud Provider')
                 .setDesc('Select the cloud AI provider')
