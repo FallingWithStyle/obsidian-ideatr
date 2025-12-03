@@ -43,85 +43,30 @@ export class ServiceInitializer {
         plugin: IdeatrPlugin,
         settings: IdeatrSettings
     ): Promise<{ context: PluginContext; localLLMService: LlamaService }> {
-        // Initialize FileManager
-        const fileManager = new FileManager(app.vault);
+        // 1. Core Services
+        const { fileManager, fileOrganizer, errorLogService } = this.initializeCoreServices(app, settings);
 
-        // Initialize FileOrganizer
-        const fileOrganizer = new FileOrganizer(app.vault, settings);
+        // 2. LLM Services
+        const { localLLMService, llmService } = await this.initializeLLMServices(app, plugin, settings);
 
-        // Initialize ErrorLogService
-        const errorLogService = new ErrorLogService({
-            enabled: settings.errorLoggingEnabled,
-            maxEntries: settings.errorLogMaxEntries,
-            retentionDays: settings.errorLogRetentionDays
-        });
+        // 3. Search & Classification Services
+        const { searchService, classificationService, duplicateDetector } = this.initializeSearchServices(app, llmService);
 
-        // Initialize LLM Services
-        const { localLLMService, llmService } = await this.initializeLLMServices(
-            app,
-            plugin,
-            settings
-        );
+        // 4. Validation Services
+        const { domainService, webSearchService } = this.initializeValidationServices(settings);
 
-        // Initialize Search and Classification Services
-        const searchService = new SearchService(app.vault);
-        const classificationService = new ClassificationService(llmService, searchService);
-        const duplicateDetector = new DuplicateDetector(searchService);
+        // 5. Transformation Services
+        const { nameVariantService, scaffoldService } = this.initializeTransformationServices(app, plugin, settings, llmService);
 
-        // Initialize validation services
-        const prospectrService = new ProspectrService(
-            settings.prospectrUrl,
-            settings.domainCheckTimeout
-        );
-        const domainService = new DomainService(prospectrService);
-        const webSearchService = new WebSearchService(settings);
+        // 6. Management Services
+        const {
+            frontmatterParser, ideaRepository, embeddingService,
+            clusteringService, graphLayoutService, resurfacingService,
+            projectElevationService
+        } = this.initializeManagementServices(app, settings);
 
-        // Initialize transformation services
-        const nameVariantService = new NameVariantService(
-            llmService,
-            settings,
-            async () => {
-                const data = await plugin.loadData();
-                return data?.variantCache || {};
-            },
-            async (cacheData: Record<string, any>) => {
-                const data = await plugin.loadData();
-                await plugin.saveData({
-                    ...data,
-                    variantCache: cacheData
-                });
-            }
-        );
-        const scaffoldService = new ScaffoldService(app.vault);
-
-        // Initialize management services
-        const frontmatterParser = new FrontmatterParser();
-        const ideaRepository = new IdeaRepository(app.vault, frontmatterParser);
-        const embeddingService = new EmbeddingService();
-        const clusteringService = new ClusteringService(
-            embeddingService,
-            settings.clusteringSimilarityThreshold || 0.3
-        );
-        const graphLayoutService = new GraphLayoutService();
-        const resurfacingService = new ResurfacingService(
-            ideaRepository,
-            settings,
-            app.vault
-        );
-        const projectElevationService = new ProjectElevationService(
-            app.vault,
-            frontmatterParser,
-            settings
-        );
-
-        // Initialize analysis and export/import services
-        const tenuousLinkService = new TenuousLinkServiceImpl(
-            app.vault,
-            embeddingService,
-            llmService
-        );
-        const exportService = new ExportService(app.vault);
-        const importService = new ImportService(app.vault);
+        // 7. Analysis & IO Services
+        const { tenuousLinkService, exportService, importService } = this.initializeAnalysisServices(app, llmService, embeddingService);
 
         const context = new PluginContext(
             app,
@@ -153,6 +98,100 @@ export class ServiceInitializer {
         return { context, localLLMService };
     }
 
+    private static initializeCoreServices(app: App, settings: IdeatrSettings) {
+        const fileManager = new FileManager(app.vault);
+        const fileOrganizer = new FileOrganizer(app.vault, settings);
+        const errorLogService = new ErrorLogService({
+            enabled: settings.errorLoggingEnabled,
+            maxEntries: settings.errorLogMaxEntries,
+            retentionDays: settings.errorLogRetentionDays
+        });
+        return { fileManager, fileOrganizer, errorLogService };
+    }
+
+    private static initializeSearchServices(app: App, llmService: ILLMService) {
+        const searchService = new SearchService(app.vault);
+        const classificationService = new ClassificationService(llmService, searchService);
+        const duplicateDetector = new DuplicateDetector(searchService);
+        return { searchService, classificationService, duplicateDetector };
+    }
+
+    private static initializeValidationServices(settings: IdeatrSettings) {
+        const prospectrService = new ProspectrService(
+            settings.prospectrUrl,
+            settings.domainCheckTimeout
+        );
+        const domainService = new DomainService(prospectrService);
+        const webSearchService = new WebSearchService(settings);
+        return { domainService, webSearchService };
+    }
+
+    private static initializeTransformationServices(
+        app: App,
+        plugin: IdeatrPlugin,
+        settings: IdeatrSettings,
+        llmService: ILLMService
+    ) {
+        const nameVariantService = new NameVariantService(
+            llmService,
+            settings,
+            async () => {
+                const data = await plugin.loadData();
+                return data?.variantCache || {};
+            },
+            async (cacheData: Record<string, any>) => {
+                const data = await plugin.loadData();
+                await plugin.saveData({
+                    ...data,
+                    variantCache: cacheData
+                });
+            }
+        );
+        const scaffoldService = new ScaffoldService(app.vault);
+        return { nameVariantService, scaffoldService };
+    }
+
+    private static initializeManagementServices(app: App, settings: IdeatrSettings) {
+        const frontmatterParser = new FrontmatterParser();
+        const ideaRepository = new IdeaRepository(app.vault, frontmatterParser);
+        const embeddingService = new EmbeddingService();
+        const clusteringService = new ClusteringService(
+            embeddingService,
+            settings.clusteringSimilarityThreshold || 0.3
+        );
+        const graphLayoutService = new GraphLayoutService();
+        const resurfacingService = new ResurfacingService(
+            ideaRepository,
+            settings,
+            app.vault
+        );
+        const projectElevationService = new ProjectElevationService(
+            app.vault,
+            frontmatterParser,
+            settings
+        );
+        return {
+            frontmatterParser, ideaRepository, embeddingService,
+            clusteringService, graphLayoutService, resurfacingService,
+            projectElevationService
+        };
+    }
+
+    private static initializeAnalysisServices(
+        app: App,
+        llmService: ILLMService,
+        embeddingService: EmbeddingService
+    ) {
+        const tenuousLinkService = new TenuousLinkServiceImpl(
+            app.vault,
+            embeddingService,
+            llmService
+        );
+        const exportService = new ExportService(app.vault);
+        const importService = new ImportService(app.vault);
+        return { tenuousLinkService, exportService, importService };
+    }
+
     /**
      * Initialize LLM services (local and cloud)
      */
@@ -176,11 +215,11 @@ export class ServiceInitializer {
         let cloudLLM: ILLMService | null = null;
         if (settings.cloudProvider !== 'none' && settings.cloudProvider !== 'custom' && settings.cloudProvider !== 'custom-model') {
             // Get the API key for the current provider
-            const apiKey = (settings.cloudApiKeys && 
+            const apiKey = (settings.cloudApiKeys &&
                 settings.cloudProvider in settings.cloudApiKeys)
                 ? (settings.cloudApiKeys[settings.cloudProvider as keyof typeof settings.cloudApiKeys] || '').trim()
                 : '';
-            
+
             if (apiKey.length > 0) {
                 try {
                     const provider = ProviderFactory.createProvider(
@@ -201,11 +240,11 @@ export class ServiceInitializer {
         } else if (settings.cloudProvider === 'custom-model') {
             // Custom model: use the specified provider with a custom model
             if (settings.customModelProvider && settings.customModel) {
-                const apiKey = (settings.cloudApiKeys && 
+                const apiKey = (settings.cloudApiKeys &&
                     settings.customModelProvider in settings.cloudApiKeys)
                     ? (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] || '').trim()
                     : '';
-                
+
                 if (apiKey.length > 0) {
                     try {
                         const provider = ProviderFactory.createProvider(
