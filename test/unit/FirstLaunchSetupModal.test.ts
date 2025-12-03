@@ -192,6 +192,17 @@ describe('FirstLaunchSetupModal', () => {
         });
 
         it('should mark setup as complete after API key is entered', async () => {
+            // Initialize cloudApiKeys if not present
+            if (!mockSettings.cloudApiKeys) {
+                mockSettings.cloudApiKeys = {
+                    anthropic: '',
+                    openai: '',
+                    gemini: '',
+                    groq: '',
+                    openrouter: ''
+                };
+            }
+
             const modal = new FirstLaunchSetupModal(
                 app,
                 mockModelManager,
@@ -200,11 +211,11 @@ describe('FirstLaunchSetupModal', () => {
             );
             modal.onOpen();
 
-            // Simulate entering API key
-            await (modal as any).handleApiKeySubmit('test-api-key');
+            // Simulate entering API key with provider (default to 'openai')
+            await (modal as any).handleApiKeySubmit('test-api-key', 'openai');
 
             expect(mockSettings.setupCompleted).toBe(true);
-            expect(mockSettings.cloudApiKey).toBe('test-api-key');
+            expect(mockSettings.cloudApiKeys?.openai).toBe('test-api-key');
             expect(onCompleteCallback).toHaveBeenCalled();
         });
     });

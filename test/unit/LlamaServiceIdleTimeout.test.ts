@@ -2,9 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { LlamaService } from '../../src/services/LlamaService';
 import type { IdeatrSettings } from '../../src/settings';
 
-// Mock fetch global
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+// Mock requestUrl (used by LlamaService instead of fetch)
+const mockRequestUrl = vi.hoisted(() => vi.fn());
 
 // Mock fs
 vi.mock('fs', async () => {
@@ -47,11 +46,12 @@ vi.mock('child_process', async () => {
     };
 });
 
-// Mock Obsidian Notice
+// Mock Obsidian Notice and requestUrl
 vi.mock('obsidian', () => ({
     Notice: class {
         constructor(message: string) { }
-    }
+    },
+    requestUrl: mockRequestUrl
 }));
 
 describe('LlamaService - Idle Timeout', () => {
@@ -128,7 +128,7 @@ describe('LlamaService - Idle Timeout', () => {
         mocks.childProcess.on.mockClear();
         mocks.childProcess.kill.mockClear();
         service = LlamaService.getInstance(mockSettings);
-        mockFetch.mockReset();
+        mockRequestUrl.mockReset();
     });
 
     afterEach(() => {
@@ -148,6 +148,8 @@ describe('LlamaService - Idle Timeout', () => {
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 const stdoutCallback = stdoutCallbacks[0][1];
                 stdoutCallback(Buffer.from('HTTP server listening'));
+                // Also send model loaded message to set isServerReady
+                stdoutCallback(Buffer.from('main: model loaded'));
             }
 
             // Advance timers to complete startup delay (2000ms)
@@ -155,13 +157,17 @@ describe('LlamaService - Idle Timeout', () => {
             await startPromise;
 
             // Use the service
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: async () => ({ content: '{"category":"saas","tags":["app"]}' })
-            } as any);
+            mockRequestUrl.mockResolvedValue({
+                status: 200,
+                json: { content: '{"category":"saas","tags":["app"]}' }
+            });
 
+            // Ensure server is ready before classifying
+            // The server should already be ready from the setup above
             const classifyPromise = service.classify('test idea');
-            await vi.advanceTimersByTimeAsync(6000); // Wait for classification
+            // Advance timers enough to complete classification (timeout is 10000ms)
+            // But limit to avoid running all ensureReady() wait loops
+            await vi.advanceTimersByTimeAsync(11000);
             await classifyPromise;
 
             // Advance time by 15 minutes + 1 second
@@ -179,26 +185,28 @@ describe('LlamaService - Idle Timeout', () => {
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 stdoutCallbacks[0][1](Buffer.from('HTTP server listening'));
+                // Also send model loaded message to set isServerReady
+                stdoutCallbacks[0][1](Buffer.from('main: model loaded'));
             }
 
             await vi.advanceTimersByTimeAsync(2000);
             await startPromise;
 
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: async () => ({ content: '{"category":"saas","tags":["app"]}' })
-            } as any);
+            mockRequestUrl.mockResolvedValue({
+                status: 200,
+                json: { content: '{"category":"saas","tags":["app"]}' }
+            });
 
             // First classification
             const classify1Promise = service.classify('test idea 1');
-            await vi.advanceTimersByTimeAsync(6000);
+            await vi.advanceTimersByTimeAsync(11000);
             await classify1Promise;
 
             await vi.advanceTimersByTimeAsync(14 * 60 * 1000); // 14 minutes
 
             // Second classification (should reset timer)
             const classify2Promise = service.classify('test idea 2');
-            await vi.advanceTimersByTimeAsync(6000);
+            await vi.advanceTimersByTimeAsync(11000);
             await classify2Promise;
 
             await vi.advanceTimersByTimeAsync(14 * 60 * 1000); // Another 14 minutes
@@ -216,7 +224,9 @@ describe('LlamaService - Idle Timeout', () => {
         it('should not unload model if keepModelLoaded is true', async () => {
             mockSettings.keepModelLoaded = true;
             mocks.childProcess.kill.mockClear();
-            service.updateSettings(mockSettings);
+            // Destroy existing instance and create new one with updated settings
+            LlamaService.destroyInstance();
+            service = LlamaService.getInstance(mockSettings);
 
             // Start server
             const startPromise = service.startServer();
@@ -225,18 +235,21 @@ describe('LlamaService - Idle Timeout', () => {
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 stdoutCallbacks[0][1](Buffer.from('HTTP server listening'));
+                // Also send model loaded message to set isServerReady
+                stdoutCallbacks[0][1](Buffer.from('main: model loaded'));
             }
 
             await vi.advanceTimersByTimeAsync(2000);
             await startPromise;
 
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: async () => ({ content: '{"category":"saas","tags":["app"]}' })
-            } as any);
+            mockRequestUrl.mockResolvedValue({
+                status: 200,
+                json: { content: '{"category":"saas","tags":["app"]}' }
+            });
 
             const classifyPromise = service.classify('test idea');
-            await vi.advanceTimersByTimeAsync(6000);
+            // Advance timers enough to complete classification (timeout is 10000ms)
+            await vi.advanceTimersByTimeAsync(11000);
             await classifyPromise;
 
             // Advance time by 20 minutes
@@ -254,20 +267,22 @@ describe('LlamaService - Idle Timeout', () => {
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 stdoutCallbacks[0][1](Buffer.from('HTTP server listening'));
+                // Also send model loaded message to set isServerReady
+                stdoutCallbacks[0][1](Buffer.from('main: model loaded'));
             }
 
             await vi.advanceTimersByTimeAsync(2000);
             await startPromise;
 
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: async () => ({ content: '{"category":"saas","tags":["app"]}' })
-            } as any);
+            mockRequestUrl.mockResolvedValue({
+                status: 200,
+                json: { content: '{"category":"saas","tags":["app"]}' }
+            });
 
             // Multiple rapid classifications
             for (let i = 0; i < 10; i++) {
                 const classifyPromise = service.classify(`test idea ${i}`);
-                await vi.advanceTimersByTimeAsync(6000);
+                await vi.advanceTimersByTimeAsync(11000);
                 await classifyPromise;
                 await vi.advanceTimersByTimeAsync(1000);
             }
@@ -282,6 +297,10 @@ describe('LlamaService - Idle Timeout', () => {
 
     describe('loading states', () => {
         it('should track loading state correctly', async () => {
+            // Destroy existing instance to start fresh (avoid "Server already running" issue)
+            LlamaService.destroyInstance();
+            service = LlamaService.getInstance(mockSettings);
+
             // Initially not loaded
             expect(service.isAvailable()).toBe(true);
 
@@ -292,6 +311,8 @@ describe('LlamaService - Idle Timeout', () => {
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 stdoutCallbacks[0][1](Buffer.from('HTTP server listening'));
+                // Also send model loaded message to set isServerReady
+                stdoutCallbacks[0][1](Buffer.from('main: model loaded'));
             }
 
             // Server should be starting

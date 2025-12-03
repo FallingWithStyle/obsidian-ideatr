@@ -350,18 +350,18 @@ describe('LlamaService', () => {
             }
         });
 
-        it('should use 40 GPU layers for 20-40GB models', async () => {
+        it('should use 75 GPU layers for 5-10GB models (llama-3.1-8b)', async () => {
             mockSettings.localModel = 'llama-3.1-8b';
             service = LlamaService.getInstance(mockSettings);
 
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
 
-            // Check spawn was called with correct GPU layers
+            // llama-3.1-8b is 8.5GB, which falls in MEDIUM range (5-10GB) = 75 layers
             // ProcessManager calls spawn with (command, args, options)
             expect(mocks.spawn).toHaveBeenCalledWith(
                 expect.any(String),
-                expect.arrayContaining(['--n-gpu-layers', '40']),
+                expect.arrayContaining(['--n-gpu-layers', '75']),
                 expect.any(Object)
             );
 
@@ -373,18 +373,18 @@ describe('LlamaService', () => {
             }
         });
 
-        it('should use 60 GPU layers for 10-20GB models', async () => {
+        it('should use 75 GPU layers for 5-10GB models (qwen-2.5-7b)', async () => {
             mockSettings.localModel = 'qwen-2.5-7b';
             service = LlamaService.getInstance(mockSettings);
 
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
 
-            // Check spawn was called with correct GPU layers
+            // qwen-2.5-7b is 7.8GB, which falls in MEDIUM range (5-10GB) = 75 layers
             // ProcessManager calls spawn with (command, args, options)
             expect(mocks.spawn).toHaveBeenCalledWith(
                 expect.any(String),
-                expect.arrayContaining(['--n-gpu-layers', '60']),
+                expect.arrayContaining(['--n-gpu-layers', '75']),
                 expect.any(Object)
             );
 
@@ -396,18 +396,18 @@ describe('LlamaService', () => {
             }
         });
 
-        it('should use 75 GPU layers for 5-10GB models', async () => {
+        it('should use 99 GPU layers for <5GB models (phi-3.5-mini)', async () => {
             mockSettings.localModel = 'phi-3.5-mini';
             service = LlamaService.getInstance(mockSettings);
 
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
 
-            // Check spawn was called with correct GPU layers
+            // phi-3.5-mini is 4.06GB, which falls in SMALL range (<5GB) = 99 layers (all layers)
             // ProcessManager calls spawn with (command, args, options)
             expect(mocks.spawn).toHaveBeenCalledWith(
                 expect.any(String),
-                expect.arrayContaining(['--n-gpu-layers', '75']),
+                expect.arrayContaining(['--n-gpu-layers', '99']),
                 expect.any(Object)
             );
 

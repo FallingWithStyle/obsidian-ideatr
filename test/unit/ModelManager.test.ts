@@ -18,7 +18,32 @@ vi.mock('fs/promises', () => ({
     readFile: vi.fn()
 }));
 
-// Mock fs createWriteStream
+// Mock fs createWriteStream and createReadStream
+const createMockReadStream = () => {
+    const handlers: { [key: string]: any[] } = {};
+    const stream = {
+        on: vi.fn((event: string, handler: any) => {
+            if (!handlers[event]) handlers[event] = [];
+            handlers[event].push(handler);
+            // Auto-emit events for common cases
+            if (event === 'data') {
+                // Emit mock data immediately
+                setTimeout(() => handler(Buffer.from('mock file data')), 0);
+            } else if (event === 'end') {
+                setTimeout(() => handler(), 0);
+            }
+            return stream;
+        }),
+        once: vi.fn(),
+        pipe: vi.fn(),
+        destroy: vi.fn(() => {
+            stream.destroyed = true;
+        }),
+        destroyed: false
+    };
+    return stream;
+};
+
 vi.mock('fs', () => ({
     createWriteStream: vi.fn(() => ({
         write: vi.fn(),
@@ -26,7 +51,8 @@ vi.mock('fs', () => ({
         on: vi.fn(),
         once: vi.fn(),
         destroy: vi.fn()
-    }))
+    })),
+    createReadStream: vi.fn(() => createMockReadStream())
 }));
 
 // Mock fetch
@@ -326,7 +352,14 @@ describe('ModelManager', () => {
                 size: expectedSizeBytes
             } as any);
 
+            // Temporarily clear checksum so it falls back to size checking
+            const originalChecksum = (modelManager as any).modelInfo.checksum;
+            (modelManager as any).modelInfo.checksum = '';
+
             const result = await modelManager.verifyModelIntegrity();
+
+            // Restore original checksum
+            (modelManager as any).modelInfo.checksum = originalChecksum;
 
             expect(result).toBe(true);
         });
@@ -346,14 +379,21 @@ describe('ModelManager', () => {
             vi.mocked(fs.access).mockResolvedValue(undefined);
             const modelInfo = modelManager.getModelInfo();
             const expectedSizeBytes = modelInfo.sizeBytes;
-            // 0.5% larger than expected (within 1% tolerance)
+            // 0.5% larger than expected (within 1% tolerance, but implementation uses 20% tolerance)
             const actualSizeBytes = expectedSizeBytes * 1.005;
             
             vi.mocked(fs.stat).mockResolvedValue({
                 size: actualSizeBytes
             } as any);
 
+            // Temporarily clear checksum so it falls back to size checking
+            const originalChecksum = (modelManager as any).modelInfo.checksum;
+            (modelManager as any).modelInfo.checksum = '';
+
             const result = await modelManager.verifyModelIntegrity();
+
+            // Restore original checksum
+            (modelManager as any).modelInfo.checksum = originalChecksum;
 
             expect(result).toBe(true);
         });
