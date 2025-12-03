@@ -13,13 +13,15 @@ export const IDEATR_ICON_RED = 'ideatr-icon-red';
  * Helper function to create an SVG wrapper for a PNG image
  * This allows PNG images to be used with Obsidian's icon system
  * 
+ * Obsidian icons use a 24x24 viewBox and let CSS control the actual display size.
+ * We don't set explicit width/height so Obsidian can scale them properly.
+ * 
  * @param imageDataUri - Base64 data URI of the PNG image (e.g., 'data:image/png;base64,iVBORw0KG...')
- * @param size - Size of the icon (default: 24)
  * @returns SVG string that can be used with addIcon()
  */
-export function createPNGIconSVG(imageDataUri: string, size: number = 24): string {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <image href="${imageDataUri}" width="${size}" height="${size}"/>
+export function createPNGIconSVG(imageDataUri: string): string {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <image href="${imageDataUri}" width="24" height="24"/>
     </svg>`;
 }
 

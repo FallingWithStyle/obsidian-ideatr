@@ -323,8 +323,8 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   transition: all 0.2s ease;
 }
 
@@ -439,13 +439,13 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
 }
 
 .status-bar-item .ideatr-model-status-icon {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
 }
 
 .status-bar-item .ideatr-model-status-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
 }
 
 /* Adjust tooltip position for status bar (show above) */
@@ -534,4 +534,13 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Custom Ideatr icons sizing */
+.ideatr-capture-modal svg,
+.ideatr-help-text svg {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  vertical-align: middle;
 }
