@@ -2,8 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OpenRouterProvider } from '../../src/services/providers/OpenRouterProvider';
 import type { ClassificationResult } from '../../src/types/classification';
 
-// Mock fetch
-global.fetch = vi.fn();
+// Mock requestUrl from obsidian
+vi.mock('obsidian', () => ({
+    requestUrl: vi.fn()
+}));
+
+import { requestUrl } from 'obsidian';
+const mockRequestUrl = vi.mocked(requestUrl);
 
 describe('OpenRouterProvider', () => {
     let provider: OpenRouterProvider;
@@ -52,35 +57,36 @@ describe('OpenRouterProvider', () => {
                 }]
             };
 
-            vi.mocked(global.fetch).mockResolvedValue({
-                ok: true,
-                json: async () => mockResponse
-            } as Response);
+            mockRequestUrl.mockResolvedValue({
+                status: 200,
+                json: mockResponse,
+                statusText: 'OK'
+            });
 
             const result = await provider.classify('A productivity app');
 
             expect(result.category).toBe('saas');
             expect(result.tags).toContain('app');
             expect(result.tags).toContain('productivity');
-            expect(global.fetch).toHaveBeenCalled();
+            expect(mockRequestUrl).toHaveBeenCalled();
         });
 
         it('should handle API errors', async () => {
-            vi.mocked(global.fetch).mockResolvedValue({
-                ok: false,
+            mockRequestUrl.mockResolvedValue({
                 status: 401,
-                json: async () => ({ error: 'Invalid API key' })
-            } as Response);
+                json: { error: 'Invalid API key' },
+                statusText: 'Unauthorized'
+            });
 
             await expect(provider.classify('test')).rejects.toThrow();
         });
 
         it('should handle rate limiting', async () => {
-            vi.mocked(global.fetch).mockResolvedValue({
-                ok: false,
+            mockRequestUrl.mockResolvedValue({
                 status: 429,
-                json: async () => ({ error: 'Rate limit exceeded' })
-            } as Response);
+                json: { error: 'Rate limit exceeded' },
+                statusText: 'Too Many Requests'
+            });
 
             await expect(provider.classify('test')).rejects.toThrow('Rate limit exceeded');
         });
