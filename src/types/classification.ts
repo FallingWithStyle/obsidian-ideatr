@@ -98,9 +98,10 @@ export interface ILLMService {
             temperature?: number;
             n_predict?: number;
             stop?: string[];
+            grammar?: string;
         }
     ): Promise<string>;
-    
+
     /**
      * Generate idea mutations (variations)
      * @param text - Idea text
@@ -111,7 +112,7 @@ export interface ILLMService {
         text: string,
         options?: import('./transformation').MutationOptions
     ): Promise<import('./transformation').Mutation[]>;
-    
+
     /**
      * Expand an idea with detailed description
      * @param text - Idea text
@@ -122,7 +123,7 @@ export interface ILLMService {
         text: string,
         options?: import('./transformation').ExpansionOptions
     ): Promise<import('./transformation').ExpansionResult>;
-    
+
     /**
      * Reorganize an idea into structured format
      * @param text - Idea text

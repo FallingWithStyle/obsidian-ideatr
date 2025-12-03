@@ -4,6 +4,7 @@ import { CommandContext } from '../base/CommandContext';
 import { ClusterAnalysisModal, type ClusterInfo } from '../../views/ClusterAnalysisModal';
 import { PROMPTS } from '../../services/prompts';
 import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { GRAMMARS } from '../../utils/grammars';
 import { Logger } from '../../utils/logger';
 
 /**
@@ -32,7 +33,7 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
         // Get all ideas
         const allFiles = this.context.app.vault.getMarkdownFiles();
-        const ideaFiles = allFiles.filter(f => 
+        const ideaFiles = allFiles.filter(f =>
             f.path.startsWith('Ideas/') && !f.path.startsWith('Ideas/Archived/')
         );
 
@@ -60,7 +61,7 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
         const clusters = await this.context.clusteringService.clusterIdeas(ideas);
 
         // Find cluster containing current idea
-        const currentCluster = clusters.find(c => 
+        const currentCluster = clusters.find(c =>
             c.ideas.some(i => i.filename === file.name || `Ideas/${i.filename}` === file.path)
         );
 
@@ -85,7 +86,7 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
         // Calculate statistics
         const ages = currentCluster.ideas.map(idea => {
-            const created = idea.frontmatter?.created 
+            const created = idea.frontmatter?.created
                 ? new Date(idea.frontmatter.created).getTime()
                 : Date.now();
             return Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24));
@@ -110,7 +111,7 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
                         for (const idea2 of otherCluster.ideas) {
                             const body1 = idea1.body || idea1.filename || '';
                             const body2 = idea2.body || idea2.filename || '';
-                            
+
                             if (body1 && body2) {
                                 const similarity = this.context.searchService.calculateSimilarity(body1, body2);
                                 totalSimilarity += similarity;
@@ -158,7 +159,8 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
                 const analysisResponse = await this.context.llmService.complete(analysisPrompt, {
                     temperature: 0.7,
-                    n_predict: 500
+                    n_predict: 500,
+                    grammar: GRAMMARS.clusterAnalysis
                 });
 
                 try {
@@ -188,7 +190,8 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
                         const relationshipResponse = await this.context.llmService.complete(relationshipPrompt, {
                             temperature: 0.7,
-                            n_predict: 300
+                            n_predict: 300,
+                            grammar: GRAMMARS.clusterAnalysis
                         });
 
                         try {
