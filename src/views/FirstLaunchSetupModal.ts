@@ -112,7 +112,7 @@ export class FirstLaunchSetupModal extends Modal {
 
             // Render compact model card
             const modelDisplay = localModelToDisplayInfo(config);
-            const cardEl = renderCompactModelCard(container, modelDisplay, true);
+            renderCompactModelCard(container, modelDisplay, true);
 
             // Select button with checksum indicator (add to container, below card)
             const selectButtonSetting = new Setting(container);

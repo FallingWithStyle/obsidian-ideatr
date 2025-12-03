@@ -2,7 +2,8 @@ import { App, PluginSettingTab } from 'obsidian';
 import type IdeatrPlugin from './main';
 import { LLMSettingsSection } from './settings/sections/LLMSettingsSection';
 import { CloudAISettingsSection } from './settings/sections/CloudAISettingsSection';
-import { DomainSettingsSection } from './settings/sections/DomainSettingsSection';
+// Domain checking removed - functionality hidden
+// import { DomainSettingsSection } from './settings/sections/DomainSettingsSection';
 import { WebSearchSettingsSection } from './settings/sections/WebSearchSettingsSection';
 import { NameVariantSettingsSection } from './settings/sections/NameVariantSettingsSection';
 import { ScaffoldSettingsSection } from './settings/sections/ScaffoldSettingsSection';
@@ -281,7 +282,8 @@ export class IdeatrSettingTab extends PluginSettingTab {
         // Initialize sections
         const llmSection = new LLMSettingsSection(this.app, this.plugin, this);
         const cloudAISection = new CloudAISettingsSection(this.app, this.plugin, this);
-        const domainSection = new DomainSettingsSection(this.app, this.plugin, this);
+        // Domain checking removed - functionality hidden
+        // const domainSection = new DomainSettingsSection(this.app, this.plugin, this);
         const webSearchSection = new WebSearchSettingsSection(this.app, this.plugin, this);
         const nameVariantSection = new NameVariantSettingsSection(this.app, this.plugin, this);
         const scaffoldSection = new ScaffoldSettingsSection(this.app, this.plugin, this);

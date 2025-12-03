@@ -2,7 +2,8 @@ import type { Plugin } from 'obsidian';
 import { Notice } from 'obsidian';
 import { CommandContext } from './base/CommandContext';
 import { CaptureCommand } from './capture/CaptureCommand';
-import { DomainCheckCommand } from './validation/DomainCheckCommand';
+// Domain checking removed - functionality hidden
+// import { DomainCheckCommand } from './validation/DomainCheckCommand';
 import { ExistenceSearchCommand } from './validation/ExistenceSearchCommand';
 import { DuplicateCheckCommand } from './validation/DuplicateCheckCommand';
 import { RelatedNotesCommand } from './validation/RelatedNotesCommand';

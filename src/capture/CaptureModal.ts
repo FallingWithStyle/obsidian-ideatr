@@ -117,7 +117,7 @@ export class CaptureModal extends Modal {
         classificationService: ClassificationService,
         duplicateDetector: DuplicateDetector,
         settings: IdeatrSettings,
-        domainService: any, // Domain checking removed - functionality hidden
+        _domainService: any, // Domain checking removed - functionality hidden (prefix with _ to avoid unused warning)
         webSearchService: WebSearchService,
         nameVariantService?: INameVariantService,
         llmService?: ILLMService,
