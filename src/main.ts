@@ -1,4 +1,4 @@
-import { Plugin, Notice } from 'obsidian';
+import { Plugin, Notice, addIcon } from 'obsidian';
 import { CaptureModal } from './capture/CaptureModal';
 import { DashboardView } from './views/DashboardView';
 import { GraphView } from './views/GraphView';
@@ -30,6 +30,8 @@ export default class IdeatrPlugin extends Plugin {
     private statusBarItem!: HTMLElement;
     private statusUpdateInterval?: number;
     private memoryMonitor?: MemoryMonitor;
+    private unhandledRejectionHandler?: (reason: any, promise: Promise<any>) => void;
+    private uncaughtExceptionHandler?: (error: Error) => void;
 
     // Public properties for settings modal access
     get nameVariantService(): NameVariantService {
@@ -44,15 +46,18 @@ export default class IdeatrPlugin extends Plugin {
         await this.loadSettings();
 
         // Global error handlers for leak detection
-        process.on('unhandledRejection', (reason, promise) => {
+        // Store handler references so they can be removed in onunload()
+        this.unhandledRejectionHandler = (reason: any, promise: Promise<any>) => {
             console.error('Ideatr: Unhandled Rejection at:', promise, 'reason:', reason);
             Logger.error('Unhandled Rejection:', reason);
-        });
+        };
+        process.on('unhandledRejection', this.unhandledRejectionHandler);
 
-        process.on('uncaughtException', (error) => {
+        this.uncaughtExceptionHandler = (error: Error) => {
             console.error('Ideatr: Uncaught Exception:', error);
             Logger.error('Uncaught Exception:', error);
-        });
+        };
+        process.on('uncaughtException', this.uncaughtExceptionHandler);
 
         // Initialize Logger with app instance and debug mode setting
         await Logger.initialize(this.app, this.settings.debugMode);
@@ -151,10 +156,10 @@ export default class IdeatrPlugin extends Plugin {
             }
 
             // Register custom Ideatr icons (purple for primary, colored for status)
-            this.addIcon(IDEATR_ICON_ID, createPNGIconSVG(`data:image/png;base64,${PURPLE_ICON_BASE64}`));
-            this.addIcon(IDEATR_ICON_GREEN, createPNGIconSVG(`data:image/png;base64,${GREEN_ICON_BASE64}`));
-            this.addIcon(IDEATR_ICON_YELLOW, createPNGIconSVG(`data:image/png;base64,${YELLOW_ICON_BASE64}`));
-            this.addIcon(IDEATR_ICON_RED, createPNGIconSVG(`data:image/png;base64,${RED_ICON_BASE64}`));
+            addIcon(IDEATR_ICON_ID, createPNGIconSVG(`data:image/png;base64,${PURPLE_ICON_BASE64}`));
+            addIcon(IDEATR_ICON_GREEN, createPNGIconSVG(`data:image/png;base64,${GREEN_ICON_BASE64}`));
+            addIcon(IDEATR_ICON_YELLOW, createPNGIconSVG(`data:image/png;base64,${YELLOW_ICON_BASE64}`));
+            addIcon(IDEATR_ICON_RED, createPNGIconSVG(`data:image/png;base64,${RED_ICON_BASE64}`));
             
             // Use IDEATR_ICON_ID constant to ensure consistency across ribbon and other icons
             this.addRibbonIcon(IDEATR_ICON_ID, 'Capture Idea', () => {
@@ -237,6 +242,16 @@ export default class IdeatrPlugin extends Plugin {
     onunload() {
         Logger.debug('Unloading Ideatr plugin');
 
+        // Remove global error handlers to prevent resource leaks
+        if (this.unhandledRejectionHandler) {
+            process.removeListener('unhandledRejection', this.unhandledRejectionHandler);
+            this.unhandledRejectionHandler = undefined;
+        }
+        if (this.uncaughtExceptionHandler) {
+            process.removeListener('uncaughtException', this.uncaughtExceptionHandler);
+            this.uncaughtExceptionHandler = undefined;
+        }
+
         // Clear status update interval
         if (this.statusUpdateInterval) {
             clearInterval(this.statusUpdateInterval);
@@ -263,7 +278,46 @@ export default class IdeatrPlugin extends Plugin {
     }
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const loadedData = await this.loadData();
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
+        
+        // Migrate legacy cloudApiKey to cloudApiKeys map if needed
+        if (loadedData && 'cloudApiKey' in loadedData && loadedData.cloudApiKey && 
+            (!this.settings.cloudApiKeys || Object.values(this.settings.cloudApiKeys).every(key => !key))) {
+            // If we have a legacy API key and no keys in the new structure, migrate it
+            const legacyKey = loadedData.cloudApiKey as string;
+            const provider = (loadedData.cloudProvider || 'none') as string;
+            
+            if (legacyKey && provider !== 'none' && provider !== 'custom') {
+                if (!this.settings.cloudApiKeys) {
+                    this.settings.cloudApiKeys = {
+                        anthropic: '',
+                        openai: '',
+                        gemini: '',
+                        groq: '',
+                        openrouter: ''
+                    };
+                }
+                // Migrate the key to the appropriate provider
+                if (provider === 'anthropic' || provider === 'openai' || provider === 'gemini' || 
+                    provider === 'groq' || provider === 'openrouter') {
+                    this.settings.cloudApiKeys[provider as keyof typeof this.settings.cloudApiKeys] = legacyKey;
+                }
+                // Save the migrated settings
+                await this.saveSettings();
+            }
+        }
+        
+        // Ensure cloudApiKeys exists (for new installations)
+        if (!this.settings.cloudApiKeys) {
+            this.settings.cloudApiKeys = {
+                anthropic: '',
+                openai: '',
+                gemini: '',
+                groq: '',
+                openrouter: ''
+            };
+        }
     }
 
     async saveSettings() {
