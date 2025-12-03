@@ -4,6 +4,7 @@ import { ModelManager } from '../services/ModelManager';
 import type { IdeatrSettings } from '../settings';
 import { ModelDownloadModal } from './ModelDownloadModal';
 import { checkModelCompatibility, getSystemInfoString } from '../utils/systemCapabilities';
+import { localModelToDisplayInfo, renderCompactModelCard } from '../utils/modelComparisonRenderer';
 
 /**
  * FirstLaunchSetupModal - Modal for first-launch AI setup
@@ -104,46 +105,16 @@ export class FirstLaunchSetupModal extends Modal {
         const modelManager = new ModelManager();
         const availableModels = modelManager.getAvailableModels();
 
-        // Create a card for each model
+        // Create a card for each model using standardized format
         for (const modelKey of Object.keys(availableModels) as Array<keyof typeof availableModels>) {
             const config = availableModels[modelKey];
             const container = this.contentEl.createDiv({ cls: 'model-option-card' });
 
-            // Header with name and badge
-            const header = container.createDiv({ cls: 'model-header' });
-            const headerTitle = header.createDiv({ cls: 'model-header-title' });
-            headerTitle.createEl('h3', { text: config.name });
-            headerTitle.createEl('span', { text: config.badge, cls: 'model-badge' });
+            // Render compact model card
+            const modelDisplay = localModelToDisplayInfo(config);
+            const cardEl = renderCompactModelCard(container, modelDisplay, true);
 
-            // Description
-            container.createEl('p', { text: config.description, cls: 'model-description' });
-
-            // Stats
-            const stats = container.createDiv({ cls: 'model-stats' });
-            stats.createEl('div', { text: `📦 Size: ${(config.sizeMB / 1000).toFixed(1)}GB` });
-            stats.createEl('div', { text: `💾 RAM: ${config.ram}` });
-            stats.createEl('div', { text: `⭐ Quality: ${config.quality}/5` });
-            stats.createEl('div', { text: `⚡ Speed: ${config.speed}/5` });
-
-            // Pros
-            const prosContainer = container.createDiv({ cls: 'model-pros' });
-            prosContainer.createEl('strong', { text: 'Pros:' });
-            const prosList = prosContainer.createEl('ul');
-            config.pros.forEach((pro: string) => prosList.createEl('li', { text: pro }));
-
-            // Cons
-            const consContainer = container.createDiv({ cls: 'model-cons' });
-            consContainer.createEl('strong', { text: 'Cons:' });
-            const consList = consContainer.createEl('ul');
-            config.cons.forEach((con: string) => consList.createEl('li', { text: con }));
-
-            // Best for
-            container.createEl('p', {
-                text: `Best for: ${config.bestFor}`,
-                cls: 'model-best-for'
-            });
-
-            // Select button with checksum indicator
+            // Select button with checksum indicator (add to container, below card)
             const selectButtonSetting = new Setting(container);
             
             selectButtonSetting
