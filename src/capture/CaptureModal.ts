@@ -3,8 +3,9 @@ import { validateIdeaText } from './InputValidator';
 import { FileManager } from '../storage/FileManager';
 import { ClassificationService } from '../services/ClassificationService';
 import { DuplicateDetector } from '../services/DuplicateDetector';
-import { DomainService } from '../services/DomainService';
-import { formatDomainResultsForFrontmatter } from '../services/DomainFormatter';
+// Domain checking removed - functionality hidden
+// import { DomainService } from '../services/DomainService';
+// import { formatDomainResultsForFrontmatter } from '../services/DomainFormatter';
 import { WebSearchService } from '../services/WebSearchService';
 import { SearchQueryGenerator } from '../services/SearchQueryGenerator';
 import { formatSearchResultsForFrontmatter } from '../services/SearchResultFormatter';
@@ -97,7 +98,8 @@ export class CaptureModal extends Modal {
     private fileManager: FileManager;
     private classificationService: ClassificationService;
     private duplicateDetector: DuplicateDetector;
-    private domainService: DomainService;
+    // Domain checking removed - functionality hidden
+    // private domainService: DomainService;
     private webSearchService: WebSearchService;
     private searchQueryGenerator: SearchQueryGenerator;
     private nameVariantService?: INameVariantService;
@@ -115,7 +117,7 @@ export class CaptureModal extends Modal {
         classificationService: ClassificationService,
         duplicateDetector: DuplicateDetector,
         settings: IdeatrSettings,
-        domainService: DomainService,
+        domainService: any, // Domain checking removed - functionality hidden
         webSearchService: WebSearchService,
         nameVariantService?: INameVariantService,
         llmService?: ILLMService,
@@ -125,7 +127,8 @@ export class CaptureModal extends Modal {
         this.fileManager = fileManager;
         this.classificationService = classificationService;
         this.duplicateDetector = duplicateDetector;
-        this.domainService = domainService;
+        // Domain checking removed - functionality hidden
+        // this.domainService = domainService;
         this.webSearchService = webSearchService;
         this.searchQueryGenerator = new SearchQueryGenerator();
         this.nameVariantService = nameVariantService;
@@ -459,9 +462,21 @@ export class CaptureModal extends Modal {
             let title = '';
             if (this.llmService.complete) {
                 try {
-                    const titlePrompt = `Generate a simple, concise title or subject line for this idea. Keep it brief (2-8 words), descriptive, and not too creative.
+                    const titlePrompt = `Generate a concise, descriptive title for this idea.
 
 Idea: "${idea.text}"
+
+Requirements:
+- 2-8 words maximum
+- Descriptive and clear (captures the core concept)
+- Not overly creative or abstract
+- Should help someone quickly understand what this idea is about
+- Extract the key concept, not just use the first words
+
+Examples:
+- "AI generated puzzle full of interlinked monkeys" → "AI Monkey Puzzle Game"
+- "notification app that sends alerts" → "Notification App"
+- "task manager for remote teams" → "Team Task Manager"
 
 Title:`;
                     const titleResponse = await this.llmService.complete(titlePrompt, {
@@ -483,7 +498,7 @@ Title:`;
             if (this.llmService.expandIdea) {
                 try {
                     // Use a simpler expansion focused on ideas and questions
-                    const expansionPrompt = `Based on this idea, generate related ideas and questions to explore. Keep it concise and practical.
+                    const expansionPrompt = `Expand this idea with related concepts, questions, and next steps.
 
 Original Idea:
 ${idea.text}
@@ -491,12 +506,24 @@ ${idea.text}
 Category: ${classification.category || 'general'}
 Tags: ${classification.tags.join(', ') || 'none'}
 
-Generate:
-- 2-3 related ideas or variations
-- 3-4 key questions to explore
-- 1-2 potential next steps
+Generate a structured expansion with:
 
-Format as markdown with clear sections. Keep it brief and actionable.
+## Related Ideas
+2-3 variations or related concepts that explore different angles or implementations. Each should be:
+- Distinct from the original but clearly related
+- Brief (1-2 sentences each)
+- Practical and actionable
+
+## Key Questions
+3-4 important questions to explore. Focus on:
+- Validation questions (who needs this? what problem does it solve?)
+- Implementation questions (how would this work? what's needed?)
+- Strategic questions (what are the risks? what's the market?)
+
+## Next Steps
+1-2 concrete, actionable next steps to move forward. Be specific and practical.
+
+Format as markdown with the sections above. Keep it concise and actionable - each item should be brief but meaningful.
 
 Response:`;
 
@@ -835,12 +862,12 @@ Response:`;
         }
 
         // Step 2: Trigger validation in background (non-blocking)
-        // This includes domain checks, web search, and name variant generation
+        // This includes web search and name variant generation
         await this.triggerValidation(file, ideaText, ideaCategory);
     }
 
     /**
-     * Trigger validation (domain check, web search, and name variant generation) in background (non-blocking)
+     * Trigger validation (web search and name variant generation) in background (non-blocking)
      */
     private async triggerValidation(
         file: TFile,
@@ -851,27 +878,18 @@ Response:`;
         const projectName = extractIdeaNameRuleBased(ideaText);
 
         // Track which validations were attempted
-        const shouldCheckDomains = this.settings.enableDomainCheck && this.settings.autoCheckDomains;
+        // Domain checking removed - functionality hidden
         const shouldSearchWeb = this.settings.enableWebSearch && this.settings.autoSearchExistence;
         const shouldGenerateVariants = this.settings.enableNameVariants && 
                                        this.settings.autoGenerateVariants && 
                                        this.nameVariantService?.isAvailable();
 
         // If no validations are enabled, skip
-        if (!shouldCheckDomains && !shouldSearchWeb && !shouldGenerateVariants) {
+        if (!shouldSearchWeb && !shouldGenerateVariants) {
             return;
         }
 
         // Run validation checks in parallel with individual error handling
-        const domainPromise = shouldCheckDomains
-            ? this.domainService.checkDomains(ideaText, projectName)
-                .catch(error => {
-                    Logger.warn('Domain check failed:', error);
-                    // Return error result for storage
-                    return null; // Signal that domain check was attempted but failed
-                })
-            : Promise.resolve(null);
-
         const searchPromise = shouldSearchWeb
             ? this.performWebSearch(ideaText, category, projectName)
                 .catch(error => {
@@ -898,21 +916,9 @@ Response:`;
             : Promise.resolve(null);
 
         // Wait for all to complete (or fail)
-        Promise.all([domainPromise, searchPromise, variantPromise])
-            .then(([domainResults, searchResults, _variantResult]) => {
+        Promise.all([searchPromise, variantPromise])
+            .then(([searchResults, _variantResult]) => {
                 const updates: any = {};
-                
-                // Handle domain results
-                if (shouldCheckDomains) {
-                    if (domainResults === null) {
-                        // Domain check failed - store error state
-                        updates.domains = ['error: Validation failed'];
-                    } else if (domainResults.length > 0) {
-                        // Domain check succeeded with results
-                        updates.domains = formatDomainResultsForFrontmatter(domainResults);
-                    }
-                    // If domainResults is empty array, don't update (no domains found is not an error)
-                }
                 
                 // Handle search results
                 if (shouldSearchWeb) {
@@ -939,11 +945,8 @@ Response:`;
             .catch(error => {
                 // This catch handles unexpected errors in the Promise.all itself
                 Logger.warn('Validation orchestration failed:', error);
-                // Store error state for both validations if they were attempted
+                // Store error state for validations if they were attempted
                 const errorUpdates: any = {};
-                if (shouldCheckDomains) {
-                    errorUpdates.domains = ['error: Validation failed'];
-                }
                 if (shouldSearchWeb) {
                     errorUpdates['existence-check'] = ['Search error: Validation failed'];
                 }

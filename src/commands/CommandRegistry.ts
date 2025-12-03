@@ -149,11 +149,12 @@ export class CommandRegistry {
         console.log('[Ideatr] Registered: Capture Idea');
 
         // Validation commands
-        plugin.addCommand({
-            id: 'check-domains',
-            name: 'Check Domains',
-            callback: CommandRegistry.createCommandCallback('Check Domains', () => new DomainCheckCommand(context).execute())
-        });
+        // Domain checking command hidden - functionality removed
+        // plugin.addCommand({
+        //     id: 'check-domains',
+        //     name: 'Check Domains',
+        //     callback: CommandRegistry.createCommandCallback('Check Domains', () => new DomainCheckCommand(context).execute())
+        // });
 
         plugin.addCommand({
             id: 'search-existence',

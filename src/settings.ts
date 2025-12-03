@@ -300,7 +300,8 @@ export class IdeatrSettingTab extends PluginSettingTab {
         validationTitle.createEl('h2', { text: 'Validation Tools' });
         const validationHelpIcon = createHelpIcon(this.app, 'validation', 'Learn about Validation Tools');
         validationTitle.appendChild(validationHelpIcon);
-        domainSection.display(containerEl);
+        // Domain checking settings hidden - functionality removed
+        // domainSection.display(containerEl);
         webSearchSection.display(containerEl);
 
         // Transformation Tools Section

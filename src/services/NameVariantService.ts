@@ -240,25 +240,35 @@ export class NameVariantService implements INameVariantService {
      * Construct prompt for LLM variant generation
      */
     private constructPrompt(ideaName: string): string {
-        return `Generate creative name variants for: "${ideaName}"
+        return `Generate creative, brandable name variants for: "${ideaName}"
 
-Generate 8-12 high-quality, brandable name variants. Each variant should be:
-- Memorable and easy to pronounce
-- Distinct from others
-- Creative, not generic
+CRITICAL REQUIREMENTS:
+- Extract the CORE CONCEPT, not just use the literal text
+- Focus on what makes the idea unique and memorable
+- Generate names that could actually be used as product/brand names
+- Prioritize creativity and memorability over literal translation
 
-Variant types:
-1. synonym - Words capturing the idea's essence (e.g., "notification" → "alert", "signal")
-2. short - Concise names, 2-8 chars (e.g., "notification" → "Notify", "Alertly")
-3. domain-hack - TLD completes the word (e.g., "notif.io", "read.it", "measur.app")
-4. phonetic - Similar sound, different spelling (e.g., "notify" → "Notifai", "Notifi")
-5. portmanteau - Blend two words (e.g., "net" + "flicks" → "Netflix")
-6. made-up - Invented, pronounceable words (e.g., "Zapier", "Slack")
+Generate 8-12 high-quality, brandable name variants. Each variant must be:
+- Memorable and easy to pronounce (test: can you say it out loud naturally?)
+- Distinct and creative (avoid generic words like "AI", "App", "Tool")
+- Brandable (could you see this as a real product name?)
+- 2-15 characters for most variants (domain hacks can be slightly longer if clever)
 
-Rules:
-- Domain hacks: TLD must complete the word naturally, not just appended
-- Short names: Must be meaningful, not random letters
-- All variants: Should feel brandable and professional
+Variant types (use diverse mix):
+1. synonym - Words capturing the idea's essence (e.g., "puzzle game" → "Riddle", "Enigma")
+2. short - Concise, punchy names 3-8 chars (e.g., "notification" → "Ping", "Buzz")
+3. domain-hack - TLD completes word naturally, MUST be short and clever (e.g., "find.it", "read.ly", NOT "longphrase.io")
+4. phonetic - Similar sound, different spelling (e.g., "notify" → "Notifai")
+5. portmanteau - Blend two relevant words (e.g., "net" + "flicks" → "Netflix")
+6. made-up - Invented but pronounceable words (e.g., "Zapier", "Slack", "Figma")
+
+STRICT RULES:
+- NEVER create unpronounceable acronyms (e.g., "AGPFOIM" is BAD)
+- If using acronyms, they must be 6 chars or fewer AND pronounceable (e.g., "ACME", "NASA")
+- Domain hacks: Must be SHORT (under 12 chars total) and clever, not just appending .io to long phrases
+- Avoid overly generic terms (e.g., "AI", "App", "Tool" alone are too generic)
+- Short names: Must be meaningful words or pronounceable invented words, not random letters
+- Extract the essence: For "AI puzzle with monkeys like Where's Waldo" → focus on "puzzle", "find", "monkey", "hidden", not the full description
 
 Examples:
 
@@ -267,9 +277,30 @@ Output: {
   "variants": [
     {"text": "Alert", "type": "synonym"},
     {"text": "Ping", "type": "short"},
+    {"text": "Buzz", "type": "short"},
     {"text": "notif.io", "type": "domain-hack"},
     {"text": "Notifai", "type": "phonetic"},
-    {"text": "Alertify", "type": "made-up"}
+    {"text": "Alertify", "type": "made-up"},
+    {"text": "Signal", "type": "synonym"},
+    {"text": "Chime", "type": "short"}
+  ]
+}
+
+Input: "AI generated puzzle full of interlinked monkeys that look similar, sort of a where's waldo of monkeys"
+Output: {
+  "variants": [
+    {"text": "MonkeyFind", "type": "portmanteau"},
+    {"text": "PrimateSeek", "type": "portmanteau"},
+    {"text": "FindMonkey", "type": "portmanteau"},
+    {"text": "WaldoMonkey", "type": "portmanteau"},
+    {"text": "SpotTheApe", "type": "portmanteau"},
+    {"text": "MonkeyHunt", "type": "portmanteau"},
+    {"text": "PrimatePuzzle", "type": "portmanteau"},
+    {"text": "ApeSpot", "type": "short"},
+    {"text": "MonkeySee", "type": "portmanteau"},
+    {"text": "find.ape", "type": "domain-hack"},
+    {"text": "Spotly", "type": "made-up"},
+    {"text": "Primate", "type": "synonym"}
   ]
 }
 
@@ -278,9 +309,11 @@ Output: {
   "variants": [
     {"text": "Mindful", "type": "synonym"},
     {"text": "Zen", "type": "short"},
-    {"text": "meditat.io", "type": "domain-hack"},
+    {"text": "Breathe", "type": "synonym"},
     {"text": "Mindspace", "type": "portmanteau"},
-    {"text": "Breathly", "type": "made-up"}
+    {"text": "Breathly", "type": "made-up"},
+    {"text": "Calmly", "type": "made-up"},
+    {"text": "Zenly", "type": "made-up"}
   ]
 }
 
@@ -289,9 +322,11 @@ Output: {
   "variants": [
     {"text": "Organize", "type": "synonym"},
     {"text": "Tasker", "type": "short"},
+    {"text": "Doable", "type": "made-up"},
     {"text": "get.done", "type": "domain-hack"},
     {"text": "Taskly", "type": "phonetic"},
-    {"text": "Doable", "type": "made-up"}
+    {"text": "Tackle", "type": "synonym"},
+    {"text": "Action", "type": "synonym"}
   ]
 }
 
@@ -370,35 +405,59 @@ Output: {`;
      */
     private generateFallbackVariants(ideaName: string): NameVariant[] {
         const variants: NameVariant[] = [];
-        const words = ideaName.split(/\s+/).filter(w => w.length > 0);
+        const words = ideaName.split(/\s+/).filter(w => w.length > 0 && w.length <= 15); // Filter out very long words
         const cleanName = ideaName.replace(/\s+/g, '').toLowerCase();
 
-        // Short version - first word or first 5 chars
-        if (words.length > 0) {
-            const firstWord = words[0];
-            if (firstWord.length > 5) {
-                variants.push({ text: firstWord.substring(0, 5), type: 'short' });
-            } else {
-                variants.push({ text: firstWord, type: 'short' });
+        // Extract meaningful words (skip common words like "the", "a", "an", "of", "for", "with")
+        const meaningfulWords = words.filter(w => {
+            const lower = w.toLowerCase();
+            return !['the', 'a', 'an', 'of', 'for', 'with', 'that', 'this', 'is', 'are', 'was', 'were'].includes(lower);
+        });
+
+        // Use meaningful words if available, otherwise use all words
+        const wordsToUse = meaningfulWords.length > 0 ? meaningfulWords : words;
+
+        // Short version - first meaningful word (capitalized)
+        if (wordsToUse.length > 0) {
+            const firstWord = wordsToUse[0];
+            // Only use if it's a reasonable length (3-12 chars)
+            if (firstWord.length >= 3 && firstWord.length <= 12) {
+                const capitalized = firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+                variants.push({ text: capitalized, type: 'short' });
             }
         }
 
-        // Domain hacks
-        if (cleanName.length > 0) {
+        // Domain hacks - only if the clean name is reasonably short (under 15 chars)
+        if (cleanName.length > 0 && cleanName.length <= 12) {
             variants.push({ text: `${cleanName}.io`, type: 'domain-hack' });
-            variants.push({ text: `${cleanName}.app`, type: 'domain-hack' });
-            variants.push({ text: `${cleanName}.dev`, type: 'domain-hack' });
+            if (cleanName.length <= 10) {
+                variants.push({ text: `${cleanName}.app`, type: 'domain-hack' });
+            }
         }
 
-        // Basic short version from clean name
-        if (cleanName.length > 5) {
-            variants.push({ text: cleanName.substring(0, 5), type: 'short' });
+        // Portmanteau from first two meaningful words (if both are short enough)
+        if (wordsToUse.length >= 2) {
+            const word1 = wordsToUse[0].toLowerCase();
+            const word2 = wordsToUse[1].toLowerCase();
+            if (word1.length <= 8 && word2.length <= 8) {
+                // Combine first part of word1 with word2, or word1 with first part of word2
+                const portmanteau1 = word1 + word2;
+                const portmanteau2 = word1.substring(0, Math.min(4, word1.length)) + word2;
+                if (portmanteau1.length <= 12) {
+                    const capitalized = portmanteau1.charAt(0).toUpperCase() + portmanteau1.slice(1);
+                    variants.push({ text: capitalized, type: 'portmanteau' });
+                }
+                if (portmanteau2.length <= 12 && portmanteau2 !== portmanteau1) {
+                    const capitalized = portmanteau2.charAt(0).toUpperCase() + portmanteau2.slice(1);
+                    variants.push({ text: capitalized, type: 'portmanteau' });
+                }
+            }
         }
 
-        // Acronym if multiple words
-        if (words.length > 1) {
-            const acronym = words.map(w => w[0]?.toUpperCase() || '').join('');
-            if (acronym.length >= 2) {
+        // Acronym only if 2-4 words and will be pronounceable (2-4 chars)
+        if (wordsToUse.length >= 2 && wordsToUse.length <= 4) {
+            const acronym = wordsToUse.map(w => w[0]?.toUpperCase() || '').join('');
+            if (acronym.length >= 2 && acronym.length <= 4) {
                 variants.push({ text: acronym, type: 'short' });
             }
         }

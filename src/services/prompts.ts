@@ -42,7 +42,7 @@ export const PROMPTS = {
         const tags = params.tags && params.tags.length > 0 ? params.tags.join(', ') : 'none';
         const focus = params.focus ? `\n\nFocus: ${params.focus}` : '';
 
-        return `Generate ${count} creative variations of this idea.
+        return `Generate ${count} creative, distinct variations of this idea.
 
 Original Idea:
 ${params.ideaText}
@@ -50,17 +50,24 @@ ${params.ideaText}
 Category: ${category}
 Tags: ${tags}${focus}
 
-Explore variations through:
-- Different perspectives or angles
-- Alternative implementations
-- Different audiences
-- Different business models
-- Different technologies
+CRITICAL REQUIREMENTS:
+- Each variation should be meaningfully different, not just minor tweaks
+- Explore diverse angles: different audiences, use cases, business models, technologies, or problem-solving approaches
+- Variations should be interesting and potentially viable on their own
+- Avoid variations that are too similar to each other
 
 For each variation, provide:
-- title: Brief name (2-5 words)
-- description: How it differs (1-2 sentences)
-- differences: 2-3 key differences
+- title: Brief, descriptive name (2-5 words) that captures the variation's unique angle
+- description: Clear explanation of how this variation differs from the original (1-2 sentences). Be specific about what changed and why it matters.
+- differences: 2-3 concrete, specific differences that make this variation distinct. Focus on meaningful changes, not trivial details.
+
+Variation strategies to consider:
+- Different target audience (e.g., B2B vs B2C, professionals vs consumers)
+- Different problem focus (e.g., different pain point, different use case)
+- Different business model (e.g., subscription vs one-time, freemium vs premium)
+- Different technology approach (e.g., mobile-first vs web-first, AI-powered vs manual)
+- Different scope (e.g., enterprise vs personal, comprehensive vs focused)
+- Different angle (e.g., productivity vs entertainment, serious vs playful)
 
 IMPORTANT: 
 - Respond with ONLY a valid JSON array
@@ -69,13 +76,14 @@ IMPORTANT:
 - Start your response with [ and end with ]
 - Ensure the JSON is complete and properly closed
 - Generate all ${count} variations
+- Make each variation distinct and interesting
 
 Output format (JSON array):
 [
   {
     "title": "Variation Name",
     "description": "How this differs from original...",
-    "differences": ["Difference 1", "Difference 2"]
+    "differences": ["Difference 1", "Difference 2", "Difference 3"]
   }
 ]`;
     },
@@ -88,7 +96,7 @@ Output format (JSON array):
         const tags = params.tags && params.tags.length > 0 ? params.tags.join(', ') : 'none';
         const detailLevel = params.detailLevel || 'detailed';
 
-        return `Expand this idea into a structured description.
+        return `Expand this idea into a comprehensive, structured description.
 
 Original Idea:
 ${params.ideaText}
@@ -96,27 +104,45 @@ ${params.ideaText}
 Category: ${category}
 Tags: ${tags}
 
-Requirements:
-- Preserve original meaning and intent
-- Add detail without changing core concept
-- Use markdown formatting
-- Detail level: ${detailLevel}
+CRITICAL REQUIREMENTS:
+- Preserve the original meaning and core concept completely
+- Add meaningful detail that enhances understanding without changing the fundamental idea
+- Use clear markdown formatting with proper headings
+- Detail level: ${detailLevel} (brief = concise, detailed = thorough, comprehensive = extensive)
 
-Structure:
+Structure your expansion as follows:
+
 ## Overview
-Clear summary (2-3 sentences)
+A clear, concise summary (2-4 sentences) that captures:
+- What this idea is
+- The core problem it solves or value it provides
+- Why it matters or what makes it interesting
 
 ## Key Features / Mechanics
-Main features, mechanics, or core components
+Main features, mechanics, or core components. For ${detailLevel === 'comprehensive' ? 'each feature, explain how it works and why it matters' : detailLevel === 'detailed' ? 'each feature, provide a brief explanation' : 'each feature, list it concisely'}:
+- What are the essential components or features?
+- How do they work together?
+- What makes them unique or effective?
 
 ## Goals / Objectives
-What this idea aims to achieve
+What this idea aims to achieve:
+- Primary goals (what problem does it solve?)
+- Secondary benefits (what additional value does it provide?)
+- Success criteria (how would you know it's working?)
 
 ## Potential Challenges
-Potential obstacles or challenges
+Realistic obstacles or challenges to consider:
+- Technical challenges
+- Market or adoption challenges
+- Resource or implementation challenges
+- Competitive or strategic challenges
 
 ## Next Steps
-Initial steps to explore or develop
+Concrete, actionable initial steps to explore or develop:
+- Research or validation steps
+- Prototyping or development steps
+- Market or user research steps
+- Partnership or resource acquisition steps
 
 Response:`;
     },
