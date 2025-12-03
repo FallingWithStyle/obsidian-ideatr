@@ -2,7 +2,7 @@ import { Setting, Notice } from 'obsidian';
 import { BaseSettingsSection } from '../components/SettingsSection';
 import { ProviderFactory } from '../../services/providers/ProviderFactory';
 import type { CloudProviderType } from '../../types/llm-provider';
-import { getAllCloudModels, getCloudModelsByProvider, type CloudModelConfig } from '../../utils/ModelValidator';
+import { getCloudModelsByProvider, type CloudModelConfig } from '../../utils/ModelValidator';
 
 export class CloudAISettingsSection extends BaseSettingsSection {
     private showComparison: boolean = false;
