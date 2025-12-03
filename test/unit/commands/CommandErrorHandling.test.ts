@@ -11,6 +11,7 @@ vi.mock('../../../src/utils/logger', () => ({
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),
+        isDebugEnabled: vi.fn(() => false),
     }
 }));
 import { Logger } from '../../../src/utils/logger';

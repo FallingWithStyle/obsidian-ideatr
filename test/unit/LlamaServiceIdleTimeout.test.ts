@@ -21,10 +21,15 @@ vi.mock('fs', async () => {
 const mocks = vi.hoisted(() => {
     const mockSpawn = vi.fn();
     const createMockChildProcess = () => ({
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
+        stdout: { on: vi.fn(), removeListener: vi.fn() },
+        stderr: { on: vi.fn(), removeListener: vi.fn() },
         on: vi.fn(),
-        kill: vi.fn()
+        once: vi.fn(),
+        removeListener: vi.fn(),
+        kill: vi.fn(),
+        pid: 12345,
+        exitCode: null,
+        killed: false
     });
     const mockChildProcess = createMockChildProcess();
     mockSpawn.mockReturnValue(mockChildProcess);
@@ -122,7 +127,7 @@ describe('LlamaService - Idle Timeout', () => {
         mocks.childProcess.stderr.on.mockClear();
         mocks.childProcess.on.mockClear();
         mocks.childProcess.kill.mockClear();
-        service = new LlamaService(mockSettings);
+        service = LlamaService.getInstance(mockSettings);
         mockFetch.mockReset();
     });
 
@@ -134,10 +139,10 @@ describe('LlamaService - Idle Timeout', () => {
         it('should unload model after 15 minutes of inactivity', async () => {
             // Start server
             const startPromise = service.startServer();
-            
+
             // Wait a tick for spawn to complete and register stdout listener
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Get the stdout callback and trigger it to set isServerReady
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
@@ -162,15 +167,15 @@ describe('LlamaService - Idle Timeout', () => {
             // Advance time by 15 minutes + 1 second
             await vi.advanceTimersByTimeAsync(15 * 60 * 1000 + 1000);
 
-            // Model should be unloaded
-            expect(mocks.childProcess.kill).toHaveBeenCalled();
+            // Model should be unloaded - check if process manager stopped the process
+            expect(service.hasServerProcess()).toBe(false);
         });
 
         it('should reset idle timer on each classification', async () => {
             // Start server
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 stdoutCallbacks[0][1](Buffer.from('HTTP server listening'));
@@ -188,35 +193,35 @@ describe('LlamaService - Idle Timeout', () => {
             const classify1Promise = service.classify('test idea 1');
             await vi.advanceTimersByTimeAsync(6000);
             await classify1Promise;
-            
+
             await vi.advanceTimersByTimeAsync(14 * 60 * 1000); // 14 minutes
 
             // Second classification (should reset timer)
             const classify2Promise = service.classify('test idea 2');
             await vi.advanceTimersByTimeAsync(6000);
             await classify2Promise;
-            
+
             await vi.advanceTimersByTimeAsync(14 * 60 * 1000); // Another 14 minutes
 
             // Model should still be loaded (only 14 minutes since last use)
-            expect(mocks.childProcess.kill).not.toHaveBeenCalled();
+            expect(service.hasServerProcess()).toBe(true);
 
             // Advance another 2 minutes to trigger timeout
             await vi.advanceTimersByTimeAsync(2 * 60 * 1000);
 
             // Now model should be unloaded
-            expect(mocks.childProcess.kill).toHaveBeenCalled();
+            expect(service.hasServerProcess()).toBe(false);
         });
 
         it('should not unload model if keepModelLoaded is true', async () => {
             mockSettings.keepModelLoaded = true;
             mocks.childProcess.kill.mockClear();
-            service = new LlamaService(mockSettings);
+            service.updateSettings(mockSettings);
 
             // Start server
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 stdoutCallbacks[0][1](Buffer.from('HTTP server listening'));
@@ -238,14 +243,14 @@ describe('LlamaService - Idle Timeout', () => {
             await vi.advanceTimersByTimeAsync(20 * 60 * 1000);
 
             // Model should NOT be unloaded
-            expect(mocks.childProcess.kill).not.toHaveBeenCalled();
+            expect(service.hasServerProcess()).toBe(true);
         });
 
         it('should handle rapid classifications without unloading', async () => {
             // Start server
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 stdoutCallbacks[0][1](Buffer.from('HTTP server listening'));
@@ -271,7 +276,7 @@ describe('LlamaService - Idle Timeout', () => {
             await vi.advanceTimersByTimeAsync(14 * 60 * 1000);
 
             // Model should still be loaded
-            expect(mocks.childProcess.kill).not.toHaveBeenCalled();
+            expect(service.hasServerProcess()).toBe(true);
         });
     });
 
@@ -283,7 +288,7 @@ describe('LlamaService - Idle Timeout', () => {
             // Start loading
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 stdoutCallbacks[0][1](Buffer.from('HTTP server listening'));

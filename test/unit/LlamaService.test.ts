@@ -8,9 +8,9 @@ global.fetch = mockFetch;
 
 // Mock fs
 const fsMocks = vi.hoisted(() => {
-    const existsSync = vi.fn(() => true);
+    const existsSync = vi.fn((path: string) => true);
     const accessSync = vi.fn();
-    const readdirSync = vi.fn(() => []);
+    const readdirSync = vi.fn((path: string) => []);
     const chmodSync = vi.fn();
     return {
         existsSync,
@@ -34,10 +34,15 @@ vi.mock('fs', async () => {
 const mocks = vi.hoisted(() => {
     const mockSpawn = vi.fn();
     const createMockChildProcess = () => ({
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
+        stdout: { on: vi.fn(), removeListener: vi.fn() },
+        stderr: { on: vi.fn(), removeListener: vi.fn() },
         on: vi.fn(),
-        kill: vi.fn()
+        once: vi.fn(),
+        removeListener: vi.fn(),
+        kill: vi.fn(),
+        pid: 12345,
+        exitCode: null,
+        killed: false
     });
     const mockChildProcess = createMockChildProcess();
     mockSpawn.mockReturnValue(mockChildProcess);
@@ -84,7 +89,7 @@ describe('LlamaService', () => {
             concurrency: 1,
             llmTimeout: 1000,
             autoClassify: true
-        };
+        } as unknown as IdeatrSettings;
         // Reset mocks before creating new service
         mocks.spawn.mockClear();
         mocks.childProcess.stdout.on.mockClear();
@@ -94,7 +99,7 @@ describe('LlamaService', () => {
         fsMocks.existsSync.mockReturnValue(true);
         fsMocks.accessSync.mockReturnValue(undefined);
         fsMocks.readdirSync.mockReturnValue([]);
-        
+
         // Use getInstance for singleton pattern
         service = LlamaService.getInstance(mockSettings);
         mockFetch.mockReset();
@@ -165,10 +170,10 @@ describe('LlamaService', () => {
             // Ensure server is "ready" for classification tests
             // Start server and simulate readiness
             const startPromise = service.startServer();
-            
+
             // Wait a tick for spawn to complete and register stdout listener
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Get the stdout callback and trigger it to set isServerReady
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
@@ -181,7 +186,7 @@ describe('LlamaService', () => {
             await vi.advanceTimersByTimeAsync(2000);
             await startPromise;
         });
-        
+
         it('should successfully classify an idea', async () => {
             const mockResponse = {
                 content: JSON.stringify({
@@ -196,10 +201,10 @@ describe('LlamaService', () => {
             });
 
             const classifyPromise = service.classify('A fantasy RPG game');
-            
+
             // Advance timers through any readiness wait loops (up to 5s = 50 * 100ms)
             await vi.advanceTimersByTimeAsync(6000);
-            
+
             const result = await classifyPromise;
 
             expect(result.category).toBe('game');
@@ -234,14 +239,14 @@ describe('LlamaService', () => {
 
             // Start classification
             const classifyPromise = service.classify('test');
-            
+
             // Advance through readiness wait (if any) + timeout (1000ms)
             await vi.advanceTimersByTimeAsync(7000);
-            
+
             // The timeout should have triggered the abort
             // Catch the error to prevent unhandled rejection
             await expect(classifyPromise).rejects.toThrow('API request timed out');
-            
+
             // Wait a tick to ensure any unhandled rejections are caught
             await vi.advanceTimersByTimeAsync(0);
         });
@@ -256,10 +261,10 @@ describe('LlamaService', () => {
             const classifyPromise = service.classify('test');
             // Advance through readiness wait
             await vi.advanceTimersByTimeAsync(6000);
-            
+
             // Catch the error to prevent unhandled rejection
             await expect(classifyPromise).rejects.toThrow('Llama.cpp server error: 500 Internal Server Error');
-            
+
             // Wait a tick to ensure any unhandled rejections are caught
             await vi.advanceTimersByTimeAsync(0);
         });
@@ -277,7 +282,7 @@ describe('LlamaService', () => {
             const classifyPromise = service.classify('test');
             // Advance through readiness wait
             await vi.advanceTimersByTimeAsync(6000);
-            
+
             const result = await classifyPromise;
             expect(result.category).toBe('');
             expect(result.tags).toEqual([]);
@@ -298,7 +303,7 @@ describe('LlamaService', () => {
             const classifyPromise = service.classify('test');
             // Advance through readiness wait
             await vi.advanceTimersByTimeAsync(6000);
-            
+
             const result = await classifyPromise;
             expect(result.category).toBe('');
             expect(result.tags).toEqual([]);
@@ -321,16 +326,16 @@ describe('LlamaService', () => {
         it('should use 25 GPU layers for 70B models', async () => {
             mockSettings.localModel = 'llama-3.3-70b';
             service = LlamaService.getInstance(mockSettings);
-            
+
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Check spawn was called with correct GPU layers
             expect(mocks.spawn).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.arrayContaining(['--n-gpu-layers', '25'])
             );
-            
+
             // Clean up
             await vi.advanceTimersByTimeAsync(2000);
             try {
@@ -343,16 +348,16 @@ describe('LlamaService', () => {
         it('should use 40 GPU layers for 20-40GB models', async () => {
             mockSettings.localModel = 'llama-3.1-8b';
             service = LlamaService.getInstance(mockSettings);
-            
+
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Check spawn was called with correct GPU layers
             expect(mocks.spawn).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.arrayContaining(['--n-gpu-layers', '40'])
             );
-            
+
             await vi.advanceTimersByTimeAsync(2000);
             try {
                 await startPromise;
@@ -364,16 +369,16 @@ describe('LlamaService', () => {
         it('should use 60 GPU layers for 10-20GB models', async () => {
             mockSettings.localModel = 'qwen-2.5-7b';
             service = LlamaService.getInstance(mockSettings);
-            
+
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Check spawn was called with correct GPU layers
             expect(mocks.spawn).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.arrayContaining(['--n-gpu-layers', '60'])
             );
-            
+
             await vi.advanceTimersByTimeAsync(2000);
             try {
                 await startPromise;
@@ -385,16 +390,16 @@ describe('LlamaService', () => {
         it('should use 75 GPU layers for 5-10GB models', async () => {
             mockSettings.localModel = 'phi-3.5-mini';
             service = LlamaService.getInstance(mockSettings);
-            
+
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Check spawn was called with correct GPU layers
             expect(mocks.spawn).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.arrayContaining(['--n-gpu-layers', '75'])
             );
-            
+
             await vi.advanceTimersByTimeAsync(2000);
             try {
                 await startPromise;
@@ -418,14 +423,14 @@ describe('LlamaService', () => {
 
             mockSettings.localModel = 'qwen-2.5-7b';
             service = LlamaService.getInstance(mockSettings);
-            
+
             // This will call getEffectiveModelPath internally
             try {
                 await service.startServer();
             } catch (error) {
                 // May fail for other reasons, but path should be checked
             }
-            
+
             // Verify it tried to use the correct model path
             expect(fsMocks.existsSync).toHaveBeenCalledWith(
                 expect.stringContaining('Qwen2.5-7B-Instruct-Q8_0.gguf')
@@ -438,7 +443,7 @@ describe('LlamaService', () => {
                 'Qwen2.5-7B-Instruct-Q8_0.gguf',
                 'Phi-3.5-mini-instruct-Q8_0.gguf'
             ] as any);
-            
+
             fsMocks.existsSync.mockImplementation((path: string) => {
                 // Binary exists
                 if (typeof path === 'string' && path.includes('llama-server')) {
@@ -454,7 +459,7 @@ describe('LlamaService', () => {
 
             mockSettings.localModel = 'qwen-2.5-7b';
             service = LlamaService.getInstance(mockSettings);
-            
+
             // Should not use the 70B model even though it exists
             try {
                 await service.startServer();
@@ -470,23 +475,23 @@ describe('LlamaService', () => {
         it('should use 5 minute timeout for 70B models', async () => {
             mockSettings.localModel = 'llama-3.3-70b';
             service = LlamaService.getInstance(mockSettings);
-            
+
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Simulate long loading time
             const stderrCallbacks = mocks.childProcess.stderr.on.mock.calls.filter(call => call[0] === 'data');
             if (stderrCallbacks.length > 0 && stderrCallbacks[0][1]) {
                 const stderrCallback = stderrCallbacks[0][1];
                 stderrCallback(Buffer.from('loading model tensors'));
             }
-            
+
             // Advance time but not enough to timeout (should wait 5 minutes = 300000ms)
             await vi.advanceTimersByTimeAsync(200000); // 200 seconds
-            
+
             // Should still be waiting (not timed out)
             expect(mocks.childProcess.kill).not.toHaveBeenCalled();
-            
+
             // Clean up
             try {
                 await startPromise;
@@ -498,14 +503,14 @@ describe('LlamaService', () => {
         it('should use shorter timeout for smaller models', async () => {
             mockSettings.localModel = 'phi-3.5-mini';
             service = LlamaService.getInstance(mockSettings);
-            
+
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Smaller models should timeout faster (2 minutes = 120000ms)
             // This is tested through ensureReady behavior
             expect(mocks.spawn).toHaveBeenCalled();
-            
+
             await vi.advanceTimersByTimeAsync(2000);
             try {
                 await startPromise;
@@ -519,20 +524,20 @@ describe('LlamaService', () => {
         it('should detect Metal memory errors', async () => {
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Simulate Metal memory error
             const stderrCallbacks = mocks.childProcess.stderr.on.mock.calls.filter(call => call[0] === 'data');
             if (stderrCallbacks.length > 0 && stderrCallbacks[0][1]) {
                 const stderrCallback = stderrCallbacks[0][1];
                 stderrCallback(Buffer.from('error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)'));
             }
-            
+
             await vi.advanceTimersByTimeAsync(2000);
-            
+
             // Error should be detected and logged
             // The error handler should have been called
             expect(stderrCallbacks.length).toBeGreaterThan(0);
-            
+
             try {
                 await startPromise;
             } catch {
@@ -543,19 +548,19 @@ describe('LlamaService', () => {
         it('should detect Metal allocation warnings', async () => {
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Simulate Metal allocation warning
             const stderrCallbacks = mocks.childProcess.stderr.on.mock.calls.filter(call => call[0] === 'data');
             if (stderrCallbacks.length > 0 && stderrCallbacks[0][1]) {
                 const stderrCallback = stderrCallbacks[0][1];
                 stderrCallback(Buffer.from('ggml_metal_log_allocated_size: warning: current allocated size is greater than the recommended max working set size'));
             }
-            
+
             await vi.advanceTimersByTimeAsync(2000);
-            
+
             // Warning should be detected
             expect(stderrCallbacks.length).toBeGreaterThan(0);
-            
+
             try {
                 await startPromise;
             } catch {
@@ -566,19 +571,19 @@ describe('LlamaService', () => {
         it('should detect command buffer failures', async () => {
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Simulate command buffer failure
             const stderrCallbacks = mocks.childProcess.stderr.on.mock.calls.filter(call => call[0] === 'data');
             if (stderrCallbacks.length > 0 && stderrCallbacks[0][1]) {
                 const stderrCallback = stderrCallbacks[0][1];
                 stderrCallback(Buffer.from('ggml_metal_synchronize: error: command buffer 0 failed with status 5'));
             }
-            
+
             await vi.advanceTimersByTimeAsync(2000);
-            
+
             // Error should be detected
             expect(stderrCallbacks.length).toBeGreaterThan(0);
-            
+
             try {
                 await startPromise;
             } catch {
@@ -591,27 +596,27 @@ describe('LlamaService', () => {
         it('should handle cleanup during model loading', async () => {
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Simulate model loading
             const stderrCallbacks = mocks.childProcess.stderr.on.mock.calls.filter(call => call[0] === 'data');
             if (stderrCallbacks.length > 0 && stderrCallbacks[0][1]) {
                 const stderrCallback = stderrCallbacks[0][1];
                 stderrCallback(Buffer.from('loading model tensors'));
             }
-            
+
             // Trigger cleanup while loading
             service.cleanup();
-            
+
             // Should gracefully stop the server
             expect(mocks.childProcess.kill).toHaveBeenCalled();
-            
+
             // Event handlers should ignore events during cleanup
             if (stderrCallbacks.length > 0 && stderrCallbacks[0][1]) {
                 const stderrCallback = stderrCallbacks[0][1];
                 // This should be ignored during cleanup
                 stderrCallback(Buffer.from('model loaded'));
             }
-            
+
             await vi.advanceTimersByTimeAsync(2000);
             try {
                 await startPromise;
@@ -622,7 +627,7 @@ describe('LlamaService', () => {
 
         it('should prevent new operations during cleanup', async () => {
             service.cleanup();
-            
+
             // Try to start server during cleanup
             await expect(service.startServer()).rejects.toThrow('Cannot start server during plugin cleanup');
         });
@@ -630,21 +635,21 @@ describe('LlamaService', () => {
         it('should gracefully kill process with SIGTERM then SIGKILL', async () => {
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             // Simulate server running
             const stdoutCallbacks = mocks.childProcess.stdout.on.mock.calls.filter(call => call[0] === 'data');
             if (stdoutCallbacks.length > 0 && stdoutCallbacks[0][1]) {
                 const stdoutCallback = stdoutCallbacks[0][1];
                 stdoutCallback(Buffer.from('HTTP server listening'));
             }
-            
+
             await vi.advanceTimersByTimeAsync(2000);
             try {
                 await startPromise;
             } catch {
                 // Ignore
             }
-            
+
             // Mock process to not be killed immediately
             mocks.childProcess.killed = false;
             mocks.childProcess.kill.mockImplementation((signal?: string) => {
@@ -654,12 +659,12 @@ describe('LlamaService', () => {
                 }
                 return true;
             });
-            
+
             service.stopServer();
-            
+
             // Should try SIGTERM first
             expect(mocks.childProcess.kill).toHaveBeenCalledWith('SIGTERM');
-            
+
             // After timeout, should try SIGKILL
             await vi.advanceTimersByTimeAsync(2000);
             // Note: The actual SIGKILL happens in a setTimeout, which we can't easily test
@@ -669,14 +674,14 @@ describe('LlamaService', () => {
         it('should remove event handlers before killing process', async () => {
             const startPromise = service.startServer();
             await vi.advanceTimersByTimeAsync(0);
-            
+
             await vi.advanceTimersByTimeAsync(2000);
             try {
                 await startPromise;
             } catch {
                 // Ignore
             }
-            
+
             const removeListenerCalls: string[] = [];
             mocks.childProcess.stdout.removeListener = vi.fn((event: string) => {
                 removeListenerCalls.push(`stdout.${event}`);
@@ -687,9 +692,9 @@ describe('LlamaService', () => {
             mocks.childProcess.removeListener = vi.fn((event: string) => {
                 removeListenerCalls.push(event);
             });
-            
+
             service.stopServer();
-            
+
             // Should have removed event listeners
             expect(mocks.childProcess.stdout.removeListener).toHaveBeenCalled();
             expect(mocks.childProcess.stderr.removeListener).toHaveBeenCalled();

@@ -9,31 +9,39 @@ export class Plugin {
     constructor(app?: any, manifest?: any) {
         this.app = app;
     }
+
+    addStatusBarItem(): any {
+        return new MockHTMLElement();
+    }
+
+    addRibbonIcon(icon: string, title: string, callback: () => void): any {
+        return new MockHTMLElement();
+    }
 }
 export class PluginSettingTab { }
 export class Setting {
     private containerEl: any;
-    
+
     constructor(containerEl: any) {
         this.containerEl = containerEl;
     }
-    
+
     setName(name: string): Setting {
         return this;
     }
-    
+
     setDesc(desc: string): Setting {
         return this;
     }
-    
+
     setValue(value: any): Setting {
         return this;
     }
-    
+
     setDisabled(disabled: boolean): Setting {
         return this;
     }
-    
+
     addButton(callback: (button: any) => void): Setting {
         const button = {
             setButtonText: (text: string) => button,
@@ -44,7 +52,7 @@ export class Setting {
         callback(button);
         return this;
     }
-    
+
     addToggle(callback: (toggle: any) => void): Setting {
         const toggle = {
             setValue: (value: boolean) => toggle,
@@ -53,7 +61,7 @@ export class Setting {
         callback(toggle);
         return this;
     }
-    
+
     addDropdown(callback: (dropdown: any) => void): Setting {
         const dropdown = {
             addOption: (value: string, text: string) => dropdown,
@@ -73,35 +81,35 @@ export class App {
 export class Modal {
     contentEl: any;
     app: any;
-    
+
     constructor(app?: any) {
         this.app = app || {};
         this.contentEl = new MockHTMLElement();
     }
-    
+
     open(): void {
         this.onOpen();
     }
-    
+
     close(): void {
         this.onClose();
     }
-    
+
     onOpen(): void { }
     onClose(): void { }
 }
 
 export class SuggestModal<T> {
     app: any;
-    
+
     constructor(app: any) {
         this.app = app || {};
     }
-    
+
     setPlaceholder(placeholder: string): void { }
     open(): void { }
     close(): void { }
-    
+
     getSuggestions(query: string): T[] { return []; }
     renderSuggestion(item: T, el: HTMLElement): void { }
     onChooseSuggestion(item: T, evt: MouseEvent | KeyboardEvent): void { }
@@ -122,12 +130,12 @@ export class Vault {
     modify(file: TFile, content: string): Promise<void> { return Promise.resolve(); }
     create(path: string, content: string): Promise<TFile> { return Promise.resolve(new TFile()); }
     createFolder(path: string): Promise<void> { return Promise.resolve(); }
-    rename(file: TFile, newPath: string): Promise<void> { 
+    rename(file: TFile, newPath: string): Promise<void> {
         file.path = newPath;
         file.name = newPath.split('/').pop() || newPath;
-        return Promise.resolve(); 
+        return Promise.resolve();
     }
-    on(event: string, callback: (file: TFile) => void): () => void { return () => {}; }
+    on(event: string, callback: (file: TFile) => void): () => void { return () => { }; }
     process(file: TFile, processor: (content: string) => string): Promise<void> { return Promise.resolve(); }
     cachedRead(file: TFile): Promise<string> { return Promise.resolve(''); }
     delete(file: TFile | TFolder, force?: boolean): Promise<void> { return Promise.resolve(); }
@@ -155,7 +163,7 @@ class MockHTMLElement {
     tagName: string = '';
     disabled: boolean = false;
     select: any = vi.fn();
-    
+
     // Create classList object that wraps the Set
     get classList() {
         const set = this.classListSet;
@@ -184,59 +192,59 @@ class MockHTMLElement {
             contains: (cls: string) => set.has(cls)
         };
     }
-    
-    empty() { 
-        this.children = []; 
+
+    empty() {
+        this.children = [];
         this.innerHTML = '';
     }
-    
+
     addClass(cls: string) {
         this.classListSet.add(cls);
         return this;
     }
-    
+
     removeClass(cls: string) {
         this.classListSet.delete(cls);
         return this;
     }
-    
+
     focus() {
         // Mock focus method
     }
-    
+
     setText(text: string) {
         this.textContent = text;
     }
-    
+
     setAttribute(name: string, value: string) {
         (this as any)[name] = value;
     }
-    
+
     getAttribute(name: string) {
         return (this as any)[name];
     }
-    
+
     addEventListener(event: string, handler: any) {
         if (!this.eventListeners.has(event)) {
             this.eventListeners.set(event, []);
         }
         this.eventListeners.get(event)!.push(handler);
     }
-    
+
     click() {
         const clickHandlers = this.eventListeners.get('click') || [];
         clickHandlers.forEach(handler => handler());
     }
-    
-    createDiv(cls?: string) { 
-        const el = new MockHTMLElement(); 
+
+    createDiv(cls?: string) {
+        const el = new MockHTMLElement();
         if (cls) el.addClass(cls);
-        this.children.push(el); 
-        return el; 
+        this.children.push(el);
+        return el;
     }
-    
-    createEl(tag: string, opts?: any) { 
-        const el = new MockHTMLElement(); 
+
+    createEl(tag: string, opts?: any) {
+        const el = new MockHTMLElement();
         el.tagName = tag.toUpperCase();
         if (opts?.cls) el.addClass(opts.cls);
         if (opts?.text) el.textContent = opts.text;
@@ -252,32 +260,32 @@ class MockHTMLElement {
                 }
             });
         }
-        this.children.push(el); 
-        return el; 
+        this.children.push(el);
+        return el;
     }
-    
-    createSpan(opts?: any) { 
-        const el = new MockHTMLElement(); 
+
+    createSpan(opts?: any) {
+        const el = new MockHTMLElement();
         if (opts?.cls) el.addClass(opts.cls);
-        this.children.push(el); 
-        return el; 
+        this.children.push(el);
+        return el;
     }
-    
-    querySelector(selector: string): MockHTMLElement | null { 
+
+    querySelector(selector: string): MockHTMLElement | null {
         // Simple selector matching
         if (selector.startsWith('.')) {
             const cls = selector.substring(1);
-            return this.children.find((child: any) => 
+            return this.children.find((child: any) =>
                 child.classList?.has?.(cls) || (child.classListSet && child.classListSet.has(cls))
             ) || null;
         }
-        return null; 
+        return null;
     }
-    
+
     querySelectorAll(selector: string): MockHTMLElement[] {
         // Simple selector matching
         const results: MockHTMLElement[] = [];
-        
+
         // Handle tag selectors (e.g., 'input', 'div')
         if (/^[a-z]+$/i.test(selector)) {
             this.children.forEach((child: any) => {
@@ -306,7 +314,7 @@ class MockHTMLElement {
             const [tagPart, attrPart] = selector.split('[');
             const tag = tagPart.trim();
             const attrMatch = attrPart.match(/(\w+)="?([^"]+)"?/);
-            
+
             if (attrMatch) {
                 const [, attrName, attrValue] = attrMatch;
                 this.children.forEach((child: any) => {
@@ -321,16 +329,16 @@ class MockHTMLElement {
                 });
             }
         }
-        
+
         return results;
     }
-    
+
     appendChild() { }
-    appendText(text: string) { 
+    appendText(text: string) {
         this.textContent += text;
     }
     checked: boolean = false;
-    
+
     get textContent(): string {
         // Recursively collect text from this element and all children
         let text = this._textContent || '';
@@ -341,13 +349,13 @@ class MockHTMLElement {
         });
         return text;
     }
-    
+
     set textContent(value: string) {
         this._textContent = value;
     }
-    
+
     private _textContent: string = '';
-    
+
     private parseStyle(styleStr: string): any {
         const styles: any = {};
         styleStr.split(';').forEach(rule => {
@@ -364,13 +372,13 @@ export class ItemView {
     contentEl: any;
     leaf: WorkspaceLeaf;
     app: any;
-    
+
     constructor(leaf: WorkspaceLeaf) {
         this.leaf = leaf;
         this.contentEl = new MockHTMLElement();
         this.app = { vault: new Vault(), workspace: {}, plugins: { getPlugin: () => null } };
     }
-    
+
     getViewType(): string { return ''; }
     getDisplayText(): string { return ''; }
     getIcon(): string { return ''; }
