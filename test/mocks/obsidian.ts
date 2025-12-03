@@ -12,6 +12,18 @@ export function setIcon(el: HTMLElement, iconId: string): void {
     el.classList.add('obsidian-icon');
 }
 
+/**
+ * Mock requestUrl function from Obsidian API
+ * Returns a promise that resolves to a response-like object
+ */
+export function requestUrl(options: { url: string; method?: string; headers?: Record<string, string>; body?: string }): Promise<{ status: number; json: any }> {
+    // This will be mocked in tests that need it
+    return Promise.resolve({
+        status: 200,
+        json: { content: '' }
+    });
+}
+
 export class Notice {
     constructor(message: string) { }
 }

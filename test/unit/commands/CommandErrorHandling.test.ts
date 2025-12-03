@@ -73,7 +73,7 @@ describe('CommandRegistry Reproduction (Fixed)', () => {
             expect.any(Error)
         );
 
-        // Verify start log was called
-        expect(Logger.debug).toHaveBeenCalledWith(expect.stringContaining("Starting command: Capture Idea"));
+        // Verify start log was called (uses Logger.info, not Logger.debug)
+        expect(Logger.info).toHaveBeenCalledWith(expect.stringContaining("Starting command: Capture Idea"));
     });
 });

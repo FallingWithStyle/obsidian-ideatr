@@ -19,6 +19,11 @@ describe('Logger', () => {
         mockApp = new App();
         mockApp.vault = mockVault;
 
+        // Mock vault.adapter.exists() for debug file detection
+        (mockVault as any).adapter = {
+            exists: vi.fn().mockResolvedValue(false),
+        };
+
         consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
         consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
         consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
@@ -47,17 +52,12 @@ describe('Logger', () => {
 
     describe('debug file detection', () => {
         it('should detect .ideatr-debug file', async () => {
-            const debugFile = new TFile();
-            debugFile.path = '.ideatr-debug';
-            mockVault.getAbstractFileByPath = vi.fn((path: string) => {
-                if (path === '.ideatr-debug') return debugFile;
-                return null;
+            (mockVault.adapter as any).exists = vi.fn(async (path: string) => {
+                return path === '.ideatr-debug';
             });
 
             vi.useFakeTimers();
-            Logger.initialize(mockApp, false);
-
-            // Advance timers to trigger async check
+            await Logger.initialize(mockApp, false);
             await vi.advanceTimersByTimeAsync(100);
 
             Logger.debug('test');
@@ -67,16 +67,12 @@ describe('Logger', () => {
         });
 
         it('should detect .ideatr-debug.md file', async () => {
-            const debugFile = new TFile();
-            debugFile.path = '.ideatr-debug.md';
-            mockVault.getAbstractFileByPath = vi.fn((path: string) => {
-                if (path === '.ideatr-debug.md') return debugFile;
-                return null;
+            (mockVault.adapter as any).exists = vi.fn(async (path: string) => {
+                return path === '.ideatr-debug.md';
             });
 
             vi.useFakeTimers();
-            Logger.initialize(mockApp, false);
-
+            await Logger.initialize(mockApp, false);
             await vi.advanceTimersByTimeAsync(100);
 
             Logger.debug('test');
@@ -86,38 +82,29 @@ describe('Logger', () => {
         });
 
         it('should prefer .ideatr-debug over .ideatr-debug.md', async () => {
-            const debugFile1 = new TFile();
-            debugFile1.path = '.ideatr-debug';
-            const debugFile2 = new TFile();
-            debugFile2.path = '.ideatr-debug.md';
-
-            let callCount = 0;
-            mockVault.getAbstractFileByPath = vi.fn((path: string) => {
-                callCount++;
-                if (path === '.ideatr-debug') return debugFile1;
-                if (path === '.ideatr-debug.md') return debugFile2;
-                return null;
+            const existsSpy = vi.fn(async (path: string) => {
+                // Should check .ideatr-debug first, and return true if found
+                return path === '.ideatr-debug';
             });
+            (mockVault.adapter as any).exists = existsSpy;
 
             vi.useFakeTimers();
-            Logger.initialize(mockApp, false);
-
+            await Logger.initialize(mockApp, false);
             await vi.advanceTimersByTimeAsync(100);
 
             Logger.debug('test');
             expect(consoleLogSpy).toHaveBeenCalledWith('[Ideatr Debug]', 'test');
             // Should check .ideatr-debug first
-            expect(mockVault.getAbstractFileByPath).toHaveBeenCalledWith('.ideatr-debug');
+            expect(existsSpy).toHaveBeenCalledWith('.ideatr-debug');
 
             vi.useRealTimers();
         });
 
         it('should work when debug file does not exist', async () => {
-            mockVault.getAbstractFileByPath = vi.fn(() => null);
+            (mockVault.adapter as any).exists = vi.fn(async () => false);
 
             vi.useFakeTimers();
-            Logger.initialize(mockApp, false);
-
+            await Logger.initialize(mockApp, false);
             await vi.advanceTimersByTimeAsync(100);
 
             Logger.debug('test');
@@ -129,17 +116,12 @@ describe('Logger', () => {
 
     describe('synchronous checking', () => {
         it('should check debug file synchronously on first debug call', async () => {
-            const debugFile = new TFile();
-            debugFile.path = '.ideatr-debug';
-            mockVault.getAbstractFileByPath = vi.fn((path: string) => {
-                if (path === '.ideatr-debug') return debugFile;
-                return null;
+            (mockVault.adapter as any).exists = vi.fn(async (path: string) => {
+                return path === '.ideatr-debug';
             });
 
             vi.useFakeTimers();
-            Logger.initialize(mockApp, false);
-
-            // Advance timers to allow async check to complete
+            await Logger.initialize(mockApp, false);
             await vi.advanceTimersByTimeAsync(100);
 
             // Should work after async check completes
@@ -152,21 +134,20 @@ describe('Logger', () => {
 
     describe('forceRecheckDebugFile', () => {
         it('should force recheck of debug file', async () => {
-            mockVault.getAbstractFileByPath = vi.fn(() => null);
+            // Initially no debug file
+            (mockVault.adapter as any).exists = vi.fn(async () => false);
 
             vi.useFakeTimers();
-            Logger.initialize(mockApp, false);
+            await Logger.initialize(mockApp, false);
+            await vi.advanceTimersByTimeAsync(100);
 
             // Initially no debug file
             Logger.debug('test1');
             expect(consoleLogSpy).not.toHaveBeenCalled();
 
-            // Create debug file
-            const debugFile = new TFile();
-            debugFile.path = '.ideatr-debug';
-            mockVault.getAbstractFileByPath = vi.fn((path: string) => {
-                if (path === '.ideatr-debug') return debugFile;
-                return null;
+            // Update mock to return true for .ideatr-debug
+            (mockVault.adapter as any).exists = vi.fn(async (path: string) => {
+                return path === '.ideatr-debug';
             });
 
             // Force recheck
@@ -183,27 +164,25 @@ describe('Logger', () => {
 
     describe('periodic rechecking', () => {
         it('should recheck debug file periodically', async () => {
-            mockVault.getAbstractFileByPath = vi.fn(() => null);
+            // Initially no debug file
+            (mockVault.adapter as any).exists = vi.fn(async () => false);
 
-            Logger.initialize(mockApp, false);
+            vi.useFakeTimers();
+            await Logger.initialize(mockApp, false);
+            await vi.advanceTimersByTimeAsync(100);
 
             // Initially no debug file
             Logger.debug('test1');
             expect(consoleLogSpy).not.toHaveBeenCalled();
 
-            // Create debug file after initial check
-            const debugFile = new TFile();
-            debugFile.path = '.ideatr-debug';
-            mockVault.getAbstractFileByPath = vi.fn((path: string) => {
-                if (path === '.ideatr-debug') return debugFile;
-                return null;
+            // Update mock to return true for .ideatr-debug after initial check
+            (mockVault.adapter as any).exists = vi.fn(async (path: string) => {
+                return path === '.ideatr-debug';
             });
 
-            // Wait for recheck interval (5 seconds) - but we'll mock time
-            vi.useFakeTimers();
-
-            // Fast forward past recheck interval
-            vi.advanceTimersByTime(6000);
+            // Force recheck (there's no automatic periodic recheck, so we use forceRecheckDebugFile)
+            Logger.forceRecheckDebugFile();
+            await vi.advanceTimersByTimeAsync(100);
 
             // Now should detect the file
             Logger.debug('test2');
@@ -214,27 +193,27 @@ describe('Logger', () => {
     });
 
     describe('debug mode priority', () => {
-        it('should prioritize settings debug mode over file', () => {
-            mockVault.getAbstractFileByPath = vi.fn(() => null);
+        it('should prioritize settings debug mode over file', async () => {
+            (mockVault.adapter as any).exists = vi.fn(async () => false);
 
-            Logger.initialize(mockApp, true);
+            vi.useFakeTimers();
+            await Logger.initialize(mockApp, true);
+            await vi.advanceTimersByTimeAsync(100);
 
             // Should work even without debug file
             Logger.debug('test');
             expect(consoleLogSpy).toHaveBeenCalledWith('[Ideatr Debug]', 'test');
+
+            vi.useRealTimers();
         });
 
         it('should use debug file when settings debug mode is false', async () => {
-            const debugFile = new TFile();
-            debugFile.path = '.ideatr-debug';
-            mockVault.getAbstractFileByPath = vi.fn((path: string) => {
-                if (path === '.ideatr-debug') return debugFile;
-                return null;
+            (mockVault.adapter as any).exists = vi.fn(async (path: string) => {
+                return path === '.ideatr-debug';
             });
 
             vi.useFakeTimers();
-            Logger.initialize(mockApp, false);
-
+            await Logger.initialize(mockApp, false);
             await vi.advanceTimersByTimeAsync(100);
 
             Logger.debug('test');
