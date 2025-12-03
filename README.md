@@ -4,7 +4,7 @@ A powerful, Obsidian-native "idea intake + triage + transform + validate" tool. 
 
 ## Overview
 
-Ideatr is a comprehensive idea management system for Obsidian that captures ideas quickly, enhances them intelligently using AI, clusters related concepts, deduplicates similar ideas, validates domains and existence, generates variants and scaffolds, and prepares ideas for project elevation.
+Ideatr is a comprehensive idea management system for Obsidian that captures ideas quickly, enhances them intelligently using AI, clusters related concepts, deduplicates similar ideas, validates domains and existence, generates variants and scaffolds, and prepares ideas for project elevation. In short, it lets you save ideas quickly, and (optionally) enhance them easily.
 
 **Problem**: Creative professionals, entrepreneurs, and knowledge workers generate a large volume of ideas across many domains. These ideas often live in fragmented systems (chat logs, fleeting notes, various apps), causing low retrieval rates, duplicate effort, and missed connections.
 
