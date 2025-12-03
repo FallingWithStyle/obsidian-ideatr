@@ -1,6 +1,17 @@
 // Import vi for mocks
 import { vi } from 'vitest';
 
+/**
+ * Mock setIcon function from Obsidian API
+ * Sets an icon on an HTML element
+ */
+export function setIcon(el: HTMLElement, iconId: string): void {
+    // Mock implementation: just set a data attribute to track the icon
+    el.setAttribute('data-icon', iconId);
+    // Add a class to indicate this is an icon element
+    el.classList.add('obsidian-icon');
+}
+
 export class Notice {
     constructor(message: string) { }
 }
@@ -157,12 +168,12 @@ class MockHTMLElement {
     innerHTML: string = '';
     style: any = {};
     value: string = '';
-    textContent: string = '';
     placeholder: string = '';
     rows: string = '';
     tagName: string = '';
     disabled: boolean = false;
     select: any = vi.fn();
+    id: string = '';
 
     // Create classList object that wraps the Set
     get classList() {
@@ -247,7 +258,7 @@ class MockHTMLElement {
         const el = new MockHTMLElement();
         el.tagName = tag.toUpperCase();
         if (opts?.cls) el.addClass(opts.cls);
-        if (opts?.text) el.textContent = opts.text;
+        if (opts?.text) el._textContent = opts.text;
         if (opts?.placeholder) el.placeholder = opts.placeholder;
         if (opts?.value !== undefined) el.value = opts.value;
         if (opts?.type) (el as any).type = opts.type;
@@ -255,6 +266,8 @@ class MockHTMLElement {
             Object.keys(opts.attr).forEach(key => {
                 if (key === 'style') {
                     Object.assign(el.style, this.parseStyle(opts.attr[key]));
+                } else if (key === 'id') {
+                    el.id = opts.attr[key];
                 } else {
                     (el as any)[key] = opts.attr[key];
                 }
@@ -272,12 +285,64 @@ class MockHTMLElement {
     }
 
     querySelector(selector: string): MockHTMLElement | null {
-        // Simple selector matching
+        // Handle ID selectors (e.g., '#myId')
+        if (selector.startsWith('#')) {
+            const id = selector.substring(1);
+            return this.children.find((child: any) => child.id === id) || null;
+        }
+        // Handle class selectors (e.g., '.class-name')
         if (selector.startsWith('.')) {
             const cls = selector.substring(1);
-            return this.children.find((child: any) =>
+            const found = this.children.find((child: any) =>
                 child.classList?.has?.(cls) || (child.classListSet && child.classListSet.has(cls))
-            ) || null;
+            );
+            if (found) return found;
+            // Search recursively in children
+            for (const child of this.children) {
+                if (child.querySelector) {
+                    const result = child.querySelector(selector);
+                    if (result) return result;
+                }
+            }
+            return null;
+        }
+        // Handle tag selectors (e.g., 'div', 'input')
+        if (/^[a-z]+$/i.test(selector)) {
+            const found = this.children.find((child: any) => 
+                child.tagName?.toLowerCase() === selector.toLowerCase()
+            );
+            if (found) return found;
+            // Search recursively in children
+            for (const child of this.children) {
+                if (child.querySelector) {
+                    const result = child.querySelector(selector);
+                    if (result) return result;
+                }
+            }
+            return null;
+        }
+        // Handle attribute selectors (e.g., 'input[type="text"]')
+        if (selector.includes('[')) {
+            const [tagPart, attrPart] = selector.split('[');
+            const tag = tagPart.trim();
+            const attrMatch = attrPart.match(/(\w+)="?([^"]+)"?/);
+            if (attrMatch) {
+                const [, attrName, attrValue] = attrMatch;
+                const found = this.children.find((child: any) => {
+                    const tagMatches = !tag || child.tagName?.toLowerCase() === tag.toLowerCase();
+                    const attrMatches = (child as any)[attrName] === attrValue || child.getAttribute?.(attrName) === attrValue;
+                    return tagMatches && attrMatches;
+                });
+                if (found) return found;
+                // Search recursively in children
+                for (const child of this.children) {
+                    if (child.querySelector) {
+                        const result = child.querySelector(selector);
+                        if (result) return result;
+                    }
+                }
+            }
+            return null;
         }
         return null;
     }
@@ -333,11 +398,49 @@ class MockHTMLElement {
         return results;
     }
 
-    appendChild() { }
+    appendChild(child: any): any {
+        if (child) {
+            this.children.push(child);
+        }
+        return child;
+    }
+    
+    removeChild(child: any): any {
+        const index = this.children.indexOf(child);
+        if (index > -1) {
+            this.children.splice(index, 1);
+        }
+        return child;
+    }
+    
+    replaceChild(newChild: any, oldChild: any): any {
+        const index = this.children.indexOf(oldChild);
+        if (index > -1) {
+            this.children[index] = newChild;
+        }
+        return oldChild;
+    }
+    
+    insertBefore(newChild: any, referenceChild: any): any {
+        if (referenceChild) {
+            const index = this.children.indexOf(referenceChild);
+            if (index > -1) {
+                this.children.splice(index, 0, newChild);
+            } else {
+                this.children.push(newChild);
+            }
+        } else {
+            this.children.push(newChild);
+        }
+        return newChild;
+    }
+    
     appendText(text: string) {
-        this.textContent += text;
+        this._textContent = (this._textContent || '') + text;
     }
     checked: boolean = false;
+
+    private _textContent: string = '';
 
     get textContent(): string {
         // Recursively collect text from this element and all children
@@ -353,8 +456,6 @@ class MockHTMLElement {
     set textContent(value: string) {
         this._textContent = value;
     }
-
-    private _textContent: string = '';
 
     private parseStyle(styleStr: string): any {
         const styles: any = {};
@@ -385,3 +486,4 @@ export class ItemView {
     async onOpen(): Promise<void> { }
     async onClose(): Promise<void> { }
 }
+
