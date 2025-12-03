@@ -439,6 +439,7 @@ export class CaptureModal extends Modal {
             }
         }
 
+        let file: TFile | null = null;
         try {
             // Show processing message
             this.showClassificationInProgress(true);
@@ -450,7 +451,7 @@ export class CaptureModal extends Modal {
                 timestamp: new Date()
             };
 
-            const file = await this.fileManager.createIdeaFile(idea);
+            file = await this.fileManager.createIdeaFile(idea);
 
             // Step 2: Classify the idea
             const classification = await this.classificationService.classifyIdea(idea.text);
@@ -589,6 +590,12 @@ Response:`;
             if (this.classificationAbortController?.signal.aborted) {
                 return;
             }
+            
+            // If the file was created, the idea was saved - show alert to user
+            if (file) {
+                new Notice('Ideate command failed, but your idea has been saved to your list of ideas.');
+            }
+            
             this.showError('Failed to process idea. Please try again.');
             console.error('Error processing idea:', error);
             // Show manual mode option
