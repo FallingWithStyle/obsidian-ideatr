@@ -33,7 +33,16 @@ export class ProcessManager {
         }
 
         Logger.debug(`Starting process: ${command} ${args.join(' ')}`);
-        this.process = spawn(command, args, this.options);
+
+        // Ensure process is NOT detached to prevent orphaning
+        // When detached: false, child dies when parent exits
+        const spawnOptions: SpawnOptions = {
+            ...this.options,
+            detached: false,  // Critical: prevents PPID=1 orphans
+            stdio: 'pipe'     // Ensure we can capture stdout/stderr
+        };
+
+        this.process = spawn(command, args, spawnOptions);
 
         this.setupListeners();
 

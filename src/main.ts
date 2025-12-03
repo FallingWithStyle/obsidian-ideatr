@@ -32,6 +32,9 @@ export default class IdeatrPlugin extends Plugin {
     private memoryMonitor?: MemoryMonitor;
     private unhandledRejectionHandler?: (reason: any, promise: Promise<any>) => void;
     private uncaughtExceptionHandler?: (error: Error) => void;
+    private exitHandler?: () => void;
+    private sigintHandler?: () => void;
+    private sigtermHandler?: () => void;
 
     // Public properties for settings modal access
     get nameVariantService(): NameVariantService {
@@ -58,6 +61,30 @@ export default class IdeatrPlugin extends Plugin {
             Logger.error('Uncaught Exception:', error);
         };
         process.on('uncaughtException', this.uncaughtExceptionHandler);
+
+        // Process exit handlers to ensure llama-server cleanup
+        // These prevent orphaned processes when Obsidian quits
+        this.exitHandler = () => {
+            Logger.debug('Process exit handler triggered - cleaning up llama-server');
+            LlamaService.destroyInstance();
+        };
+
+        this.sigintHandler = () => {
+            Logger.debug('SIGINT received - cleaning up and exiting');
+            LlamaService.destroyInstance();
+            process.exit(0);
+        };
+
+        this.sigtermHandler = () => {
+            Logger.debug('SIGTERM received - cleaning up and exiting');
+            LlamaService.destroyInstance();
+            process.exit(0);
+        };
+
+        process.on('exit', this.exitHandler);
+        process.on('SIGINT', this.sigintHandler);
+        process.on('SIGTERM', this.sigtermHandler);
+
 
         // Initialize Logger with app instance and debug mode setting
         await Logger.initialize(this.app, this.settings.debugMode);
@@ -160,7 +187,7 @@ export default class IdeatrPlugin extends Plugin {
             addIcon(IDEATR_ICON_GREEN, createPNGIconSVG(`data:image/png;base64,${GREEN_ICON_BASE64}`));
             addIcon(IDEATR_ICON_YELLOW, createPNGIconSVG(`data:image/png;base64,${YELLOW_ICON_BASE64}`));
             addIcon(IDEATR_ICON_RED, createPNGIconSVG(`data:image/png;base64,${RED_ICON_BASE64}`));
-            
+
             // Use IDEATR_ICON_ID constant to ensure consistency across ribbon and other icons
             this.addRibbonIcon(IDEATR_ICON_ID, 'Capture Idea', () => {
                 this.openCaptureModal();
@@ -251,6 +278,20 @@ export default class IdeatrPlugin extends Plugin {
             this.uncaughtExceptionHandler = undefined;
         }
 
+        // Remove process exit handlers to prevent resource leaks
+        if (this.exitHandler) {
+            process.removeListener('exit', this.exitHandler);
+            this.exitHandler = undefined;
+        }
+        if (this.sigintHandler) {
+            process.removeListener('SIGINT', this.sigintHandler);
+            this.sigintHandler = undefined;
+        }
+        if (this.sigtermHandler) {
+            process.removeListener('SIGTERM', this.sigtermHandler);
+            this.sigtermHandler = undefined;
+        }
+
         // Clear status update interval
         if (this.statusUpdateInterval) {
             clearInterval(this.statusUpdateInterval);
@@ -279,14 +320,14 @@ export default class IdeatrPlugin extends Plugin {
     async loadSettings() {
         const loadedData = await this.loadData();
         this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
-        
+
         // Migrate legacy cloudApiKey to cloudApiKeys map if needed
-        if (loadedData && 'cloudApiKey' in loadedData && loadedData.cloudApiKey && 
+        if (loadedData && 'cloudApiKey' in loadedData && loadedData.cloudApiKey &&
             (!this.settings.cloudApiKeys || Object.values(this.settings.cloudApiKeys).every(key => !key))) {
             // If we have a legacy API key and no keys in the new structure, migrate it
             const legacyKey = loadedData.cloudApiKey as string;
             const provider = (loadedData.cloudProvider || 'none') as string;
-            
+
             if (legacyKey && provider !== 'none' && provider !== 'custom') {
                 if (!this.settings.cloudApiKeys) {
                     this.settings.cloudApiKeys = {
@@ -298,7 +339,7 @@ export default class IdeatrPlugin extends Plugin {
                     };
                 }
                 // Migrate the key to the appropriate provider
-                if (provider === 'anthropic' || provider === 'openai' || provider === 'gemini' || 
+                if (provider === 'anthropic' || provider === 'openai' || provider === 'gemini' ||
                     provider === 'groq' || provider === 'openrouter') {
                     this.settings.cloudApiKeys[provider as keyof typeof this.settings.cloudApiKeys] = legacyKey;
                 }
@@ -306,7 +347,7 @@ export default class IdeatrPlugin extends Plugin {
                 await this.saveSettings();
             }
         }
-        
+
         // Ensure cloudApiKeys exists (for new installations)
         if (!this.settings.cloudApiKeys) {
             this.settings.cloudApiKeys = {

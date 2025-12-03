@@ -184,6 +184,9 @@ export class LlamaService implements ILLMService {
      * Update settings for existing instance
      */
     updateSettings(settings: IdeatrSettings): void {
+        const oldModel = this.settings.localModel;
+        const newModel = settings.localModel;
+
         this.settings = settings;
         // Update ModelManager if model changed
         this.modelManager = new ModelManager(settings.localModel || 'phi-3.5-mini');
@@ -192,6 +195,12 @@ export class LlamaService implements ILLMService {
             this.idleTimeout = 0;
         } else {
             this.idleTimeout = LLM_CONSTANTS.IDLE_TIMEOUT;
+        }
+
+        // Kill existing server if model changed
+        if (oldModel !== newModel && this.processManager?.isRunning()) {
+            Logger.debug(`Model changed from ${oldModel} to ${newModel}, stopping old server`);
+            this.stopServer();
         }
     }
 
@@ -360,6 +369,35 @@ export class LlamaService implements ILLMService {
         return null;
     }
 
+    /**
+     * Check if server is alive and responding
+     */
+    private async isServerAlive(): Promise<boolean> {
+        try {
+            const response = await requestUrl({
+                url: `${this.settings.llamaServerUrl}/health`,
+                method: 'GET',
+                throw: false
+            });
+            return response.status === 200;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Kill any existing server process before starting a new one
+     */
+    private async killExistingServer(): Promise<void> {
+        if (this.processManager?.isRunning()) {
+            Logger.debug('Killing existing server before starting new one');
+            await this.processManager.stop('SIGTERM', 2000);
+            this.processManager = null;
+            this.isServerReady = false;
+            this.loadingState = 'not-loaded';
+        }
+    }
+
     async startServer(): Promise<void> {
         // Don't start if we're cleaning up
         if (this.isCleaningUp) {
@@ -367,9 +405,15 @@ export class LlamaService implements ILLMService {
             throw new Error('Cannot start server during plugin cleanup');
         }
 
-        // If already running, return early
-        if (this.processManager?.getProcess()) {
-            Logger.debug('Server already running');
+        // Kill any existing server first to prevent multiple instances
+        await this.killExistingServer();
+
+        // Check if a server is already alive on the port (from previous run)
+        const serverAlive = await this.isServerAlive();
+        if (serverAlive) {
+            Logger.debug('Server already alive on port, reusing existing server');
+            this.isServerReady = true;
+            this.loadingState = 'ready';
             return;
         }
 
