@@ -52,10 +52,32 @@ export class ProcessHealthMonitor {
     /**
      * Get memory usage of the process (platform-specific)
      */
+    /**
+     * Get memory usage of the process (platform-specific)
+     */
     private getMemoryUsage(): number | null {
-        // Note: Getting memory usage of child process requires platform-specific tools
-        // This is a placeholder - actual implementation would use ps/tasklist
-        // For now, we rely on the process being monitored externally
+        if (!this.process || !this.process.pid) return null;
+
+        try {
+            // Use ps to get RSS memory in KB
+            // -o rss= outputs just the value without header
+            // -p <pid> selects the process
+            const output = require('child_process').execSync(`ps -o rss= -p ${this.process.pid}`, { 
+                encoding: 'utf8',
+                stdio: ['ignore', 'pipe', 'ignore'] // Ignore stdin/stderr to prevent hanging
+            }).trim();
+
+            if (output) {
+                const rssKB = parseInt(output, 10);
+                if (!isNaN(rssKB)) {
+                    return rssKB / 1024; // Convert to MB
+                }
+            }
+        } catch (error) {
+            // Process might have exited or ps failed
+            // Logger.debug('Failed to get memory usage:', error);
+        }
+
         return null;
     }
 
