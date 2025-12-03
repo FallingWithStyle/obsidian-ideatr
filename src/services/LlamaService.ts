@@ -38,6 +38,7 @@ export class LlamaService implements ILLMService {
     private stderrHandler: ((data: Buffer) => void) | null = null;
     private closeHandler: ((code: number | null, signal: NodeJS.Signals | null) => void) | null = null;
     private errorHandler: ((error: Error) => void) | null = null;
+    private healthCheckTimer: NodeJS.Timeout | null = null;
 
     private constructor(settings: IdeatrSettings, pluginDir?: string) {
         this.settings = settings;
@@ -60,7 +61,7 @@ export class LlamaService implements ILLMService {
     private calculateGPULayers(): number {
         const modelKey = this.settings.localModel || 'phi-3.5-mini';
         const modelConfig = MODELS[modelKey];
-        
+
         if (!modelConfig) {
             // Fallback: conservative default
             return 35; // Safe default for unknown models
@@ -68,12 +69,12 @@ export class LlamaService implements ILLMService {
 
         // Model size in GB
         const modelSizeGB = modelConfig.sizeMB / 1024;
-        
+
         // Calculate GPU layers based on model size
         // For 70B models (~42GB), we need to be very conservative
         // Metal on Apple Silicon has ~29GB recommended max working set
         // A 70B Q4_K_M model needs ~40GB, so we can only load a fraction to GPU
-        
+
         if (modelSizeGB >= 40) {
             // Very large models (70B): Load only ~30-40% to GPU, rest on CPU
             // 80 layers total for 70B, so ~25-30 layers on GPU
@@ -94,40 +95,64 @@ export class LlamaService implements ILLMService {
     }
 
     /**
-     * Get recommended timeout based on model size and task type
+     * Get recommended timeout based on model size, task type, and expected token count
      * Larger models need more time, especially for complex tasks like expansion
+     * Timeout accounts for expected generation length (n_predict tokens)
      */
-    private getRecommendedTimeout(taskType: 'classification' | 'completion' | 'expansion' = 'completion'): number {
+    private getRecommendedTimeout(
+        taskType: 'classification' | 'completion' | 'expansion' = 'completion',
+        n_predict: number = 256
+    ): number {
         const modelKey = this.settings.localModel || 'phi-3.5-mini';
         const modelConfig = MODELS[modelKey];
-        
+
         if (!modelConfig) {
             // Fallback to default if model not found
             return this.settings.llmTimeout;
         }
 
-        // Base timeout on model size (MB)
-        // Small models (<5GB): 10-15s base
-        // Medium models (5-10GB): 20-30s base
-        // Large models (10-20GB): 30-45s base
-        // Very large models (>20GB): 60-90s base
-        let baseTimeout: number;
+        // Estimate generation speed based on model size
+        // Smaller models are typically faster, but we use conservative estimates
+        // These are conservative estimates to ensure we have enough time
+        let tokensPerSecond: number;
         if (modelConfig.sizeMB < 5000) {
-            baseTimeout = 15000; // 15s for small models
+            tokensPerSecond = 50; // Conservative: 50 tokens/sec for small models
         } else if (modelConfig.sizeMB < 10000) {
-            baseTimeout = 30000; // 30s for medium models
+            tokensPerSecond = 30; // 30 tokens/sec for medium models
         } else if (modelConfig.sizeMB < 20000) {
-            baseTimeout = 45000; // 45s for large models
+            tokensPerSecond = 20; // 20 tokens/sec for large models
         } else {
-            baseTimeout = 90000; // 90s for very large models
+            tokensPerSecond = 10; // 10 tokens/sec for very large models
+        }
+
+        // Calculate base timeout based on expected tokens
+        // Add 5 seconds overhead for prompt processing and network latency
+        const generationTimeMs = (n_predict / tokensPerSecond) * 1000;
+        const overheadMs = 5000; // 5 seconds overhead
+        let baseTimeout = Math.round(generationTimeMs + overheadMs);
+
+        // Ensure minimum timeout based on model size
+        // Small models (<5GB): 15s minimum
+        // Medium models (5-10GB): 30s minimum
+        // Large models (10-20GB): 45s minimum
+        // Very large models (>20GB): 90s minimum
+        let minTimeout: number;
+        if (modelConfig.sizeMB < 5000) {
+            minTimeout = 15000; // 15s for small models
+        } else if (modelConfig.sizeMB < 10000) {
+            minTimeout = 30000; // 30s for medium models
+        } else if (modelConfig.sizeMB < 20000) {
+            minTimeout = 45000; // 45s for large models
+        } else {
+            minTimeout = 90000; // 90s for very large models
         }
 
         // Adjust for task complexity
         // Expansion tasks are more complex and need more time
         const taskMultiplier = taskType === 'expansion' ? 1.5 : taskType === 'completion' ? 1.2 : 1.0;
-        
-        const recommendedTimeout = Math.round(baseTimeout * taskMultiplier);
-        
+
+        const recommendedTimeout = Math.round(Math.max(baseTimeout, minTimeout) * taskMultiplier);
+
         // Use the higher of user setting or recommended timeout
         // But respect user's setting if they've explicitly set a higher value
         return Math.max(this.settings.llmTimeout, recommendedTimeout);
@@ -140,14 +165,14 @@ export class LlamaService implements ILLMService {
     private getModelLoadingTimeout(): number {
         const modelKey = this.settings.localModel || 'phi-3.5-mini';
         const modelConfig = MODELS[modelKey];
-        
+
         if (!modelConfig) {
             return 120000; // 2 minutes default
         }
 
         // Model size in GB
         const modelSizeGB = modelConfig.sizeMB / 1024;
-        
+
         if (modelSizeGB >= 40) {
             // Very large models (70B): 5 minutes
             return 300000; // 5 minutes
@@ -311,28 +336,28 @@ export class LlamaService implements ILLMService {
                 // Model doesn't exist with exact filename - try to find a matching model
                 Logger.debug(`Exact filename not found: ${modelConfig.fileName}`);
                 Logger.debug('Searching for similar model files...');
-                
+
                 const modelDir = path.dirname(defaultPath);
                 if (fs.existsSync(modelDir)) {
                     const files = fs.readdirSync(modelDir);
                     const ggufFiles = files.filter(f => f.endsWith('.gguf'));
-                    
+
                     Logger.debug(`Found ${ggufFiles.length} GGUF files in directory:`, ggufFiles);
-                    
+
                     // Try to find a file that matches the model name (case-insensitive, partial match)
                     const modelNameLower = modelConfig.name.toLowerCase();
                     const modelKeyParts = modelKey.split('-'); // e.g., ['qwen', '2.5', '7b']
-                    
+
                     for (const file of ggufFiles) {
                         const fileLower = file.toLowerCase();
                         // Check if filename contains model name or key parts
-                        const matchesName = modelNameLower.split(' ').some(part => 
+                        const matchesName = modelNameLower.split(' ').some(part =>
                             part.length > 2 && fileLower.includes(part)
                         );
-                        const matchesKey = modelKeyParts.some(part => 
+                        const matchesKey = modelKeyParts.some(part =>
                             part.length > 2 && fileLower.includes(part)
                         );
-                        
+
                         if (matchesName || matchesKey) {
                             const foundPath = path.join(modelDir, file);
                             Logger.debug(`Found matching model file: ${file}`);
@@ -342,7 +367,7 @@ export class LlamaService implements ILLMService {
                             return foundPath;
                         }
                     }
-                    
+
                     // If no match found, log all available files
                     Logger.warn(`Configured model "${modelConfig.name}" not found at: ${defaultPath}`);
                     Logger.warn(`Expected filename: ${modelConfig.fileName}`);
@@ -366,7 +391,7 @@ export class LlamaService implements ILLMService {
             Logger.debug('Cannot start server - cleanup in progress');
             throw new Error('Cannot start server during plugin cleanup');
         }
-        
+
         // If already running, return early
         if (this.serverProcess) {
             Logger.debug('Server already running');
@@ -465,7 +490,7 @@ export class LlamaService implements ILLMService {
                 if (this.isCleaningUp) {
                     return;
                 }
-                
+
                 const output = data.toString();
                 addToBuffer(stdoutBuffer, output);
                 Logger.debug('[Llama Server stdout]', output.trim());
@@ -492,7 +517,7 @@ export class LlamaService implements ILLMService {
                 if (this.isCleaningUp) {
                     return;
                 }
-                
+
                 const errorOutput = data.toString();
                 addToBuffer(stderrBuffer, errorOutput);
                 const outputLines = errorOutput.split('\n').filter((line: string) => line.trim());
@@ -595,15 +620,15 @@ export class LlamaService implements ILLMService {
                     Logger.debug('Server process closed during cleanup (expected)');
                     return;
                 }
-                
+
                 Logger.debug('Server process closed event fired', { code, signal });
                 processExited = true;
                 exitCode = code;
-                
+
                 // Log detailed information about the exit
                 const fullStderr = stderrBuffer.join('');
                 const fullStdout = stdoutBuffer.join('');
-                
+
                 Logger.error('[LlamaService] Server process exited', {
                     exitCode: code,
                     signal: signal,
@@ -627,7 +652,7 @@ export class LlamaService implements ILLMService {
                         }
                         Logger.error('--- END STDERR ---');
                     }
-                    
+
                     if (fullStdout.length > 0) {
                         Logger.debug('[LlamaService] Full stdout output from crashed server:');
                         Logger.debug('--- BEGIN STDOUT ---');
@@ -743,6 +768,9 @@ export class LlamaService implements ILLMService {
                 throw new Error('Server process failed to start');
             }
 
+            // Start health check
+            this.startHealthCheck();
+
         } catch (error) {
             Logger.error('[LlamaService] Failed to start Llama server:', error);
             Logger.error('[LlamaService] Startup error details:', {
@@ -772,7 +800,8 @@ export class LlamaService implements ILLMService {
             const wasLoading = this.loadingState === 'loading';
             Logger.debug('Stopping Llama server...', wasLoading ? '(model was loading)' : '');
             this.clearIdleTimer();
-            
+            this.stopHealthCheck();
+
             // Remove event listeners to prevent memory leaks and errors during cleanup
             try {
                 if (this.stdoutHandler && this.serverProcess.stdout) {
@@ -781,7 +810,7 @@ export class LlamaService implements ILLMService {
             } catch (error) {
                 Logger.debug('Error removing stdout handler:', error);
             }
-            
+
             try {
                 if (this.stderrHandler && this.serverProcess.stderr) {
                     this.serverProcess.stderr.removeListener('data', this.stderrHandler);
@@ -789,7 +818,7 @@ export class LlamaService implements ILLMService {
             } catch (error) {
                 Logger.debug('Error removing stderr handler:', error);
             }
-            
+
             try {
                 if (this.closeHandler) {
                     this.serverProcess.removeListener('close', this.closeHandler);
@@ -797,7 +826,7 @@ export class LlamaService implements ILLMService {
             } catch (error) {
                 Logger.debug('Error removing close handler:', error);
             }
-            
+
             try {
                 if (this.errorHandler) {
                     this.serverProcess.removeListener('error', this.errorHandler);
@@ -805,19 +834,19 @@ export class LlamaService implements ILLMService {
             } catch (error) {
                 Logger.debug('Error removing error handler:', error);
             }
-            
+
             // Clear handler references
             this.stdoutHandler = null;
             this.stderrHandler = null;
             this.closeHandler = null;
             this.errorHandler = null;
-            
+
             // Kill the process gracefully, then forcefully if needed
             try {
                 // Try SIGTERM first (graceful shutdown)
                 if (this.serverProcess.killed === false) {
                     this.serverProcess.kill('SIGTERM');
-                    
+
                     // Wait a bit for graceful shutdown, then force kill if still running
                     setTimeout(() => {
                         if (this.serverProcess && !this.serverProcess.killed) {
@@ -841,13 +870,13 @@ export class LlamaService implements ILLMService {
                     Logger.debug('Error force killing process:', killError);
                 }
             }
-            
+
             this.serverProcess = null;
             this.processHealthMonitor.setProcess(null);
             this.isServerReady = false;
             this.loadingState = 'not-loaded';
             this.lastUseTime = 0;
-            
+
             if (wasLoading) {
                 Logger.debug('Server stopped while model was loading (plugin unload during startup)');
             }
@@ -861,7 +890,7 @@ export class LlamaService implements ILLMService {
      */
     cleanup(): void {
         Logger.debug('LlamaService cleanup started');
-        
+
         // Set cleanup flag to prevent new operations
         this.isCleaningUp = true;
 
@@ -993,8 +1022,10 @@ export class LlamaService implements ILLMService {
                 }
 
                 // Use requestUrl instead of fetch to bypass CORS restrictions in Electron
+                // Use dynamic timeout based on model size (classification uses n_predict: 128)
+                const timeout = this.getRecommendedTimeout('classification', 128);
                 const timeoutPromise = new Promise<never>((_, reject) => {
-                    setTimeout(() => reject(new APITimeoutError(`API request timed out after ${this.settings.llmTimeout}ms`)), this.settings.llmTimeout);
+                    setTimeout(() => reject(new APITimeoutError(`API request timed out after ${timeout}ms`)), timeout);
                 });
 
                 let response;
@@ -1300,10 +1331,11 @@ export class LlamaService implements ILLMService {
                 }
 
                 // Use requestUrl instead of fetch to bypass CORS restrictions in Electron
-                // Use dynamic timeout based on model size for completion
+                // Use dynamic timeout based on model size and expected token count
                 // Check if this is an expansion task by looking at n_predict (expansion uses more tokens)
-                const isExpansion = (options?.n_predict || 256) > 1000;
-                const timeout = this.getRecommendedTimeout(isExpansion ? 'expansion' : 'completion');
+                const n_predict = options?.n_predict || 256;
+                const isExpansion = n_predict > 1000;
+                const timeout = this.getRecommendedTimeout(isExpansion ? 'expansion' : 'completion', n_predict);
                 const timeoutPromise = new Promise<never>((_, reject) => {
                     setTimeout(() => reject(new APITimeoutError(`API request timed out after ${timeout}ms`)), timeout);
                 });
@@ -1484,5 +1516,48 @@ Output: {`;
 
         const normalized = category?.toLowerCase().trim() as IdeaCategory;
         return validCategories.includes(normalized) ? normalized : '';
+    }
+
+    private calculateMemoryLimit(): number {
+        const modelConfig = this.modelManager.getModelConfig();
+        // Base limit is model size + 4GB overhead to be safe
+        return modelConfig.sizeMB + 4096;
+    }
+
+    private startHealthCheck(): void {
+        if (this.healthCheckTimer) return;
+
+        this.healthCheckTimer = setInterval(() => {
+            const health = this.processHealthMonitor.getHealth();
+            if (health.memoryUsageMB) {
+                const limit = this.calculateMemoryLimit();
+                // Only restart if we are consistently over limit (could add a counter here, but for now direct)
+                if (health.memoryUsageMB > limit) {
+                    Logger.warn(`Llama server memory usage (${health.memoryUsageMB.toFixed(0)}MB) exceeded limit (${limit.toFixed(0)}MB). Restarting...`);
+                    new Notice('Restarting AI Server (Memory Limit Exceeded)');
+                    this.restartServer();
+                }
+            }
+        }, 30000); // Check every 30s
+    }
+
+    private stopHealthCheck(): void {
+        if (this.healthCheckTimer) {
+            clearInterval(this.healthCheckTimer);
+            this.healthCheckTimer = null;
+        }
+    }
+
+    private async restartServer(): Promise<void> {
+        Logger.info('Restarting server...');
+        this.stopServer();
+        // Wait a bit for cleanup
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+            await this.startServer();
+        } catch (error) {
+            Logger.error('Failed to restart server:', error);
+            new Notice('Failed to auto-restart AI Server');
+        }
     }
 }
