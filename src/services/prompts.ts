@@ -160,7 +160,7 @@ Response:`;
             ? params.preserveSections.join('\n- ')
             : 'None';
 
-        return `Reorganize this idea into a structured format.
+        return `Reorganize this idea into a clear, well-structured format.
 
 Original Idea:
 ${params.ideaText}
@@ -168,12 +168,20 @@ ${params.ideaText}
 Category: ${category}
 Tags: ${tags}
 
-Critical rules:
-1. Preserve ALL information - do not remove content
-2. Organize into logical sections
-3. Remove redundancy, keep unique points
-4. Maintain original meaning
-5. Use markdown (headings, lists, emphasis)
+CRITICAL REQUIREMENTS:
+- Preserve ALL information - do not remove or lose any content
+- Maintain the original meaning and intent completely
+- Organize content logically so it flows naturally
+- Remove only true redundancy (duplicate information), keep all unique points
+- Use proper markdown formatting (headings, lists, emphasis, code blocks if needed)
+
+Reorganization Guidelines:
+1. Group related information together
+2. Create clear hierarchical structure with appropriate heading levels
+3. Use lists for multiple related items
+4. Place most important information first
+5. Ensure smooth flow from section to section
+6. Use consistent formatting throughout
 
 Target structure:
 - ${targetStructure}
@@ -181,7 +189,7 @@ Target structure:
 Preserve exactly (if any):
 - ${preserveSections}
 
-Output: Reorganized content with markdown formatting`;
+Output: Reorganized content with clear markdown formatting. Ensure all original information is present, just better organized.`;
     },
 
     /**
@@ -202,23 +210,46 @@ Output: Reorganized content with markdown formatting`;
             ? `\nSimilarity: ${(params.similarity * 100).toFixed(1)}%`
             : '';
 
-        return `Analyze this cluster of ideas.
+        return `Analyze this cluster of ideas to understand their relationships and potential.
 
 Cluster Ideas:
 ${ideaSummaries}${otherClusterInfo}${similarityInfo}
 
-Identify:
-1. Common themes connecting these ideas
-2. Common patterns or structures
-3. Why these ideas belong together
-4. Potential synergies or combinations${params.otherClusterIdeas ? '\n5. Relationship to other cluster' : ''}
+CRITICAL REQUIREMENTS:
+- Look for meaningful connections, not just surface-level similarities
+- Identify both explicit and implicit relationships
+- Consider how ideas could complement or enhance each other
+- Think about practical applications and combinations
 
-Output format (JSON):
+Analyze and identify:
+
+1. Common Themes
+   - What underlying concepts or topics connect these ideas?
+   - What shared values, goals, or problems do they address?
+   - Look for both obvious and subtle thematic connections
+
+2. Common Patterns or Structures
+   - Do these ideas share similar approaches, formats, or methodologies?
+   - Are there recurring elements, features, or design patterns?
+   - What structural similarities exist?
+
+3. Relationship Explanation
+   - Why do these ideas belong together in this cluster?
+   - What makes them cohesive as a group?
+   - What is the unifying thread that connects them?
+
+4. Potential Synergies or Combinations
+   - How could these ideas be combined to create something greater?
+   - What new possibilities emerge when these ideas are considered together?
+   - Are there complementary strengths that could be leveraged?
+   - What would a merged or combined version look like?${params.otherClusterIdeas ? '\n\n5. Relationship to Other Cluster\n   - How does this cluster relate to the other cluster?\n   - What are the key differences or similarities?\n   - Could ideas from different clusters be combined?' : ''}
+
+Output format (JSON only, no markdown, no code blocks):
 {
-  "commonThemes": ["Theme 1", "Theme 2"],
+  "commonThemes": ["Theme 1", "Theme 2", "Theme 3"],
   "commonPatterns": ["Pattern 1", "Pattern 2"],
-  "relationshipExplanation": "Why these belong together...",
-  "synergies": ["Synergy 1", "Synergy 2"],${params.otherClusterIdeas ? '\n  "relationshipToOtherCluster": "Relationship...",' : ''}
+  "relationshipExplanation": "Clear explanation of why these ideas belong together and what connects them...",
+  "synergies": ["Specific synergy 1", "Specific synergy 2", "Specific synergy 3"],${params.otherClusterIdeas ? '\n  "relationshipToOtherCluster": "How this cluster relates to the other cluster...",' : ''}
   "relevance": 0.0-1.0
 }
 

@@ -195,7 +195,7 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
         relatedIdeaText: string,
         similarity: number
     ): Promise<{ explanation: string; synergy?: string; relevance: number }> {
-        const prompt = `Analyze the connection between these ideas.
+        const prompt = `Analyze the connection between these two ideas, focusing on unexpected or creative connections.
 
 Original Idea:
 ${ideaText}
@@ -206,15 +206,36 @@ Related Idea:
 ${relatedIdeaText}
 Similarity: ${similarity.toFixed(2)}
 
-Find:
-1. Unexpected connection between ideas
-2. How they could be combined
-3. New possibilities from this connection
+CRITICAL REQUIREMENTS:
+- Look beyond surface-level similarities to find deeper, more interesting connections
+- Focus on unexpected or creative connections that might not be immediately obvious
+- Consider how these ideas could enhance or transform each other
+- Think about novel applications or combinations
 
-Output format (JSON):
+Analyze and identify:
+
+1. Unexpected Connection
+   - What is the non-obvious link between these ideas?
+   - What hidden relationships exist beyond the similarity score?
+   - How do they relate in ways that might not be immediately apparent?
+   - What shared principles, approaches, or underlying concepts connect them?
+
+2. Combination Potential
+   - How could these ideas be meaningfully combined?
+   - What would a merged or hybrid version look like?
+   - How could elements from one idea enhance the other?
+   - What complementary strengths do they have?
+
+3. New Possibilities
+   - What novel applications emerge from this connection?
+   - What new ideas or directions does this relationship suggest?
+   - How could combining these ideas solve problems neither could solve alone?
+   - What unique value would a combination create?
+
+Output format (JSON only, no markdown, no code blocks):
 {
-  "explanation": "Brief connection explanation...",
-  "synergy": "How to combine...",
+  "explanation": "Clear explanation of the unexpected connection between these ideas...",
+  "synergy": "Specific description of how these ideas could be combined and what the result would be...",
   "relevance": 0.0-1.0
 }
 
