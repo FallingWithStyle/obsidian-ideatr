@@ -159,6 +159,7 @@ export class HybridLLM implements ILLMService {
         const response = await this.complete(prompt, {
             temperature: 0.8, // Higher creativity for mutations
             n_predict: 4000, // Increased to handle longer JSON responses
+            stop: ['\n]', ']'], // Stop at end of JSON array (prefer newline before bracket for cleaner output)
         });
 
         // Check for empty response

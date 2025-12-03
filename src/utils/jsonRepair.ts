@@ -78,17 +78,22 @@ export function repairJSON(jsonStr: string): string {
         repaired += '"';
     }
     
-    // Add missing closing brackets first (they're nested inside objects)
-    // Close brackets before braces since arrays can be inside objects
-    while (openBrackets > 0) {
-        repaired += ']';
-        openBrackets--;
-    }
+    // Close structures in the correct order:
+    // 1. Close braces (objects) first - objects can be nested inside arrays
+    //    Example: [{"key": "value" needs } then ]
+    // 2. Close brackets (arrays) last - arrays are the outer structure
+    // This ensures proper nesting: objects inside arrays get closed before the array
     
-    // Add missing closing braces
+    // Add missing closing braces first (close objects before arrays)
     while (openBraces > 0) {
         repaired += '}';
         openBraces--;
+    }
+    
+    // Add missing closing brackets (close arrays after objects)
+    while (openBrackets > 0) {
+        repaired += ']';
+        openBrackets--;
     }
     
     return repaired;
@@ -192,11 +197,18 @@ function fixMissingCommas(jsonStr: string): string {
                 const between = jsonStr.substring(i + 1, j);
                 const hasComma = between.indexOf(',') !== -1;
                 
-                // If next char starts a new value and no comma, add one
-                if (!hasComma && (nextChar === '"' || nextChar === '{' || nextChar === '[')) {
+                // Only add comma if:
+                // 1. Next char starts a new value (quote, brace, or bracket)
+                // 2. No comma already exists
+                // Note: We don't need to check for closing braces/brackets here because
+                // the condition above already ensures nextChar is one of '"', '{', or '['
+                if (!hasComma && 
+                    (nextChar === '"' || nextChar === '{' || nextChar === '[')) {
                     result += ',';
                 }
             }
+            // If we're at the end of the string or only whitespace follows,
+            // don't add a comma - we're closing the structure
             i++;
             continue;
         }
@@ -224,8 +236,11 @@ export function extractAndRepairJSON(content: string, isArray: boolean = false):
     }
     
     // Remove common prefixes that LLMs might add (including newlines after them)
-    jsonStr = jsonStr.replace(/^(?:Here'?s?|Here is|Response:|Output:)\s*\n?\s*/i, '');
-    jsonStr = jsonStr.replace(/^(?:Example:|Example format:|Example response:)\s*\n?\s*/i, '');
+    // Handle patterns like "Here is the requested JSON array with 8 variations:"
+    jsonStr = jsonStr.replace(/^(?:Here'?s?|Here is|Response:|Output:).*?:\s*\n?\s*/i, '');
+    jsonStr = jsonStr.replace(/^(?:Example:|Example format:|Example response:).*?:\s*\n?\s*/i, '');
+    // Also remove generic "Here is" patterns
+    jsonStr = jsonStr.replace(/^Here is.*?:\s*\n?\s*/i, '');
     
     // Try to find the first occurrence of a JSON array or object
     // Look for the opening bracket/brace
