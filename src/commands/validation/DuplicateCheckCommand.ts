@@ -2,14 +2,18 @@ import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { DuplicateResultsModal } from '../../views/DuplicateResultsModal';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: check-duplicates
  * Check for duplicate ideas
  */
 export class DuplicateCheckCommand extends IdeaFileCommand {
+    private idConverter: RelatedIdConverter;
+
     constructor(context: CommandContext) {
         super(context);
+        this.idConverter = new RelatedIdConverter(context.ideaRepository);
     }
 
     protected getCommandName(): string {
@@ -33,8 +37,10 @@ export class DuplicateCheckCommand extends IdeaFileCommand {
             this.context.app,
             result.duplicates,
             async (selected) => {
+                // Convert paths to IDs
                 const relatedPaths = selected.map(d => d.path);
-                await this.updateIdeaFrontmatter(file, { related: relatedPaths });
+                const relatedIds = await this.idConverter.pathsToIds(relatedPaths);
+                await this.updateIdeaFrontmatter(file, { related: relatedIds });
                 new Notice(`Linked ${selected.length} duplicate${selected.length > 1 ? 's' : ''} in frontmatter.`);
             }
         ).open();

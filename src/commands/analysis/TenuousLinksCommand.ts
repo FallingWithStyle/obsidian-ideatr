@@ -2,14 +2,18 @@ import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { TenuousLinksModal } from '../../views/TenuousLinksModal';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: find-tenuous-links
  * Find unexpected connections between ideas
  */
 export class TenuousLinksCommand extends IdeaFileCommand {
+    private idConverter: RelatedIdConverter;
+
     constructor(context: CommandContext) {
         super(context);
+        this.idConverter = new RelatedIdConverter(context.ideaRepository);
     }
 
     protected getCommandName(): string {
@@ -27,11 +31,17 @@ export class TenuousLinksCommand extends IdeaFileCommand {
 
         new Notice('Finding tenuous links... This may take a moment.');
 
+        // Convert related IDs to paths for the service (it expects paths)
+        const relatedIds = (Array.isArray(content.frontmatter.related) 
+            ? content.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
+            : []) as number[];
+        const relatedPaths = await this.idConverter.idsToPaths(relatedIds);
+
         const links = await this.context.tenuousLinkService.findTenuousLinks(
             content.ideaText,
             (content.frontmatter.category as string) || '',
             (Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : []) as string[],
-            (Array.isArray(content.frontmatter.related) ? content.frontmatter.related : []) as string[]
+            relatedPaths
         );
 
         if (links.length === 0) {
@@ -45,23 +55,31 @@ export class TenuousLinksCommand extends IdeaFileCommand {
             links,
             async (link, action) => {
                 if (action === 'link') {
-                    // Add to related notes
-                    const currentRelated = (Array.isArray(content.frontmatter.related) ? content.frontmatter.related : []) as string[];
-                    if (!currentRelated.includes(link.idea.path)) {
+                    // Add to related notes - convert path to ID
+                    const currentRelatedIds = (Array.isArray(content.frontmatter.related) 
+                        ? content.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
+                        : []) as number[];
+                    const linkId = await this.idConverter.pathsToIds([link.idea.path]);
+                    if (linkId.length > 0 && !currentRelatedIds.includes(linkId[0])) {
                         await this.updateIdeaFrontmatter(file, {
-                            related: [...currentRelated, link.idea.path]
+                            related: [...currentRelatedIds, linkId[0]]
                         });
                         new Notice(`Linked to ${link.idea.title}`);
                     }
                 } else if (action === 'combine') {
-                    // Create combined idea
+                    // Create combined idea - convert paths to IDs
+                    const currentFileId = await this.idConverter.pathsToIds([file.path]);
+                    const linkId = await this.idConverter.pathsToIds([link.idea.path]);
+                    const relatedIds = [...currentFileId, ...linkId].filter(id => id !== 0);
+                    
                     const combinedContent = `---
 type: idea
 status: captured
 created: ${new Date().toISOString().split('T')[0]}
+id: 0
 category: ${content.frontmatter.category || ''}
 tags: ${JSON.stringify([...(Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : []), 'combined'])}
-related: ${JSON.stringify([file.path, link.idea.path])}
+related: ${JSON.stringify(relatedIds)}
 domains: []
 existence-check: []
 ---

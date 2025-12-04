@@ -43,7 +43,7 @@ export class IdeaStatsCommand extends IdeaFileCommand {
             frontmatter: content.frontmatter as any // Type assertion needed for compatibility
         };
 
-        new IdeaStatsModal(this.context.app, stats).open();
+        new IdeaStatsModal(this.context.app, stats, this.context.ideaRepository).open();
     }
 }
 

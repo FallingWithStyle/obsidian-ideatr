@@ -4,14 +4,18 @@ import type { IdeaCategory } from '../../types/classification';
 import { CommandContext } from '../base/CommandContext';
 import { MutationSelectionModal } from '../../views/MutationSelectionModal';
 import { generateFilename } from '../../storage/FilenameGenerator';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: generate-mutations
  * Generate idea variations/mutations
  */
 export class MutationCommand extends IdeaFileCommand {
+    private idConverter: RelatedIdConverter;
+
     constructor(context: CommandContext) {
         super(context);
+        this.idConverter = new RelatedIdConverter(context.ideaRepository);
     }
 
     protected getCommandName(): string {
@@ -77,6 +81,9 @@ export class MutationCommand extends IdeaFileCommand {
             async (selected, action) => {
                 if (action === 'save') {
                     // Save selected mutations as new ideas
+                    // Convert file path to ID
+                    const relatedIds = await this.idConverter.pathsToIds([file.path]);
+                    
                     for (const mutation of selected) {
                         const newContent = `---
 type: idea
@@ -85,7 +92,7 @@ created: ${new Date().toISOString().split('T')[0]}
 id: 0
 category: ${content.frontmatter.category || ''}
 tags: ${JSON.stringify(content.frontmatter.tags || [])}
-related: ${JSON.stringify([file.path])}
+related: ${JSON.stringify(relatedIds)}
 domains: []
 existence-check: []
 ---

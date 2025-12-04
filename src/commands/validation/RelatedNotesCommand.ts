@@ -2,14 +2,18 @@ import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { RelatedNotesModal } from '../../views/RelatedNotesModal';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: find-related-notes
  * Find related notes and allow user to link them
  */
 export class RelatedNotesCommand extends IdeaFileCommand {
+    private idConverter: RelatedIdConverter;
+
     constructor(context: CommandContext) {
         super(context);
+        this.idConverter = new RelatedIdConverter(context.ideaRepository);
     }
 
     protected getCommandName(): string {
@@ -28,14 +32,22 @@ export class RelatedNotesCommand extends IdeaFileCommand {
             return;
         }
 
-        // Show modal with related notes
+        // Get existing related IDs and convert to paths for display
+        const existingRelatedIds = (Array.isArray(content.frontmatter.related) 
+            ? content.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
+            : []) as number[];
+        const existingRelatedPaths = await this.idConverter.idsToPaths(existingRelatedIds);
+
+        // Show modal with related notes (still uses paths for display)
         new RelatedNotesModal(
             this.context.app,
             relatedNotes,
-            (Array.isArray(content.frontmatter.related) ? content.frontmatter.related : []) as string[],
+            existingRelatedPaths,
             async (selected) => {
-                const relatedPaths = selected.map(n => n.path);
-                await this.updateIdeaFrontmatter(file, { related: relatedPaths });
+                // Convert selected paths to IDs
+                const selectedPaths = selected.map(n => n.path);
+                const relatedIds = await this.idConverter.pathsToIds(selectedPaths);
+                await this.updateIdeaFrontmatter(file, { related: relatedIds });
                 new Notice(`Linked ${selected.length} related note${selected.length > 1 ? 's' : ''} in frontmatter.`);
             }
         ).open();
