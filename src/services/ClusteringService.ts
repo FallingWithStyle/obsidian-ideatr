@@ -40,11 +40,11 @@ export class ClusteringService implements IClusteringService {
         } else {
             // Use embedding service to calculate similarity matrix
             if (this.embeddingService instanceof EmbeddingService) {
-                similarityMatrix = await (this.embeddingService as EmbeddingService).calculateSimilarityMatrix(ideas);
+                similarityMatrix = (this.embeddingService as EmbeddingService).calculateSimilarityMatrix(ideas);
             } else {
                 // Fallback: generate embeddings first
                 const texts = ideas.map(idea => this.getIdeaText(idea));
-                const generatedEmbeddings = await this.embeddingService.generateEmbeddings(texts);
+                const generatedEmbeddings = this.embeddingService.generateEmbeddings(texts);
                 similarityMatrix = this.calculateSimilarityMatrixFromEmbeddings(generatedEmbeddings);
             }
         }

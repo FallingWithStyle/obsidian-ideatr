@@ -418,7 +418,7 @@ export default class IdeatrPlugin extends Plugin {
             const tutorialManager = new TutorialManager(this.app, pluginDir);
 
             // Check if tutorials exist in vault
-            const tutorialsInVault = await tutorialManager.tutorialsExistInVault();
+            const tutorialsInVault = tutorialManager.tutorialsExistInVault();
 
             // If not in vault, but available in plugin directory, copy them
             if (!tutorialsInVault) {

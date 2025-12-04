@@ -31,7 +31,7 @@ export class FileManager {
         let filepath = `${IDEAS_DIRECTORY}/${filename}`;
 
         // Handle collisions
-        filepath = await this.resolveCollision(filepath);
+        filepath = this.resolveCollision(filepath);
 
         // Build frontmatter
         const frontmatter = buildFrontmatter(idea);
@@ -59,7 +59,7 @@ export class FileManager {
     /**
      * Resolve filename collisions by adding numeric suffix
      */
-    private async resolveCollision(filepath: string): Promise<string> {
+    private resolveCollision(filepath: string): string {
         let currentPath = filepath;
         let suffix = 2;
 

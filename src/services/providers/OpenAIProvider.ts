@@ -33,9 +33,9 @@ export class OpenAIProvider implements ILLMProvider {
         return this.client;
     }
 
-    async authenticate(apiKey: string): Promise<boolean> {
+    authenticate(apiKey: string): Promise<boolean> {
         // Basic validation: OpenAI API keys start with 'sk-'
-        return apiKey.trim().length > 0 && apiKey.startsWith('sk-');
+        return Promise.resolve(apiKey.trim().length > 0 && apiKey.startsWith('sk-'));
     }
 
     isAvailable(): boolean {

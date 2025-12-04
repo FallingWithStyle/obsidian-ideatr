@@ -213,7 +213,7 @@ export class FirstLaunchSetupModal extends Modal {
         modal.close = () => {
             originalClose();
             // Check if download was successful
-            modelManager.isModelDownloaded().then(downloaded => {
+            void modelManager.isModelDownloaded().then(downloaded => {
                 if (downloaded) {
                     this.settings.setupCompleted = true;
                     this.settings.modelDownloaded = true;
@@ -306,7 +306,7 @@ export class FirstLaunchSetupModal extends Modal {
         });
     }
 
-    private async handleApiKeySubmit(apiKey: string, provider: 'anthropic' | 'openai'): Promise<void> {
+    private handleApiKeySubmit(apiKey: string, provider: 'anthropic' | 'openai'): void {
         // Ensure cloudApiKeys exists
         if (!this.settings.cloudApiKeys) {
             this.settings.cloudApiKeys = {

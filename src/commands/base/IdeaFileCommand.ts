@@ -16,7 +16,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
      */
     async execute(): Promise<void> {
         try {
-            const file = await this.getActiveIdeaFile();
+            const file = this.getActiveIdeaFile();
             if (!file) {
                 return;
             }
@@ -51,7 +51,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
     /**
      * Get active idea file or show error
      */
-    protected async getActiveIdeaFile(): Promise<TFile | null> {
+    protected getActiveIdeaFile(): TFile | null {
         const file = this.context.app.workspace.getActiveFile();
         if (!file) {
             this.debug('No active file found');

@@ -96,7 +96,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
     private async displayStatus(containerEl: HTMLElement): Promise<void> {
         const statusContainer = containerEl.createDiv('tutorial-status');
         
-        const tutorialsExist = await this.tutorialManager.tutorialsExistInVault();
+        const tutorialsExist = this.tutorialManager.tutorialsExistInVault();
         const bundledAvailable = await this.tutorialManager.bundledTutorialsAvailable();
         
         let statusText = '';

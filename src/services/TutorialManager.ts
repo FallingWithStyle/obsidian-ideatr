@@ -21,7 +21,7 @@ export class TutorialManager {
     /**
      * Check if tutorials exist in either case (for backward compatibility)
      */
-    private async findTutorialFolder(): Promise<TFolder | null> {
+    private findTutorialFolder(): TFolder | null {
         const capitalizedPath = 'Tutorials';
         const lowercasePath = 'tutorials';
         
@@ -72,7 +72,7 @@ export class TutorialManager {
         // (in case they were manually placed there)
         if (tutorials.size === 0) {
             try {
-                const tutorialDir = await this.findTutorialFolder();
+                const tutorialDir = this.findTutorialFolder();
                 if (tutorialDir instanceof TFolder && tutorialDir.children) {
                     for (const child of tutorialDir.children) {
                         if (child instanceof TFile && child.name.endsWith('.md')) {
@@ -258,7 +258,7 @@ export class TutorialManager {
     /**
      * Check if tutorials exist in vault (checks both capitalized and lowercase for backward compatibility)
      */
-    async tutorialsExistInVault(): Promise<boolean> {
+    tutorialsExistInVault(): boolean {
         const capitalizedPath = 'Tutorials/00-Index.md';
         const lowercasePath = 'tutorials/00-Index.md';
         

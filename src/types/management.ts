@@ -93,14 +93,14 @@ export interface IEmbeddingService {
      * @param text - Text to embed
      * @returns Embedding vector
      */
-    generateEmbedding(text: string): Promise<Embedding>;
+    generateEmbedding(text: string): Embedding;
 
     /**
      * Generate embeddings for multiple texts (batch)
      * @param texts - Array of texts to embed
      * @returns Array of embedding vectors
      */
-    generateEmbeddings(texts: string[]): Promise<Embedding[]>;
+    generateEmbeddings(texts: string[]): Embedding[];
 
     /**
      * Check if embedding service is available
@@ -327,7 +327,7 @@ export interface IProjectElevationService {
      * @param projectName - Project name to check
      * @returns True if available, false if collision
      */
-    isProjectNameAvailable(projectName: string): Promise<boolean>;
+    isProjectNameAvailable(projectName: string): boolean;
 }
 
 /**

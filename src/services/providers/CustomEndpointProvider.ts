@@ -17,13 +17,13 @@ export class CustomEndpointProvider implements ILLMProvider {
         this.format = format;
     }
 
-    async authenticate(endpointUrl: string): Promise<boolean> {
+    authenticate(endpointUrl: string): Promise<boolean> {
         // Basic URL validation
         try {
             new URL(endpointUrl);
-            return endpointUrl.trim().length > 0;
+            return Promise.resolve(endpointUrl.trim().length > 0);
         } catch {
-            return false;
+            return Promise.resolve(false);
         }
     }
 

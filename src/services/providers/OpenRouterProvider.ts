@@ -18,8 +18,8 @@ export class OpenRouterProvider implements ILLMProvider {
         this.model = model || 'openai/gpt-4o-mini';
     }
 
-    async authenticate(apiKey: string): Promise<boolean> {
-        return apiKey.trim().length > 0;
+    authenticate(apiKey: string): Promise<boolean> {
+        return Promise.resolve(apiKey.trim().length > 0);
     }
 
     isAvailable(): boolean {

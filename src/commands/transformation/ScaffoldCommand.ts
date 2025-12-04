@@ -32,7 +32,7 @@ export class ScaffoldCommand extends IdeaFileCommand {
         }
 
         new Notice('Generating scaffold...');
-        const scaffold = await this.context.scaffoldService.generateScaffold(content.ideaText, category);
+        const scaffold = this.context.scaffoldService.generateScaffold(content.ideaText, category);
 
         // Determine action (append or new note)
         const action = this.context.settings.scaffoldDefaultAction || 'append';

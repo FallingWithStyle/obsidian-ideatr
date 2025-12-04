@@ -122,7 +122,7 @@ export class ProjectElevationService implements IProjectElevationService {
     /**
      * Check if project name is available
      */
-    async isProjectNameAvailable(projectName: string): Promise<boolean> {
+    isProjectNameAvailable(projectName: string): boolean {
         const projectPath = `${this.getProjectsDirectory()}/${projectName}`;
         const existing = this.vault.getAbstractFileByPath(projectPath);
         return existing === null;
@@ -171,7 +171,7 @@ export class ProjectElevationService implements IProjectElevationService {
             await this.createProjectStructure(projectPath, createdPaths);
 
             // Create README.md with updated content
-            const updatedContent = await this.prepareElevatedContent(originalContent, projectPath);
+            const updatedContent = this.prepareElevatedContent(originalContent, projectPath);
             await this.vault.create(`${projectPath}/README.md`, updatedContent);
             createdPaths.push(`${projectPath}/README.md`);
 
@@ -219,7 +219,7 @@ export class ProjectElevationService implements IProjectElevationService {
         let projectName = baseName;
         let suffix = 2;
 
-        while (!(await this.isProjectNameAvailable(projectName))) {
+        while (!this.isProjectNameAvailable(projectName)) {
             projectName = `${baseName}-${suffix}`;
             suffix++;
         }
@@ -259,7 +259,7 @@ export class ProjectElevationService implements IProjectElevationService {
     /**
      * Prepare content for elevated project (update frontmatter)
      */
-    private async prepareElevatedContent(originalContent: string, projectPath: string): Promise<string> {
+    private prepareElevatedContent(originalContent: string, projectPath: string): string {
         // Parse existing frontmatter
         const frontmatter = this.frontmatterParser.parseFrontmatter(originalContent);
         if (!frontmatter) {

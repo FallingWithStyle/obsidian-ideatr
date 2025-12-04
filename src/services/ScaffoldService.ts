@@ -166,11 +166,11 @@ export class ScaffoldService implements IScaffoldService {
         return true; // Service is always available
     }
 
-    async generateScaffold(
+    generateScaffold(
         ideaText: string,
         category: IdeaCategory,
         ideaName?: string
-    ): Promise<string> {
+    ): string {
         // Extract idea name if not provided (use sync version for scaffolds - fast enough)
         const name = ideaName || extractIdeaNameSync(ideaText);
         

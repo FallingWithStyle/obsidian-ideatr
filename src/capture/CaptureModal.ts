@@ -923,46 +923,44 @@ Response:`;
             : Promise.resolve(null);
 
         // Wait for all to complete (or fail)
-        Promise.all([searchPromise, variantPromise])
-            .then(([searchResults, _variantResult]) => {
-                const updates: any = {};
-                
-                // Handle search results
-                if (shouldSearchWeb) {
-                    if (searchResults === null) {
-                        // Web search failed - store error state
-                        updates['existence-check'] = ['Search error: Validation failed'];
-                    } else if (searchResults.length > 0) {
-                        // Web search succeeded with results
-                        updates['existence-check'] = formatSearchResultsForFrontmatter(
-                            searchResults,
-                            this.settings.maxSearchResults,
-                            category
-                        );
-                    }
-                    // If searchResults is empty array, don't update (no results found is not an error)
+        try {
+            const [searchResults, _variantResult] = await Promise.all([searchPromise, variantPromise]);
+            const updates: any = {};
+            
+            // Handle search results
+            if (shouldSearchWeb) {
+                if (searchResults === null) {
+                    // Web search failed - store error state
+                    updates['existence-check'] = ['Search error: Validation failed'];
+                } else if (searchResults.length > 0) {
+                    // Web search succeeded with results
+                    updates['existence-check'] = formatSearchResultsForFrontmatter(
+                        searchResults,
+                        this.settings.maxSearchResults,
+                        category
+                    );
                 }
-                
-                // Update frontmatter if we have updates (including error states)
-                if (Object.keys(updates).length > 0) {
-                    return this.fileManager.updateIdeaFrontmatter(file, updates);
-                }
-                return Promise.resolve();
-            })
-            .catch(error => {
-                // This catch handles unexpected errors in the Promise.all itself
-                Logger.warn('Validation orchestration failed:', error);
-                // Store error state for validations if they were attempted
-                const errorUpdates: any = {};
-                if (shouldSearchWeb) {
-                    errorUpdates['existence-check'] = ['Search error: Validation failed'];
-                }
-                if (Object.keys(errorUpdates).length > 0) {
-                    this.fileManager.updateIdeaFrontmatter(file, errorUpdates).catch(err => {
-                        console.error('Failed to store validation error state:', err);
-                    });
-                }
-            });
+                // If searchResults is empty array, don't update (no results found is not an error)
+            }
+            
+            // Update frontmatter if we have updates (including error states)
+            if (Object.keys(updates).length > 0) {
+                await this.fileManager.updateIdeaFrontmatter(file, updates);
+            }
+        } catch (error) {
+            // This catch handles unexpected errors in the Promise.all itself
+            Logger.warn('Validation orchestration failed:', error);
+            // Store error state for validations if they were attempted
+            const errorUpdates: any = {};
+            if (shouldSearchWeb) {
+                errorUpdates['existence-check'] = ['Search error: Validation failed'];
+            }
+            if (Object.keys(errorUpdates).length > 0) {
+                this.fileManager.updateIdeaFrontmatter(file, errorUpdates).catch(err => {
+                    Logger.error('Failed to store validation error state:', err);
+                });
+            }
+        }
     }
 
     /**

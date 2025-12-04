@@ -47,7 +47,7 @@ export class TutorialService {
     /**
      * Check if tutorial files are available
      */
-    async areTutorialsAvailable(): Promise<boolean> {
+    areTutorialsAvailable(): boolean {
         const indexPaths = [
             'Tutorials/00-Index.md',
             'tutorials/00-Index.md', // backward compatibility

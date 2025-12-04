@@ -63,7 +63,7 @@ export class DashboardView extends ItemView {
 
         // Load persisted filter state if enabled (QA 4.1)
         if (this.persistFilters) {
-            await this.loadFilterState();
+            this.loadFilterState();
         }
 
         // Create header
@@ -505,7 +505,7 @@ export class DashboardView extends ItemView {
     /**
      * Load persisted filter state from leaf view state (QA 4.1)
      */
-    private async loadFilterState(): Promise<void> {
+    private loadFilterState(): void {
         try {
             const viewState = this.leaf.getViewState();
             if (viewState.state && viewState.state.filters) {

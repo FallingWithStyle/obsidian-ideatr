@@ -83,7 +83,7 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
 
                 // Calculate similarity using EmbeddingService
                 // Note: EmbeddingService uses keyword-based similarity, not true embeddings
-                const similarity = await this.calculateSimilarity(ideaText, body);
+                const similarity = this.calculateSimilarity(ideaText, body);
 
                 // Check if in tenuous range (0.3-0.5)
                 if (similarity >= this.MIN_SIMILARITY && similarity <= this.MAX_SIMILARITY) {
@@ -150,10 +150,10 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
      * Calculate similarity between two texts
      * Uses EmbeddingService's similarity calculation
      */
-    private async calculateSimilarity(text1: string, text2: string): Promise<number> {
+    private calculateSimilarity(text1: string, text2: string): number {
         // Use EmbeddingService to generate embeddings and calculate similarity
-        const embedding1 = await this.embeddingService.generateEmbedding(text1);
-        const embedding2 = await this.embeddingService.generateEmbedding(text2);
+        const embedding1 = this.embeddingService.generateEmbedding(text1);
+        const embedding2 = this.embeddingService.generateEmbedding(text2);
         
         // Calculate cosine similarity
         return this.cosineSimilarity(embedding1, embedding2);

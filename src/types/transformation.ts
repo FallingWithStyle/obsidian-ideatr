@@ -82,7 +82,7 @@ export interface IScaffoldService {
         ideaText: string,
         category: IdeaCategory,
         ideaName?: string
-    ): Promise<string>;
+    ): string;
 
     /**
      * Get available scaffold templates

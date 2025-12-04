@@ -33,8 +33,8 @@ export class GeminiProvider implements ILLMProvider {
         return this.client;
     }
 
-    async authenticate(apiKey: string): Promise<boolean> {
-        return apiKey.trim().length > 0;
+    authenticate(apiKey: string): Promise<boolean> {
+        return Promise.resolve(apiKey.trim().length > 0);
     }
 
     isAvailable(): boolean {

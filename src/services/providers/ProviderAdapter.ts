@@ -23,13 +23,13 @@ export class ProviderAdapter implements ILLMService {
      * Ensure the LLM service is ready
      * For cloud providers, this just verifies configuration
      */
-    async ensureReady(): Promise<boolean> {
+    ensureReady(): Promise<boolean> {
         if (!this.provider.isAvailable()) {
-            return false;
+            return Promise.resolve(false);
         }
         // Cloud providers are typically always ready if configured
         // No additional setup needed
-        return true;
+        return Promise.resolve(true);
     }
 
     /**
