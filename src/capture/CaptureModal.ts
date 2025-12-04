@@ -161,18 +161,12 @@ export class CaptureModal extends Modal {
 
         // Error message container
         this.errorEl = contentEl.createEl('div', {
-            cls: 'ideatr-error',
-            attr: {
-                style: 'display: none;'
-            }
+            cls: 'ideatr-error ideatr-hidden'
         });
 
         // Classification results container (hidden initially)
         this.classificationEl = contentEl.createEl('div', {
-            cls: 'ideatr-classification',
-            attr: {
-                style: 'display: none;'
-            }
+            cls: 'ideatr-classification ideatr-hidden'
         });
 
         // Button container
@@ -309,7 +303,8 @@ export class CaptureModal extends Modal {
             
             // Show error with manual mode option
             this.classificationEl.empty();
-            this.classificationEl.style.display = 'block';
+            this.classificationEl.addClass('ideatr-visible');
+            this.classificationEl.removeClass('ideatr-hidden');
             
             let errorMessage = 'Classification unavailable. Please configure AI in settings.';
             if (error instanceof Error) {
@@ -600,7 +595,8 @@ Response:`;
             console.error('Error processing idea:', error);
             // Show manual mode option
             this.classificationEl.empty();
-            this.classificationEl.style.display = 'block';
+            this.classificationEl.addClass('ideatr-visible');
+            this.classificationEl.removeClass('ideatr-hidden');
             this.classificationEl.createEl('p', {
                 text: 'Processing failed. Idea may have been saved without AI processing.',
                 cls: 'ideatr-classification-error'
@@ -621,8 +617,8 @@ Response:`;
     showError(message: string, isWarning: boolean = false) {
         this.errorEl.empty(); // Clear any previous content
         this.errorEl.setText(message); // Use Obsidian's setText method
-        this.errorEl.style.display = 'block';
-        this.errorEl.style.visibility = 'visible';
+        this.errorEl.addClass('ideatr-visible');
+        this.errorEl.removeClass('ideatr-hidden', 'ideatr-invisible');
 
         if (isWarning) {
             this.errorEl.addClass('ideatr-warning');
@@ -634,23 +630,26 @@ Response:`;
     }
 
     hideError() {
-        this.errorEl.style.display = 'none';
-        this.errorEl.style.visibility = 'hidden';
+        this.errorEl.addClass('ideatr-hidden', 'ideatr-invisible');
+        this.errorEl.removeClass('ideatr-visible');
         this.errorEl.removeClass('ideatr-warning');
         this.errorEl.removeClass('ideatr-error');
     }
 
     showClassificationInProgress(isFirstTime: boolean = false) {
         // Hide input area
-        this.inputEl.style.display = 'none';
+        this.inputEl.addClass('ideatr-hidden');
+        this.inputEl.removeClass('ideatr-visible');
         const buttonContainer = this.contentEl.querySelector('.ideatr-button-container');
         if (buttonContainer) {
-            (buttonContainer as HTMLElement).style.display = 'none';
+            (buttonContainer as HTMLElement).addClass('ideatr-hidden');
+            (buttonContainer as HTMLElement).removeClass('ideatr-visible');
         }
 
         // Show classification container
         this.classificationEl.empty();
-        this.classificationEl.style.display = 'block';
+        this.classificationEl.addClass('ideatr-visible');
+        this.classificationEl.removeClass('ideatr-hidden');
         
         const message = isFirstTime 
             ? 'Loading AI model (first use)... ~10 seconds'
@@ -677,7 +676,8 @@ Response:`;
         
         // Show manual mode option
         this.classificationEl.empty();
-        this.classificationEl.style.display = 'block';
+        this.classificationEl.addClass('ideatr-visible');
+        this.classificationEl.removeClass('ideatr-hidden');
         this.classificationEl.createEl('p', { 
             text: 'Classification cancelled. Idea saved without classification.',
             cls: 'ideatr-classification-status'

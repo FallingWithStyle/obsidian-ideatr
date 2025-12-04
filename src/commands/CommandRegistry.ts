@@ -89,8 +89,7 @@ export class CommandRegistry {
                     // Add spinner class for CSS animation
                     const spinnerSpan = noticeEl.createSpan({ cls: 'ideatr-loading-spinner' });
                     spinnerSpan.textContent = '⏳';
-                    spinnerSpan.style.marginRight = '6px';
-                    spinnerSpan.style.display = 'inline-block';
+                    spinnerSpan.addClass('ideatr-loading-spinner');
                 }
             } catch (spinnerError) {
                 // If we can't access notice element, that's okay - the emoji will still show

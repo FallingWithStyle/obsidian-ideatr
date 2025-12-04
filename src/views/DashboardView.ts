@@ -378,7 +378,7 @@ export class DashboardView extends ItemView {
     private createTableHeader(row: HTMLElement, text: string, column: string): void {
         const th = row.createEl('th');
         th.textContent = text;
-        th.style.cursor = 'pointer';
+        th.addClass('ideatr-cursor-pointer');
         th.addEventListener('click', () => this.sortBy(column));
 
         // Add sort indicator
@@ -640,7 +640,7 @@ export class DashboardView extends ItemView {
                 const li = ideasList.createEl('li');
                 const age = this.calculateAge(idea.frontmatter.created);
                 li.textContent = `${idea.filename.replace('.md', '')} (${age} days old)`;
-                li.style.cursor = 'pointer';
+                li.addClass('ideatr-cursor-pointer');
                 li.addEventListener('click', () => this.openIdea(idea));
             }
 

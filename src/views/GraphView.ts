@@ -183,28 +183,16 @@ export class GraphView extends ItemView {
         // Create context menu
         const menu = document.createElement('div');
         menu.classList.add('ideatr-graph-context-menu');
-        menu.style.position = 'fixed';
-        menu.style.left = `${event.clientX}px`;
-        menu.style.top = `${event.clientY}px`;
-        menu.style.zIndex = '10000';
-        menu.style.backgroundColor = 'var(--background-primary)';
-        menu.style.border = '1px solid var(--background-modifier-border)';
-        menu.style.borderRadius = '4px';
-        menu.style.padding = '4px';
-        menu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        menu.setCssProps({
+            left: `${event.clientX}px`,
+            top: `${event.clientY}px`
+        });
 
         // Add "Open Idea" option
         const openBtn = menu.createEl('button', {
             text: 'Open Idea',
             cls: 'context-menu-item'
         });
-        openBtn.style.display = 'block';
-        openBtn.style.width = '100%';
-        openBtn.style.textAlign = 'left';
-        openBtn.style.padding = '6px 12px';
-        openBtn.style.border = 'none';
-        openBtn.style.background = 'transparent';
-        openBtn.style.cursor = 'pointer';
         openBtn.addEventListener('click', () => {
             this.openIdea(node.idea);
             menu.remove();
@@ -216,14 +204,6 @@ export class GraphView extends ItemView {
                 text: 'Elevate to Project',
                 cls: 'context-menu-item'
             });
-            elevateBtn.style.display = 'block';
-            elevateBtn.style.width = '100%';
-            elevateBtn.style.textAlign = 'left';
-            elevateBtn.style.padding = '6px 12px';
-            elevateBtn.style.border = 'none';
-            elevateBtn.style.background = 'transparent';
-            elevateBtn.style.cursor = 'pointer';
-            elevateBtn.style.borderTop = '1px solid var(--background-modifier-border)';
             elevateBtn.addEventListener('click', () => {
                 this.elevateIdea(node.idea);
                 menu.remove();

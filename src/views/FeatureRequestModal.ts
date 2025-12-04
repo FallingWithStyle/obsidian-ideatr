@@ -134,9 +134,7 @@ export class FeatureRequestModal extends Modal {
                     text: `${recentLogs.length} error log${recentLogs.length > 1 ? 's' : ''} available`,
                     cls: 'ideatr-help-text'
                 });
-                logCount.style.marginTop = '5px';
-                logCount.style.fontSize = '0.9em';
-                logCount.style.color = 'var(--text-muted)';
+                logCount.addClass('ideatr-log-count');
             }
         }
 
@@ -151,8 +149,7 @@ export class FeatureRequestModal extends Modal {
             },
             cls: 'ideatr-textarea'
         });
-        previewTextarea.style.fontFamily = 'var(--font-monospace)';
-        previewTextarea.style.fontSize = '0.9em';
+        previewTextarea.addClass('ideatr-preview-textarea');
 
         // Update preview when inputs change
         const updatePreview = () => {

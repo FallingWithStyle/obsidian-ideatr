@@ -57,9 +57,9 @@ export class ModelDownloadModal extends Modal {
 
         // Error/warning message (hidden initially)
         this.errorMessage = contentEl.createEl('div', {
-            cls: 'ideatr-error',
+            cls: 'ideatr-error ideatr-hidden',
             attr: {
-                style: 'display: none; margin-top: 10px;'
+                style: 'margin-top: 10px;'
             }
         });
 
