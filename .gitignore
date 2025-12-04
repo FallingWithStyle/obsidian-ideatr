@@ -3,6 +3,7 @@ node_modules
 main.js.map
 *.log
 coverage
+docs/
 .vscode
 .idea
 binaries/
