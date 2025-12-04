@@ -59,9 +59,9 @@ export class FeatureRequestModal extends Modal {
             attr: { id: 'ideatr-request-type' },
             cls: 'ideatr-select'
         });
-        typeSelect.createEl('option', { text: 'Feature Request', attr: { value: 'feature' } });
-        typeSelect.createEl('option', { text: 'Bug Report', attr: { value: 'bug' } });
-        typeSelect.createEl('option', { text: 'Performance Issue', attr: { value: 'performance' } });
+        typeSelect.createEl('option', { text: 'Feature request', attr: { value: 'feature' } });
+        typeSelect.createEl('option', { text: 'Bug report', attr: { value: 'bug' } });
+        typeSelect.createEl('option', { text: 'Performance issue', attr: { value: 'performance' } });
         typeSelect.value = this.requestType;
         typeSelect.addEventListener('change', (e) => {
             this.requestType = (e.target as HTMLSelectElement).value as RequestType;
@@ -180,14 +180,14 @@ export class FeatureRequestModal extends Modal {
 
         // Open email button
         const emailButton = buttonContainer.createEl('button', {
-            text: 'Open Email',
+            text: 'Open email',
             cls: 'mod-cta'
         });
         emailButton.addEventListener('click', () => this.handleOpenEmail());
 
         // Open GitHub issue button
         const githubButton = buttonContainer.createEl('button', {
-            text: 'Open GitHub Issue',
+            text: 'Open GitHub issue',
             cls: 'mod-cta'
         });
         githubButton.addEventListener('click', () => this.handleOpenGitHub());

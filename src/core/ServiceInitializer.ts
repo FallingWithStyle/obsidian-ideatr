@@ -1,4 +1,4 @@
-import * as path from 'path';
+import { joinPath, resolvePath, isAbsolutePath } from '../utils/pathUtils';
 import { App, Notice } from 'obsidian';
 import type IdeatrPlugin from '../main';
 import type { IdeatrSettings } from '../settings';
@@ -203,10 +203,10 @@ export class ServiceInitializer {
     ): Promise<{ localLLMService: LlamaService; llmService: ILLMService }> {
         // Initialize local LLM using singleton pattern
         const vaultBasePath = (app.vault.adapter as any).basePath || app.vault.configDir;
-        const configDir = path.isAbsolute(app.vault.configDir)
+        const configDir = isAbsolutePath(app.vault.configDir)
             ? app.vault.configDir
-            : path.join(vaultBasePath, app.vault.configDir);
-        const pluginDir = path.resolve(path.join(configDir, 'plugins', plugin.manifest.id));
+            : joinPath(vaultBasePath, app.vault.configDir);
+        const pluginDir = resolvePath(joinPath(configDir, 'plugins', plugin.manifest.id));
         Logger.debug('Plugin directory:', pluginDir);
 
         // Use singleton getInstance instead of new to ensure only one instance

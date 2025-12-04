@@ -76,7 +76,7 @@ export interface IFrontmatterParser {
      * @param frontmatter - Frontmatter object to validate
      * @returns True if valid, false otherwise
      */
-    validateFrontmatter(frontmatter: any): boolean;
+    validateFrontmatter(frontmatter: Record<string, unknown>): boolean;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 
@@ -16,8 +16,8 @@ export class ArchiveCommand extends IdeaFileCommand {
     }
 
     protected async executeWithFile(
-        file: any,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        file: TFile,
+        content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         if (this.isArchive) {
             // Update status to archived

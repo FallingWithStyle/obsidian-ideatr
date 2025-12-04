@@ -2,7 +2,7 @@
  * Modal for displaying mutation generation errors with retry functionality
  */
 
-import { Modal, Notice } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 
 export interface MutationErrorDetails {
     message: string;
@@ -16,7 +16,7 @@ export class MutationErrorModal extends Modal {
     private onRetry?: () => Promise<void>;
 
     constructor(
-        app: any,
+        app: App,
         errorDetails: MutationErrorDetails,
         onRetry?: () => Promise<void>
     ) {

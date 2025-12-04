@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { StatusPickerModal, type IdeaStatus } from '../../views/StatusPickerModal';
@@ -17,8 +17,8 @@ export class StatusCommand extends IdeaFileCommand {
     }
 
     protected async executeWithFile(
-        file: any,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        file: TFile,
+        content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         const currentStatusStr = (content.frontmatter.status as string) || 'captured';
 

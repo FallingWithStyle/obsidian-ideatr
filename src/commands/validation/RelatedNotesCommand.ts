@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { RelatedNotesModal } from '../../views/RelatedNotesModal';
@@ -17,8 +17,8 @@ export class RelatedNotesCommand extends IdeaFileCommand {
     }
 
     protected async executeWithFile(
-        file: any,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        file: TFile,
+        content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         new Notice('Finding related notes...');
         const relatedNotes = await this.context.searchService.findRelatedNotes(content.ideaText, 10);

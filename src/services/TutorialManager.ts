@@ -1,6 +1,6 @@
 import { App, TFile, TFolder, Notice } from 'obsidian';
 import * as fs from 'fs';
-import * as path from 'path';
+import { joinPath } from '../utils/pathUtils';
 
 /**
  * Service for managing tutorial files (copy, delete, reset)
@@ -47,13 +47,13 @@ export class TutorialManager {
         
         // Try to read from plugin directory first
         if (this.pluginDir) {
-            const tutorialDir = path.join(this.pluginDir, 'tutorials');
+            const tutorialDir = joinPath(this.pluginDir, 'tutorials');
             try {
                 if (fs.existsSync(tutorialDir) && fs.statSync(tutorialDir).isDirectory()) {
                     const files = fs.readdirSync(tutorialDir);
                     for (const file of files) {
                         if (file.endsWith('.md')) {
-                            const filePath = path.join(tutorialDir, file);
+                            const filePath = joinPath(tutorialDir, file);
                             try {
                                 const content = fs.readFileSync(filePath, 'utf-8');
                                 tutorials.set(file, content);

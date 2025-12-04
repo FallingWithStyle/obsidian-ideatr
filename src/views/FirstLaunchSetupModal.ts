@@ -32,7 +32,7 @@ export class FirstLaunchSetupModal extends Modal {
         contentEl.addClass('ideatr-setup-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Manage AI Models' });
+        contentEl.createEl('h2', { text: 'Manage AI models' });
         contentEl.createEl('p', {
             text: 'Choose how you want to use AI for idea enhancement:',
             cls: 'ideatr-setup-description'
@@ -40,7 +40,7 @@ export class FirstLaunchSetupModal extends Modal {
 
         // Option 1: Download AI Model
         const downloadOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
-        downloadOption.createEl('h3', { text: 'Download AI Model' });
+        downloadOption.createEl('h3', { text: 'Download AI model' });
         // Use smallest model as default for display
         const defaultModelManager = new ModelManager('phi-3.5-mini');
         const modelConfig = defaultModelManager.getModelConfig();
@@ -63,7 +63,7 @@ export class FirstLaunchSetupModal extends Modal {
 
         // Option 2: Use API Key
         const apiKeyOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
-        apiKeyOption.createEl('h3', { text: 'Use My API Key' });
+        apiKeyOption.createEl('h3', { text: 'Use my API key' });
         apiKeyOption.createEl('p', {
             text: 'Use a cloud AI provider (Anthropic, OpenAI, etc.) for better quality and faster responses.'
         });
@@ -75,7 +75,7 @@ export class FirstLaunchSetupModal extends Modal {
         apiFeaturesList.createEl('li', { text: '✅ No local storage needed' });
         apiFeaturesList.createEl('li', { text: '⚠️ Requires API key (paid)' });
         const apiKeyButton = apiKeyOption.createEl('button', {
-            text: 'Enter API Key',
+            text: 'Enter API key',
             cls: 'mod-cta'
         });
         apiKeyButton.addEventListener('click', () => this.handleApiKeyOption());
@@ -87,7 +87,7 @@ export class FirstLaunchSetupModal extends Modal {
             text: 'Continue without AI. You can set up AI later in settings.'
         });
         const skipButton = skipOption.createEl('button', {
-            text: 'Skip Setup',
+            text: 'Skip setup',
             cls: 'mod-cancel'
         });
         skipButton.addEventListener('click', () => this.handleSkipOption());
@@ -95,7 +95,7 @@ export class FirstLaunchSetupModal extends Modal {
 
     private async handleDownloadOption(): Promise<void> {
         this.contentEl.empty();
-        this.contentEl.createEl('h2', { text: 'Choose AI Model' });
+        this.contentEl.createEl('h2', { text: 'Choose AI model' });
         this.contentEl.createEl('p', {
             text: 'Select which model to download. You can change this later in settings.',
             cls: 'model-selection-intro'
@@ -234,7 +234,7 @@ export class FirstLaunchSetupModal extends Modal {
         contentEl.addClass('ideatr-setup-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Enter API Key' });
+        contentEl.createEl('h2', { text: 'Enter API key' });
         contentEl.createEl('p', {
             text: 'Enter your API key for a cloud AI provider. You can configure this later in settings.',
             cls: 'ideatr-setup-description'

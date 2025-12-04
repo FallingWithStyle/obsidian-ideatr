@@ -3,7 +3,7 @@
  * QA Issue #6: Enhance show-idea-stats UI
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { IdeaFrontmatter } from '../types/idea';
 
 export interface IdeaStats {
@@ -22,7 +22,7 @@ export class IdeaStatsModal extends Modal {
     private stats: IdeaStats;
 
     constructor(
-        app: any,
+        app: App,
         stats: IdeaStats
     ) {
         super(app);
@@ -118,7 +118,7 @@ export class IdeaStatsModal extends Modal {
                 relatedSection.style.marginBottom = '10px';
 
                 relatedSection.createEl('h4', { 
-                    text: 'Related Notes',
+                    text: 'Related notes',
                     attr: { style: 'margin-bottom: 10px;' }
                 });
 

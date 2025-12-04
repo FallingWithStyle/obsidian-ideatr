@@ -5,8 +5,8 @@ import { execSync } from 'child_process';
 import { Notice, requestUrl } from 'obsidian';
 // @ts-ignore - MODELS will be used for chat template support
 import { ModelManager, MODELS } from './ModelManager';
-import * as path from 'path';
-import * as os from 'os';
+import { joinPath } from '../utils/pathUtils';
+import { getPlatform, getArch } from '../utils/platformUtils';
 import * as fs from 'fs';
 import { extractAndRepairJSON } from '../utils/jsonRepair';
 import { Logger } from '../utils/logger';
@@ -226,9 +226,9 @@ export class LlamaService implements ILLMService {
 
         // Check for bundled binary (primary path)
         if (this.pluginDir) {
-            const platformKey = `${os.platform()}-${os.arch()}`;
-            const binaryName = os.platform() === 'win32' ? 'llama-server.exe' : 'llama-server';
-            const bundledBinaryPath = path.join(this.pluginDir, 'binaries', platformKey, binaryName);
+            const platformKey = `${getPlatform()}-${getArch()}`;
+            const binaryName = getPlatform() === 'win32' ? 'llama-server.exe' : 'llama-server';
+            const bundledBinaryPath = joinPath(this.pluginDir, 'binaries', platformKey, binaryName);
 
             try {
                 if (fs.existsSync(bundledBinaryPath)) {
@@ -321,7 +321,9 @@ export class LlamaService implements ILLMService {
                 Logger.debug(`Exact filename not found: ${modelConfig.fileName}`);
                 Logger.debug('Searching for similar model files...');
 
-                const modelDir = path.dirname(defaultPath);
+                // Extract directory from path (simple dirname replacement)
+                const lastSlash = defaultPath.lastIndexOf('/');
+                const modelDir = lastSlash >= 0 ? defaultPath.substring(0, lastSlash) : '.';
                 if (fs.existsSync(modelDir)) {
                     const files = fs.readdirSync(modelDir);
                     const ggufFiles = files.filter(f => f.endsWith('.gguf'));
@@ -343,7 +345,7 @@ export class LlamaService implements ILLMService {
                         );
 
                         if (matchesName || matchesKey) {
-                            const foundPath = path.join(modelDir, file);
+                            const foundPath = joinPath(modelDir, file);
                             Logger.debug(`Found matching model file: ${file}`);
                             Logger.debug('Using:', foundPath);
                             Logger.warn(`Using model file "${file}" instead of expected "${modelConfig.fileName}"`);
@@ -438,7 +440,7 @@ export class LlamaService implements ILLMService {
         }
 
         // Check if binary is executable (Unix-like systems)
-        if (os.platform() !== 'win32') {
+        if (getPlatform() !== 'win32') {
             try {
                 fs.accessSync(binaryPath, fs.constants.X_OK);
             } catch {

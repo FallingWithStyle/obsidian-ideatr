@@ -222,7 +222,7 @@ export class FrontmatterParser implements IFrontmatterParser {
      * @param frontmatter - Frontmatter object to validate
      * @returns True if valid, false otherwise
      */
-    validateFrontmatter(frontmatter: any): boolean {
+    validateFrontmatter(frontmatter: Record<string, unknown>): boolean {
         // Check required fields
         if (!frontmatter.type || frontmatter.type !== 'idea') {
             return false;

@@ -19,7 +19,7 @@ export class GuidedIdeationService {
     async analyzeIntent(
         userPrompt: string,
         noteContent: string,
-        frontmatter: any
+        frontmatter: Record<string, unknown>
     ): Promise<TransformationPlan> {
         const prompt = this.buildIntentAnalysisPrompt(userPrompt, noteContent, frontmatter);
 
@@ -58,7 +58,7 @@ export class GuidedIdeationService {
         userPrompt: string,
         transformationPlan: TransformationPlan,
         noteContent: string,
-        frontmatter: any,
+        frontmatter: Record<string, unknown>,
         _body: string,
         currentFilename?: string
     ): Promise<TransformationResult> {
@@ -94,7 +94,7 @@ export class GuidedIdeationService {
     private buildIntentAnalysisPrompt(
         userPrompt: string,
         noteContent: string,
-        frontmatter: any
+        frontmatter: Record<string, unknown>
     ): string {
         const frontmatterStr = JSON.stringify(frontmatter, null, 2);
         const contentPreview = noteContent.substring(0, 2000); // Limit content size
@@ -144,7 +144,7 @@ Response: {`;
         userPrompt: string,
         transformationPlan: TransformationPlan,
         noteContent: string,
-        frontmatter: any,
+        frontmatter: Record<string, unknown>,
         currentFilename?: string
     ): string {
         const frontmatterStr = JSON.stringify(frontmatter, null, 2);
@@ -318,7 +318,11 @@ Response: {`;
             'restructure',
             'custom'
         ];
-        return validIntents.includes(intent as any) ? (intent as TransformationPlan['intent']) : 'custom';
+        // Type guard: check if intent is a valid TransformationPlan intent
+        if (validIntents.includes(intent as TransformationPlan['intent'])) {
+            return intent as TransformationPlan['intent'];
+        }
+        return 'custom';
     }
 
     /**

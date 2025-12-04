@@ -59,7 +59,7 @@ export class ProjectElevationSettingsSection extends BaseSettingsSection {
         
         // Build help text safely (prevents XSS from settings values)
         const projectsDir = this.plugin.settings.elevationProjectsDirectory || 'Projects';
-        elevationHelp.createEl('strong', { text: 'About Project Elevation:' });
+        elevationHelp.createEl('strong', { text: 'About project elevation:' });
         elevationHelp.createEl('br');
         elevationHelp.createEl('span', { 
             text: `Elevating an idea moves it from the Ideas/ directory to a project folder structure in ${projectsDir}/. The original idea file becomes the project's README.md, and default folders are created automatically.` 

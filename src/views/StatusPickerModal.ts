@@ -2,7 +2,7 @@
  * Modal for picking idea status
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 
 export type IdeaStatus = 'captured' | 'validated' | 'promoted' | 'archived';
 
@@ -12,7 +12,7 @@ export class StatusPickerModal extends Modal {
     private selectedStatus: IdeaStatus | null = null;
 
     constructor(
-        app: any,
+        app: App,
         currentStatus: string,
         onSelect?: (status: IdeaStatus) => void
     ) {

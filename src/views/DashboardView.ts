@@ -220,7 +220,7 @@ export class DashboardView extends ItemView {
         });
 
         // Clear filters button
-        const clearBtn = container.createEl('button', { text: 'Clear Filters' });
+        const clearBtn = container.createEl('button', { text: 'Clear filters' });
         clearBtn.addEventListener('click', () => {
             this.filters = {};
             searchInput.value = '';
@@ -399,8 +399,8 @@ export class DashboardView extends ItemView {
         }
 
         this.filteredIdeas.sort((a, b) => {
-            let aVal: any;
-            let bVal: any;
+            let aVal: number | string;
+            let bVal: number | string;
 
             switch (column) {
                 case 'created':
@@ -599,7 +599,7 @@ export class DashboardView extends ItemView {
                 });
             }
 
-            const openGraphBtn = container.createEl('button', { text: 'Open Full Graph' });
+            const openGraphBtn = container.createEl('button', { text: 'Open full graph' });
             openGraphBtn.addEventListener('click', () => {
                 this.app.workspace.getLeaf(false).setViewState({
                     type: 'ideatr-graph',
@@ -648,7 +648,7 @@ export class DashboardView extends ItemView {
                 ideasList.createEl('li', { text: `... and ${oldIdeas.length - 5} more` });
             }
 
-            const generateDigestBtn = container.createEl('button', { text: 'Generate Digest' });
+            const generateDigestBtn = container.createEl('button', { text: 'Generate digest' });
             generateDigestBtn.addEventListener('click', async () => {
                 try {
                     const digest = await this.resurfacingService!.generateDigest();

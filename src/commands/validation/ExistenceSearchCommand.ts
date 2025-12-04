@@ -1,4 +1,5 @@
-import { Notice } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
+import type { IdeaCategory } from '../../types/classification';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 
@@ -16,8 +17,8 @@ export class ExistenceSearchCommand extends IdeaFileCommand {
     }
 
     protected async executeWithFile(
-        file: any,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        file: TFile,
+        content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         if (!this.checkServiceAvailability(this.context.webSearchService, 'Web search')) {
             return;
@@ -25,7 +26,7 @@ export class ExistenceSearchCommand extends IdeaFileCommand {
 
         const category = content.frontmatter.category || '';
         new Notice('Searching for similar ideas...');
-        const results = await this.context.webSearchService.search(content.ideaText, category as any);
+        const results = await this.context.webSearchService.search(content.ideaText, category as IdeaCategory | undefined);
 
         if (results.length === 0) {
             new Notice('No similar ideas found.');

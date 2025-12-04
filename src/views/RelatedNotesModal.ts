@@ -2,7 +2,7 @@
  * Modal for displaying related notes with selection
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { RelatedNote } from '../types/classification';
 
 export class RelatedNotesModal extends Modal {
@@ -12,7 +12,7 @@ export class RelatedNotesModal extends Modal {
     private selected: Set<string> = new Set();
 
     constructor(
-        app: any,
+        app: App,
         relatedNotes: RelatedNote[],
         existingRelated: string[],
         onSelect?: (selected: RelatedNote[]) => void
@@ -27,7 +27,7 @@ export class RelatedNotesModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Related Notes' });
+        contentEl.createEl('h2', { text: 'Related notes' });
 
         const description = contentEl.createEl('p', {
             text: `Found ${this.relatedNotes.length} related note${this.relatedNotes.length > 1 ? 's' : ''}. Select which ones to link in frontmatter:`
@@ -83,7 +83,7 @@ export class RelatedNotesModal extends Modal {
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         
         const linkButton = buttonContainer.createEl('button', {
-            text: 'Link Selected',
+            text: 'Link selected',
             cls: 'mod-cta'
         });
         linkButton.addEventListener('click', () => {

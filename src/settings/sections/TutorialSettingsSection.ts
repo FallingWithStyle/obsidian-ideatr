@@ -1,22 +1,22 @@
-import { Setting } from 'obsidian';
+import { App, PluginSettingTab, Setting } from 'obsidian';
 import { BaseSettingsSection } from '../components/SettingsSection';
 import { TutorialManager } from '../../services/TutorialManager';
 import type IdeatrPlugin from '../../main';
-import * as path from 'path';
+import { joinPath, resolvePath, isAbsolutePath } from '../../utils/pathUtils';
 import { showConfirmation } from '../../utils/confirmation';
 
 export class TutorialSettingsSection extends BaseSettingsSection {
     private tutorialManager: TutorialManager;
 
-    constructor(app: any, plugin: IdeatrPlugin, settingsTab?: any) {
+    constructor(app: App, plugin: IdeatrPlugin, settingsTab?: PluginSettingTab) {
         super(app, plugin, settingsTab);
         
         // Get plugin directory for tutorial manager (same approach as ServiceInitializer)
         const vaultBasePath = (app.vault.adapter as any).basePath || app.vault.configDir;
-        const configDir = path.isAbsolute(app.vault.configDir) 
-            ? app.vault.configDir 
-            : path.join(vaultBasePath, app.vault.configDir);
-        const pluginDir = path.resolve(path.join(configDir, 'plugins', plugin.manifest.id));
+        const configDir = isAbsolutePath(app.vault.configDir) 
+            ? app.vault.configDir
+            : joinPath(vaultBasePath, app.vault.configDir);
+        const pluginDir = resolvePath(joinPath(configDir, 'plugins', plugin.manifest.id));
         
         this.tutorialManager = new TutorialManager(app, pluginDir);
     }

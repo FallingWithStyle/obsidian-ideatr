@@ -197,7 +197,7 @@ export class CaptureModal extends Modal {
         // Show "Classify Now" button if AI is not configured and setup is not completed
         if (!this.settings.setupCompleted && !this.classificationService.isAvailable()) {
             const classifyButton = buttonGroup.createEl('button', {
-                text: 'Classify Now',
+                text: 'Classify now',
                 cls: 'mod-cta'
             });
             classifyButton.addEventListener('click', () => this.handleClassifyNow());

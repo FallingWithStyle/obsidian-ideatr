@@ -3,7 +3,7 @@
  * Improves import functionality UX
  */
 
-import { SuggestModal } from 'obsidian';
+import { App, SuggestModal } from 'obsidian';
 import type { TFile } from 'obsidian';
 
 export class ImportFilePickerModal extends SuggestModal<TFile> {
@@ -11,7 +11,7 @@ export class ImportFilePickerModal extends SuggestModal<TFile> {
     private allowedExtensions: string[];
 
     constructor(
-        app: any,
+        app: App,
         allowedExtensions: string[] = ['json', 'csv', 'md'],
         onSelect: (file: TFile) => void
     ) {

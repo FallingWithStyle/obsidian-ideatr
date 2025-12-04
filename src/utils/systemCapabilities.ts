@@ -1,6 +1,6 @@
-import * as os from 'os';
 import { MODELS } from '../services/ModelManager';
 import { Logger } from './logger';
+import { getPlatform, getArch } from './platformUtils';
 
 /**
  * System capabilities information
@@ -14,18 +14,22 @@ export interface SystemCapabilities {
 
 /**
  * Get system capabilities (RAM, platform, etc.)
+ * Note: RAM information is not available in Obsidian's API
+ * This function provides platform/arch info, but RAM will be 0
+ * For RAM checks, consider making them optional or using heuristics
  */
 export function getSystemCapabilities(): SystemCapabilities {
-    const totalBytes = os.totalmem();
-    const freeBytes = os.freemem();
-    const totalRAMGB = totalBytes / (1024 * 1024 * 1024);
-    const availableRAMGB = freeBytes / (1024 * 1024 * 1024);
+    // RAM information is not available in Obsidian's API
+    // We'll return 0 as a placeholder - callers should handle this gracefully
+    // In practice, RAM checks might need to be optional or use different approaches
+    const totalRAMGB = 0;
+    const availableRAMGB = 0;
 
     return {
         totalRAMGB,
         availableRAMGB,
-        platform: os.platform(),
-        arch: os.arch()
+        platform: getPlatform(),
+        arch: getArch()
     };
 }
 
@@ -60,6 +64,18 @@ export function checkModelCompatibility(
     const systemInfo = capabilities || getSystemCapabilities();
     const requiredRAM = parseRAMRequirement(modelConfig.ram);
     const totalRAM = systemInfo.totalRAMGB;
+
+    // If RAM info is not available (0), skip RAM checks
+    // This happens when os module is not available (Obsidian environment)
+    if (totalRAM === 0) {
+        // RAM information not available - can't perform compatibility check
+        // Return compatible but with a note that RAM requirements should be considered
+        return {
+            isCompatible: true,
+            warning: `This model requires ${modelConfig.ram} RAM. Please ensure your system meets this requirement.`,
+            recommendation: `Check your system's available RAM before downloading large models.`
+        };
+    }
 
     // If model requires more RAM than system has, warn
     if (requiredRAM > totalRAM) {
@@ -100,6 +116,9 @@ export function isAppleSilicon(): boolean {
  */
 export function getSystemInfoString(): string {
     const caps = getSystemCapabilities();
-    return `System: ${caps.platform} ${caps.arch}, ${caps.totalRAMGB.toFixed(1)}GB total RAM`;
+    if (caps.totalRAMGB > 0) {
+        return `System: ${caps.platform} ${caps.arch}, ${caps.totalRAMGB.toFixed(1)}GB total RAM`;
+    }
+    return `System: ${caps.platform} ${caps.arch}`;
 }
 

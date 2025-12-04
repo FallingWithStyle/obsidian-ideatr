@@ -40,7 +40,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
      */
     protected abstract executeWithFile(
         file: TFile,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void>;
 
     /**
@@ -68,7 +68,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
     /**
      * Read idea content and parse frontmatter
      */
-    protected async readIdeaContent(file: TFile): Promise<{ frontmatter: any; body: string; content: string }> {
+    protected async readIdeaContent(file: TFile): Promise<{ frontmatter: Record<string, unknown>; body: string; content: string }> {
         const content = await this.context.app.vault.read(file);
         const parsed = this.context.frontmatterParser.parse(content);
         return {

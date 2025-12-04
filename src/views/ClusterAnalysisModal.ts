@@ -3,7 +3,7 @@
  * QA Issue #5: Enhance analyze-idea-cluster UI
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { IdeaFile } from '../types/idea';
 
 export interface ClusterInfo {
@@ -24,7 +24,7 @@ export class ClusterAnalysisModal extends Modal {
     private onOpenIdea?: (path: string) => void;
 
     constructor(
-        app: any,
+        app: App,
         cluster: ClusterInfo,
         onOpenIdea?: (path: string) => void
     ) {
@@ -89,7 +89,7 @@ export class ClusterAnalysisModal extends Modal {
             tagsSection.style.marginBottom = '20px';
 
             tagsSection.createEl('h4', { 
-                text: 'Common Tags',
+                text: 'Common tags',
                 attr: { style: 'margin-bottom: 10px;' }
             });
 
@@ -113,7 +113,7 @@ export class ClusterAnalysisModal extends Modal {
             themesSection.style.marginBottom = '20px';
 
             themesSection.createEl('h4', { 
-                text: 'Common Themes',
+                text: 'Common themes',
                 attr: { style: 'margin-bottom: 10px;' }
             });
 
@@ -131,7 +131,7 @@ export class ClusterAnalysisModal extends Modal {
         membersSection.style.marginBottom = '20px';
 
         membersSection.createEl('h4', { 
-            text: 'Cluster Members',
+            text: 'Cluster members',
             attr: { style: 'margin-bottom: 10px;' }
         });
 
@@ -179,7 +179,7 @@ export class ClusterAnalysisModal extends Modal {
             relatedSection.style.marginBottom = '20px';
 
             relatedSection.createEl('h4', { 
-                text: 'Related Clusters',
+                text: 'Related clusters',
                 attr: { style: 'margin-bottom: 10px;' }
             });
 

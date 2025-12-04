@@ -17,7 +17,7 @@ import { createModelStatusIndicator } from './utils/ModelStatusIndicator';
 import { MemoryMonitor } from './utils/MemoryMonitor';
 import { IDEATR_ICON_ID, IDEATR_ICON_GREEN, IDEATR_ICON_YELLOW, IDEATR_ICON_RED, createPNGIconSVG } from './utils/iconUtils';
 import { PURPLE_ICON_BASE64, GREEN_ICON_BASE64, YELLOW_ICON_BASE64, RED_ICON_BASE64 } from './utils/iconData';
-import * as path from 'path';
+import { joinPath, resolvePath, isAbsolutePath } from './utils/pathUtils';
 
 /**
  * Ideatr Plugin - Fast idea capture with intelligent classification
@@ -30,7 +30,7 @@ export default class IdeatrPlugin extends Plugin {
     private statusBarItem!: HTMLElement;
     private statusUpdateInterval?: number;
     private memoryMonitor?: MemoryMonitor;
-    private unhandledRejectionHandler?: (reason: any, promise: Promise<any>) => void;
+    private unhandledRejectionHandler?: (reason: unknown, promise: Promise<unknown>) => void;
     private uncaughtExceptionHandler?: (error: Error) => void;
     private exitHandler?: () => void;
     private sigintHandler?: () => void;
@@ -50,7 +50,7 @@ export default class IdeatrPlugin extends Plugin {
 
         // Global error handlers for leak detection
         // Store handler references so they can be removed in onunload()
-        this.unhandledRejectionHandler = (reason: any, promise: Promise<any>) => {
+        this.unhandledRejectionHandler = (reason: unknown, promise: Promise<unknown>) => {
             console.error('Ideatr: Unhandled Rejection at:', promise, 'reason:', reason);
             Logger.error('Unhandled Rejection:', reason);
         };
@@ -410,10 +410,10 @@ export default class IdeatrPlugin extends Plugin {
         try {
             // Get plugin directory
             const vaultBasePath = (this.app.vault.adapter as any).basePath || this.app.vault.configDir;
-            const configDir = path.isAbsolute(this.app.vault.configDir)
+            const configDir = isAbsolutePath(this.app.vault.configDir)
                 ? this.app.vault.configDir
-                : path.join(vaultBasePath, this.app.vault.configDir);
-            const pluginDir = path.resolve(path.join(configDir, 'plugins', this.manifest.id));
+                : joinPath(vaultBasePath, this.app.vault.configDir);
+            const pluginDir = resolvePath(joinPath(configDir, 'plugins', this.manifest.id));
 
             const tutorialManager = new TutorialManager(this.app, pluginDir);
 

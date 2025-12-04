@@ -4,6 +4,7 @@ import { CommandContext } from '../base/CommandContext';
 import { GuidedIdeationService } from '../../services/GuidedIdeationService';
 import { GuidedIdeationModal } from '../../views/GuidedIdeationModal';
 import { Logger } from '../../utils/logger';
+import type { TransformationResult, TransformationPlan } from '../../types/transformation';
 
 /**
  * Command: Transform
@@ -23,7 +24,7 @@ export class GuidedIdeationCommand extends IdeaFileCommand {
 
     protected async executeWithFile(
         file: TFile,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         if (!this.checkLLMAvailability()) {
             return;
@@ -48,9 +49,9 @@ export class GuidedIdeationCommand extends IdeaFileCommand {
      */
     private async applyTransformation(
         file: TFile,
-        result: any,
-        plan: any,
-        originalContent: { frontmatter: any; body: string; content: string; ideaText: string }
+        result: TransformationResult,
+        plan: TransformationPlan,
+        originalContent: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         try {
             // Create backup

@@ -4,7 +4,7 @@ import { createHotkeyPicker } from '../../utils/hotkeyPicker';
 
 export class CaptureModalSettingsSection extends BaseSettingsSection {
     display(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'Capture Modal Shortcuts' });
+        containerEl.createEl('h3', { text: 'Capture modal shortcuts' });
 
         // Capture Idea Hotkey
         new Setting(containerEl)

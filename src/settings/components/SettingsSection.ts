@@ -1,4 +1,5 @@
 // HTMLElement is a global DOM type, no import needed
+import { App, PluginSettingTab } from 'obsidian';
 import type IdeatrPlugin from '../../main';
 
 /**
@@ -12,12 +13,12 @@ export interface SettingsSection {
  * Base class for settings sections
  */
 export abstract class BaseSettingsSection implements SettingsSection {
-    protected settingsTab?: any;
+    protected settingsTab?: PluginSettingTab;
 
     constructor(
-        protected app: any,
+        protected app: App,
         protected plugin: IdeatrPlugin,
-        settingsTab?: any
+        settingsTab?: PluginSettingTab
     ) {
         this.settingsTab = settingsTab;
     }

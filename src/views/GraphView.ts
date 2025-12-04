@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
-import type { IClusteringService, IGraphLayoutService, IProjectElevationService } from '../types/management';
+import type { IClusteringService, IGraphLayoutService, IProjectElevationService, GraphLayout, GraphNode } from '../types/management';
 import type { IIdeaRepository } from '../types/management';
 import type { IdeaFile } from '../types/idea';
 import { ManagementError, getManagementErrorMessage } from '../types/management';
@@ -18,7 +18,7 @@ export class GraphView extends ItemView {
     private projectElevationService?: IProjectElevationService;
     private ideas: IdeaFile[] = [];
     private isLoading: boolean = false;
-    private currentLayout: any = null; // Store current layout for node lookups
+    private currentLayout: GraphLayout | null = null; // Store current layout for node lookups
 
     constructor(
         leaf: WorkspaceLeaf,
@@ -171,7 +171,7 @@ export class GraphView extends ItemView {
     private showNodeContextMenu(nodeId: string, event: MouseEvent): void {
         if (!this.currentLayout) return;
 
-        const node = this.currentLayout.nodes.find((n: any) => n.id === nodeId);
+        const node = this.currentLayout.nodes.find((n: GraphNode) => n.id === nodeId);
         if (!node) return;
 
         // Remove any existing context menu
@@ -190,7 +190,7 @@ export class GraphView extends ItemView {
 
         // Add "Open Idea" option
         const openBtn = menu.createEl('button', {
-            text: 'Open Idea',
+            text: 'Open idea',
             cls: 'context-menu-item'
         });
         openBtn.addEventListener('click', () => {
@@ -201,7 +201,7 @@ export class GraphView extends ItemView {
         // Add "Elevate to Project" option (if service available and idea can be elevated)
         if (this.projectElevationService && this.projectElevationService.canElevate(node.idea)) {
             const elevateBtn = menu.createEl('button', {
-                text: 'Elevate to Project',
+                text: 'Elevate to project',
                 cls: 'context-menu-item'
             });
             elevateBtn.addEventListener('click', () => {

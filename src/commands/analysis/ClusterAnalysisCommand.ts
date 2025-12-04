@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { ClusterAnalysisModal, type ClusterInfo } from '../../views/ClusterAnalysisModal';
@@ -21,8 +21,8 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
     }
 
     protected async executeWithFile(
-        file: any,
-        _content: { frontmatter: any; body: string; content: string; ideaText: string }
+        file: TFile,
+        _content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         if (!this.context.clusteringService) {
             new Notice('Clustering service is not available.');

@@ -2,7 +2,7 @@
  * Modal for previewing expanded idea content
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { ExpansionResult } from '../types/transformation';
 
 export class ExpansionPreviewModal extends Modal {
@@ -10,7 +10,7 @@ export class ExpansionPreviewModal extends Modal {
     private onAction?: (action: 'append' | 'replace') => void;
 
     constructor(
-        app: any,
+        app: App,
         expansion: ExpansionResult,
         onAction?: (action: 'append' | 'replace') => void
     ) {
@@ -57,7 +57,7 @@ export class ExpansionPreviewModal extends Modal {
         });
 
         const replaceButton = buttonContainer.createEl('button', {
-            text: 'Replace Content'
+            text: 'Replace content'
         });
         replaceButton.addEventListener('click', () => {
             if (this.onAction) {

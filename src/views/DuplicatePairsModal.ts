@@ -3,7 +3,7 @@
  * QA Issue #3: Complete find-all-duplicates UI
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { TFile } from 'obsidian';
 
 export interface DuplicatePair {
@@ -23,7 +23,7 @@ export class DuplicatePairsModal extends Modal {
     private onMerge?: (pair: DuplicatePair) => void;
 
     constructor(
-        app: any,
+        app: App,
         pairs: DuplicatePair[],
         options?: {
             onBulkAction?: (pairs: DuplicatePair[], action: BulkAction) => void;
@@ -144,7 +144,7 @@ export class DuplicatePairsModal extends Modal {
         bulkSection.style.borderTop = '1px solid var(--background-modifier-border)';
 
         bulkSection.createEl('h3', { 
-            text: 'Bulk Actions',
+            text: 'Bulk actions',
             attr: { style: 'margin-bottom: 10px;' }
         });
 
@@ -158,7 +158,7 @@ export class DuplicatePairsModal extends Modal {
         bulkButtonContainer.style.gap = '10px';
 
         const bulkLinkButton = bulkButtonContainer.createEl('button', {
-            text: 'Link Selected',
+            text: 'Link selected',
             cls: 'mod-cta'
         });
         bulkLinkButton.addEventListener('click', () => {
@@ -169,7 +169,7 @@ export class DuplicatePairsModal extends Modal {
         });
 
         const bulkArchiveButton = bulkButtonContainer.createEl('button', {
-            text: 'Archive Selected'
+            text: 'Archive selected'
         });
         bulkArchiveButton.addEventListener('click', () => {
             const selectedPairs = this.pairs.filter((_, i) => this.selected.has(i));
@@ -179,7 +179,7 @@ export class DuplicatePairsModal extends Modal {
         });
 
         const bulkMergeButton = bulkButtonContainer.createEl('button', {
-            text: 'Merge Selected'
+            text: 'Merge selected'
         });
         bulkMergeButton.addEventListener('click', () => {
             const selectedPairs = this.pairs.filter((_, i) => this.selected.has(i));

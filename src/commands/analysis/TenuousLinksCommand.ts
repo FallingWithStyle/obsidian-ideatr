@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { TenuousLinksModal } from '../../views/TenuousLinksModal';
@@ -17,8 +17,8 @@ export class TenuousLinksCommand extends IdeaFileCommand {
     }
 
     protected async executeWithFile(
-        file: any,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        file: TFile,
+        content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         if (!this.context.tenuousLinkService) {
             new Notice('Tenuous link service is not available.');

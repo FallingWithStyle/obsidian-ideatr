@@ -1,9 +1,10 @@
-import { Notice } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import type { DomainCheckResult } from '../../types/domain';
 import type { SearchResult } from '../../types/search';
 import type { DuplicateCheckResult } from '../../types/classification';
+import type { IdeaCategory } from '../../types/classification';
 
 /**
  * Command: quick-validate
@@ -19,8 +20,8 @@ export class QuickValidateCommand extends IdeaFileCommand {
     }
 
     protected async executeWithFile(
-        file: any,
-        content: { frontmatter: any; body: string; content: string; ideaText: string }
+        file: TFile,
+        content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         new Notice('Running all validations...');
 
@@ -31,7 +32,7 @@ export class QuickValidateCommand extends IdeaFileCommand {
                 return [] as DomainCheckResult[];
             }),
             this.context.webSearchService.isAvailable() 
-                ? this.context.webSearchService.search(content.ideaText, content.frontmatter.category as any).catch(e => {
+                ? this.context.webSearchService.search(content.ideaText, content.frontmatter.category as IdeaCategory | undefined).catch(e => {
                     console.error('Web search failed:', e);
                     return [] as SearchResult[];
                 })

@@ -28,7 +28,7 @@ export class ModelDownloadModal extends Modal {
         contentEl.addClass('ideatr-download-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Download AI Model' });
+        contentEl.createEl('h2', { text: 'Download AI model' });
 
         // Model information
         const info = this.modelManager.getModelInfo();

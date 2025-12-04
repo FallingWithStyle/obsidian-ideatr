@@ -2,7 +2,7 @@
  * Progress modal for batch operations
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 
 export interface ProgressUpdate {
     current: number;
@@ -23,7 +23,7 @@ export class ProgressModal extends Modal {
     private title: string;
 
     constructor(
-        app: any,
+        app: App,
         title: string,
         onCancel?: () => void
     ) {

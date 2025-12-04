@@ -193,7 +193,7 @@ export interface TransformationPlan {
  */
 export interface TransformationResult {
     newFilename?: string | null;
-    frontmatter?: any;
+    frontmatter?: Record<string, unknown>;
     body?: string;
     summary: string;
     originalContent?: string;

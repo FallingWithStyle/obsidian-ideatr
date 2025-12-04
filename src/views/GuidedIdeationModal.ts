@@ -1,4 +1,4 @@
-import { Modal, Notice } from 'obsidian';
+import { App, Modal, Notice } from 'obsidian';
 import type { TransformationPlan, TransformationResult } from '../types/transformation';
 import { GuidedIdeationService } from '../services/GuidedIdeationService';
 
@@ -12,7 +12,7 @@ export class GuidedIdeationModal extends Modal {
     private buttonContainer!: HTMLDivElement;
     private service: GuidedIdeationService;
     private noteContent: string;
-    private frontmatter: any;
+    private frontmatter: Record<string, unknown>;
     private body: string;
     private currentFilename?: string;
     private transformationResult?: TransformationResult;
@@ -21,10 +21,10 @@ export class GuidedIdeationModal extends Modal {
     private isProcessing: boolean = false;
 
     constructor(
-        app: any,
+        app: App,
         service: GuidedIdeationService,
         noteContent: string,
-        frontmatter: any,
+        frontmatter: Record<string, unknown>,
         body: string,
         currentFilename?: string,
         onAccept?: (result: TransformationResult, plan: TransformationPlan) => Promise<void>
@@ -195,7 +195,7 @@ export class GuidedIdeationModal extends Modal {
 
         // Show body preview
         if (result.body) {
-            const bodyLabel = this.previewContainer.createEl('strong', { text: 'Body Preview:' });
+            const bodyLabel = this.previewContainer.createEl('strong', { text: 'Body preview:' });
             bodyLabel.style.display = 'block';
             bodyLabel.style.marginTop = '10px';
             bodyLabel.style.marginBottom = '5px';
@@ -215,7 +215,7 @@ export class GuidedIdeationModal extends Modal {
 
         // Show frontmatter changes if applicable
         if (result.frontmatter) {
-            const fmLabel = this.previewContainer.createEl('strong', { text: 'Frontmatter Changes:' });
+            const fmLabel = this.previewContainer.createEl('strong', { text: 'Frontmatter changes:' });
             fmLabel.style.display = 'block';
             fmLabel.style.marginTop = '10px';
             fmLabel.style.marginBottom = '5px';
@@ -239,7 +239,7 @@ export class GuidedIdeationModal extends Modal {
         }
 
         const acceptButton = this.buttonContainer.createEl('button', {
-            text: 'Accept Changes',
+            text: 'Accept changes',
             cls: 'mod-cta ideatr-accept-button'
         });
         acceptButton.style.marginLeft = '10px';

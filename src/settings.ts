@@ -232,7 +232,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Ideatr Settings' });
+        containerEl.createEl('h2', { text: 'Ideatr settings' });
 
         // Beta notice
         const betaNotice = containerEl.createDiv({ cls: 'ideatr-beta-notice' });

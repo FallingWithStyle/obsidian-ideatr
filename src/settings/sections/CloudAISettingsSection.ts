@@ -9,7 +9,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
     private showComparison: boolean = false;
 
     display(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'Cloud AI' });
+        containerEl.createEl('h3', { text: 'Cloud AI' }); // "AI" is an acronym, keep uppercase
 
         // Add comparison toggle button
         const comparisonContainer = containerEl.createDiv({ cls: 'cloud-model-comparison-container' });
@@ -309,7 +309,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
 
     private renderModelComparison(containerEl: HTMLElement): void {
         containerEl.empty();
-        containerEl.createEl('h4', { text: 'Cloud AI Model Comparison' });
+        containerEl.createEl('h4', { text: 'Cloud AI model comparison' });
         containerEl.createEl('p', {
             text: 'Compare default cloud AI models to find the best fit for your needs. All models are validated for Ideatr\'s classification and tagging tasks.',
             cls: 'cloud-model-comparison-intro'

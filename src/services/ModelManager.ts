@@ -1,8 +1,8 @@
 import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as os from 'os';
+import { joinPath } from '../utils/pathUtils';
+import { getHomeDir } from '../utils/platformUtils';
 import { createWriteStream, createReadStream } from 'fs';
-import { createHash } from 'crypto';
+// Note: crypto.createHash replaced with Web Crypto API (crypto.subtle.digest)
 import { Logger } from '../utils/logger';
 
 /**
@@ -222,9 +222,18 @@ export class ModelManager implements IModelManager {
         this.modelConfig = MODELS[modelKey];
 
         // Store model in user home directory: ~/.ideatr/models/
-        const homeDir = os.homedir();
-        this.modelDir = path.join(homeDir, '.ideatr', 'models');
-        this.modelPath = path.join(this.modelDir, this.modelConfig.fileName);
+        // Note: getHomeDir() may throw if not available - consider using vault paths instead
+        try {
+            const homeDir = getHomeDir();
+            this.modelDir = joinPath(homeDir, '.ideatr', 'models');
+            this.modelPath = joinPath(this.modelDir, this.modelConfig.fileName);
+        } catch (error) {
+            // Fallback: use a relative path or configDir-based path
+            // For now, we'll use a simple fallback - this might need adjustment based on requirements
+            Logger.warn('Home directory not available, using fallback path:', error);
+            this.modelDir = '.ideatr/models';
+            this.modelPath = joinPath(this.modelDir, this.modelConfig.fileName);
+        }
 
         // Model information (legacy format for backward compatibility)
         this.modelInfo = {
@@ -493,7 +502,9 @@ export class ModelManager implements IModelManager {
                         
                         Logger.debug('HASH START', this.modelPath, 'Active:', this.activeHashOperations);
                         
-                        const hash = createHash('sha256');
+                        // Read file in chunks and accumulate for hashing
+                        // Note: Web Crypto API doesn't support incremental hashing, so we accumulate chunks
+                        const chunks: Uint8Array[] = [];
                         const stream = createReadStream(this.modelPath);
                         
                         // Ensure stream is destroyed on any error
@@ -502,17 +513,32 @@ export class ModelManager implements IModelManager {
                                 stream.destroy();
                             }
                             this.activeHashOperations--;
-                            const afterMemory = process.memoryUsage().rss;
+                            const afterMemory = typeof process !== 'undefined' ? process.memoryUsage().rss : 0;
                             Logger.debug('HASH END', this.modelPath, 'Active:', this.activeHashOperations, 
-                                'Memory delta:', ((afterMemory - beforeMemory) / 1024 / 1024).toFixed(2), 'MB');
+                                'Memory delta:', beforeMemory > 0 ? ((afterMemory - beforeMemory) / 1024 / 1024).toFixed(2) : 'N/A', 'MB');
                             // Release lock for next operation
                             lockResolver();
                         };
                         
-                        stream.on('data', (data) => hash.update(data));
-                        stream.on('end', () => {
+                        stream.on('data', (data: Buffer) => {
+                            chunks.push(new Uint8Array(data));
+                        });
+                        stream.on('end', async () => {
                             try {
-                                const result = hash.digest('hex').toLowerCase();
+                                // Concatenate all chunks
+                                const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+                                const combined = new Uint8Array(totalLength);
+                                let position = 0;
+                                for (const chunk of chunks) {
+                                    combined.set(chunk, position);
+                                    position += chunk.length;
+                                }
+                                
+                                // Calculate hash using Web Crypto API
+                                const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+                                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                                const result = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toLowerCase();
+                                
                                 cleanup();
                                 resolve(result);
                             } catch (error) {
@@ -606,11 +632,12 @@ export class ModelManager implements IModelManager {
                 return await new Promise<string>((resolve, reject) => {
                     // Track active hash operations for debugging
                     this.activeHashOperations++;
-                    const beforeMemory = process.memoryUsage().rss;
+                    const beforeMemory = typeof process !== 'undefined' ? process.memoryUsage().rss : 0;
                     
                     Logger.debug('HASH START', this.modelPath, 'Active:', this.activeHashOperations);
                     
-                    const hash = createHash('sha256');
+                    // Read file in chunks and accumulate for hashing
+                    const chunks: Uint8Array[] = [];
                     const stream = createReadStream(this.modelPath);
                     
                     // Ensure stream is destroyed on any error
@@ -619,17 +646,32 @@ export class ModelManager implements IModelManager {
                             stream.destroy();
                         }
                         this.activeHashOperations--;
-                        const afterMemory = process.memoryUsage().rss;
+                        const afterMemory = typeof process !== 'undefined' ? process.memoryUsage().rss : 0;
                         Logger.debug('HASH END', this.modelPath, 'Active:', this.activeHashOperations,
-                            'Memory delta:', ((afterMemory - beforeMemory) / 1024 / 1024).toFixed(2), 'MB');
+                            'Memory delta:', beforeMemory > 0 ? ((afterMemory - beforeMemory) / 1024 / 1024).toFixed(2) : 'N/A', 'MB');
                         // Release lock for next operation
                         lockResolver();
                     };
                     
-                    stream.on('data', (data) => hash.update(data));
-                    stream.on('end', () => {
+                    stream.on('data', (data: Buffer) => {
+                        chunks.push(new Uint8Array(data));
+                    });
+                    stream.on('end', async () => {
                         try {
-                            const result = hash.digest('hex');
+                            // Concatenate all chunks
+                            const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+                            const combined = new Uint8Array(totalLength);
+                            let position = 0;
+                            for (const chunk of chunks) {
+                                combined.set(chunk, position);
+                                position += chunk.length;
+                            }
+                            
+                            // Calculate hash using Web Crypto API
+                            const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+                            const hashArray = Array.from(new Uint8Array(hashBuffer));
+                            const result = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                            
                             cleanup();
                             resolve(result);
                         } catch (error) {

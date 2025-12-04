@@ -2,7 +2,7 @@
  * Modal for previewing reorganized idea with before/after comparison
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { ReorganizationResult } from '../types/transformation';
 
 export class ReorganizationPreviewModal extends Modal {
@@ -11,7 +11,7 @@ export class ReorganizationPreviewModal extends Modal {
     private onAction?: (action: 'accept' | 'reject') => void;
 
     constructor(
-        app: any,
+        app: App,
         originalText: string,
         reorganization: ReorganizationResult,
         onAction?: (action: 'accept' | 'reject') => void
@@ -102,7 +102,7 @@ export class ReorganizationPreviewModal extends Modal {
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         
         const acceptButton = buttonContainer.createEl('button', {
-            text: 'Accept Changes',
+            text: 'Accept changes',
             cls: 'mod-cta'
         });
         acceptButton.addEventListener('click', () => {

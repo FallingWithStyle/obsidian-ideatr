@@ -2,7 +2,7 @@
  * Modal for selecting mutations to save or append
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { Mutation } from '../types/transformation';
 
 export class MutationSelectionModal extends Modal {
@@ -11,7 +11,7 @@ export class MutationSelectionModal extends Modal {
     private selected: Set<number> = new Set();
 
     constructor(
-        app: any,
+        app: App,
         mutations: Mutation[],
         onSelect?: (selected: Mutation[], action: 'save' | 'append') => void
     ) {
