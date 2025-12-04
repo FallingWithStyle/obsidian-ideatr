@@ -22,7 +22,6 @@ export interface IdeaStats {
 
 export class IdeaStatsModal extends Modal {
     private stats: IdeaStats;
-    private ideaRepository?: IIdeaRepository;
     private idConverter?: RelatedIdConverter;
 
     constructor(
@@ -32,7 +31,6 @@ export class IdeaStatsModal extends Modal {
     ) {
         super(app);
         this.stats = stats;
-        this.ideaRepository = ideaRepository;
         if (ideaRepository) {
             this.idConverter = new RelatedIdConverter(ideaRepository);
         }
@@ -147,7 +145,7 @@ export class IdeaStatsModal extends Modal {
                             const listItem = relatedList.createEl('li', {
                                 attr: { style: 'font-size: 12px; cursor: help;' }
                             });
-                            const idSpan = listItem.createEl('span', {
+                            listItem.createEl('span', {
                                 text: id.toString(),
                                 attr: {
                                     style: 'text-decoration: underline; text-decoration-style: dotted;',

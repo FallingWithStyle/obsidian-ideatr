@@ -780,9 +780,7 @@ Response:`;
             classificationResult,
             async (editedResults: ClassificationResult) => {
                 // Accept: Merge edited results with related notes and duplicates
-                // Convert paths to IDs
                 const allRelatedPaths = [...new Set([...relatedNotes, ...duplicatePaths])];
-                const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
                 const finalClassification: IdeaClassification = {
                     category: editedResults.category,
                     tags: editedResults.tags,
@@ -798,9 +796,7 @@ Response:`;
             },
             async () => {
                 // Edit: Open note editor (for now, just accept)
-                // Convert paths to IDs
                 const allRelatedPaths = [...new Set([...relatedNotes, ...duplicatePaths])];
-                const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
                 const finalClassification: IdeaClassification = {
                     category: classificationResult.category,
                     tags: classificationResult.tags,
