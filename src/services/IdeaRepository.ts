@@ -1,4 +1,5 @@
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { IIdeaRepository } from '../types/management';
 import type { IdeaFile } from '../types/idea';
 import type { IdeaFilter } from '../types/management';

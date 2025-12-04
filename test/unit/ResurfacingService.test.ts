@@ -3,6 +3,7 @@ import { ResurfacingService } from '../../src/services/ResurfacingService';
 import { IdeaRepository } from '../../src/services/IdeaRepository';
 import { FrontmatterParser } from '../../src/services/FrontmatterParser';
 import type { Vault } from 'obsidian';
+import { TFile } from '../mocks/obsidian';
 import type { IdeaFile } from '../../src/types/idea';
 
 describe('ResurfacingService', () => {
@@ -21,7 +22,10 @@ describe('ResurfacingService', () => {
             }),
             getAbstractFileByPath: vi.fn((path: string) => {
                 if (files.has(path)) {
-                    return { path, name: path.split('/').pop(), stat: { mtime: Date.now() } } as any;
+                    const file = new TFile();
+                    file.path = path;
+                    file.name = path.split('/').pop() || path;
+                    return file;
                 }
                 return null;
             }),
@@ -119,13 +123,13 @@ dismissed: true
 
 Dismissed idea`;
 
-            vi.mocked(mockVault.getMarkdownFiles).mockReturnValue([
-                { path: 'Ideas/dismissed-idea.md', name: 'dismissed-idea.md', stat: { mtime: Date.now() } } as any
-            ]);
+            const dismissedFile = new TFile();
+            dismissedFile.path = 'Ideas/dismissed-idea.md';
+            dismissedFile.name = 'dismissed-idea.md';
+            vi.mocked(mockVault.getMarkdownFiles).mockReturnValue([dismissedFile]);
             
             // Set up file content
-            const file = { path: 'Ideas/dismissed-idea.md', name: 'dismissed-idea.md', stat: { mtime: Date.now() } } as any;
-            vi.mocked(mockVault.getAbstractFileByPath).mockReturnValue(file);
+            vi.mocked(mockVault.getAbstractFileByPath).mockReturnValue(dismissedFile);
             vi.mocked(mockVault.read).mockResolvedValue(dismissedContent);
 
             const oldIdeas = await service.identifyOldIdeas(7);
@@ -199,7 +203,9 @@ Test idea`;
             const files = (mockVault as any).__files as Map<string, string>;
             files.set('Ideas/test.md', originalContent);
 
-            const file = { path: 'Ideas/test.md', name: 'test.md', stat: { mtime: Date.now() } } as any;
+            const file = new TFile();
+            file.path = 'Ideas/test.md';
+            file.name = 'test.md';
             vi.mocked(mockVault.getAbstractFileByPath).mockReturnValue(file);
 
             await service.markAsDismissed('Ideas/test.md');
@@ -229,7 +235,9 @@ Test idea`;
             const files = (mockVault as any).__files as Map<string, string>;
             files.set('Ideas/test.md', originalContent);
 
-            const file = { path: 'Ideas/test.md', name: 'test.md', stat: { mtime: Date.now() } } as any;
+            const file = new TFile();
+            file.path = 'Ideas/test.md';
+            file.name = 'test.md';
             vi.mocked(mockVault.getAbstractFileByPath).mockReturnValue(file);
 
             await service.markAsActedUpon('Ideas/test.md');

@@ -178,7 +178,7 @@ class MockHTMLElement {
     private classListSet: Set<string> = new Set();
     private eventListeners: Map<string, any[]> = new Map();
     innerHTML: string = '';
-    style: any = {};
+    style: { [key: string]: string } = {};
     value: string = '';
     placeholder: string = '';
     rows: string = '';
@@ -221,7 +221,7 @@ class MockHTMLElement {
         this.innerHTML = '';
     }
 
-    addClass(cls: string) {
+    addClass(cls: string): MockHTMLElement {
         this.classListSet.add(cls);
         return this;
     }
@@ -479,6 +479,17 @@ class MockHTMLElement {
         });
         return styles;
     }
+
+    /**
+     * Obsidian API method to set CSS properties
+     */
+    setCssProps(props: Record<string, string>): void {
+        Object.keys(props).forEach(key => {
+            // Convert kebab-case to camelCase for style object
+            const camelKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+            this.style[camelKey] = props[key];
+        });
+    }
 }
 
 export class ItemView {
@@ -498,4 +509,16 @@ export class ItemView {
     async onOpen(): Promise<void> { }
     async onClose(): Promise<void> { }
 }
+
+/**
+ * Platform API mock for Obsidian
+ */
+export const Platform = {
+    isMacOS: process.platform === 'darwin',
+    isWindows: process.platform === 'win32',
+    isLinux: process.platform === 'linux',
+    isMobile: false,
+    isWin: process.platform === 'win32',
+    isLinuxApp: process.platform === 'linux'
+};
 

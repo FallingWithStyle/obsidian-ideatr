@@ -60,12 +60,20 @@ vi.mock('child_process', async () => {
 });
 
 
-// Mock Obsidian Notice and requestUrl
+// Mock Obsidian Notice, requestUrl, and Platform
 vi.mock('obsidian', () => ({
     Notice: class {
         constructor(message: string) { }
     },
-    requestUrl: mockRequestUrl
+    requestUrl: mockRequestUrl,
+    Platform: {
+        isMacOS: process.platform === 'darwin',
+        isWindows: process.platform === 'win32',
+        isLinux: process.platform === 'linux',
+        isMobile: false,
+        isWin: process.platform === 'win32',
+        isLinuxApp: process.platform === 'linux'
+    }
 }));
 
 describe('LlamaService', () => {

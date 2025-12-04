@@ -4,9 +4,11 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createWriteStream } from 'fs';
 
-// Mock os module
-vi.mock('os', () => ({
-    homedir: vi.fn(() => '/home/test')
+// Mock platformUtils module
+vi.mock('../../src/utils/platformUtils', () => ({
+    getHomeDir: vi.fn(() => '/home/test'),
+    getPlatform: vi.fn(() => 'darwin'),
+    getArch: vi.fn(() => 'arm64')
 }));
 
 // Mock fs module

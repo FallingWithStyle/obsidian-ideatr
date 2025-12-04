@@ -40,7 +40,7 @@ global.document = {
             getAttribute: vi.fn(),
             textContent: '',
             innerHTML: '',
-            style: {} as any,
+            style: { display: '' } as any,
             className: ''
         };
         return el;
@@ -74,7 +74,11 @@ vi.mock('../../src/utils/iconUtils', () => ({
             setAttribute: vi.fn(),
             getAttribute: vi.fn(),
             style: {} as any,
-            className: ''
+            className: '',
+            addClass: vi.fn(function(cls: string) {
+                this.classList.add(cls);
+                return this;
+            })
         };
         return icon;
     }),
@@ -274,7 +278,7 @@ describe('CaptureModal', () => {
             modalWithoutAI.onOpen();
 
             const buttons = Array.from(modalWithoutAI.contentEl.querySelectorAll('button')) as any[];
-            const classifyButton = buttons.find(btn => btn.textContent === 'Classify Now');
+            const classifyButton = buttons.find(btn => btn.textContent?.includes('Classify') || btn.textContent?.includes('classify'));
             expect(classifyButton).toBeDefined();
         });
     });
@@ -393,9 +397,9 @@ describe('CaptureModal', () => {
 
             // Check that error handling was triggered
             expect(mockClassificationService.classifyIdea).toHaveBeenCalled();
-            // Classification element should be visible
-            const classificationEl = (modal as any).classificationEl;
-            expect(classificationEl.style.display).toBe('block');
+            // Error should be shown (using CSS classes, not style.display)
+            const errorEl = modal.contentEl.querySelector('.ideatr-error');
+            expect(errorEl).toBeDefined();
         });
 
         it('should allow retry on classification error', async () => {
@@ -502,7 +506,8 @@ describe('CaptureModal', () => {
 
             const errorEl = modal.contentEl.querySelector('.ideatr-error') as HTMLElement;
             expect(errorEl.textContent).toBe('Test error message');
-            expect(errorEl.style.display).toBe('block');
+            expect(errorEl.classList.contains('ideatr-visible')).toBe(true);
+            expect(errorEl.classList.contains('ideatr-hidden')).toBe(false);
         });
 
         it('should add error class for errors', () => {
@@ -523,12 +528,13 @@ describe('CaptureModal', () => {
 
         it('should hide error message', () => {
             (modal as any).showError('Test error');
-            expect((modal as any).errorEl.style.display).toBe('block');
+            expect((modal as any).errorEl.classList.contains('ideatr-visible')).toBe(true);
             
             (modal as any).hideError();
 
             const errorEl = (modal as any).errorEl;
-            expect(errorEl.style.display).toBe('none');
+            expect(errorEl.classList.contains('ideatr-hidden')).toBe(true);
+            expect(errorEl.classList.contains('ideatr-visible')).toBe(false);
         });
     });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProjectElevationService } from '../../src/services/ProjectElevationService';
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from '../mocks/obsidian';
 import type { IdeaFile, IdeaFrontmatter } from '../../src/types/idea';
 import type { IdeatrSettings } from '../../src/settings';
 import { FrontmatterParser } from '../../src/services/FrontmatterParser';
@@ -13,7 +14,10 @@ function createMockVault(): Vault {
     return {
         getAbstractFileByPath: vi.fn((path: string) => {
             if (files.has(path)) {
-                return { path, extension: 'md' } as TFile;
+                const file = new TFile();
+                file.path = path;
+                file.name = path.split('/').pop() || path;
+                return file;
             }
             if (folders.has(path)) {
                 return { path } as any;
@@ -26,7 +30,10 @@ function createMockVault(): Vault {
         }),
         create: vi.fn(async (path: string, content: string) => {
             files.set(path, content);
-            return { path, extension: 'md' } as unknown as TFile;
+            const file = new TFile();
+            file.path = path;
+            file.name = path.split('/').pop() || path;
+            return file;
         }),
         read: vi.fn(async (file: TFile) => {
             return files.get(file.path) || '';
@@ -37,7 +44,10 @@ function createMockVault(): Vault {
                 files.delete(file.path);
                 files.set(newPath, content);
             }
-            return { path: newPath, extension: 'md' } as unknown as TFile;
+            const renamedFile = new TFile();
+            renamedFile.path = newPath;
+            renamedFile.name = newPath.split('/').pop() || newPath;
+            return renamedFile;
         }),
         delete: vi.fn(async (file: TFile) => {
             files.delete(file.path);

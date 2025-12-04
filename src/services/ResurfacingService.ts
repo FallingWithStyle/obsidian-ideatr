@@ -4,7 +4,8 @@ import type { IdeaFile } from '../types/idea';
 import type { IIdeaRepository } from '../types/management';
 import type { IdeatrSettings } from '../settings';
 import { FileManager } from '../storage/FileManager';
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from 'obsidian';
 import { ManagementError, ManagementErrorCode } from '../types/management';
 import { Logger } from '../utils/logger';
 

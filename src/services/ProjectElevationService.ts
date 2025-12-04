@@ -1,4 +1,5 @@
-import type { Vault, TFile, App } from 'obsidian';
+import type { Vault, App } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { IdeaFile, IdeaFrontmatter } from '../types/idea';
 import type { IProjectElevationService, ElevationResult } from '../types/management';
 import type { IdeatrSettings } from '../settings';

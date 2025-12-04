@@ -24,7 +24,7 @@ describe('Logger', () => {
             exists: vi.fn().mockResolvedValue(false),
         };
 
-        consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
+        consoleLogSpy = vi.spyOn(console, 'debug').mockImplementation(() => { });
         consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
         consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
