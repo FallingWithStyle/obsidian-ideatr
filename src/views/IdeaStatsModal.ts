@@ -5,6 +5,8 @@
 
 import { App, Modal } from 'obsidian';
 import type { IdeaFrontmatter } from '../types/idea';
+import type { IIdeaRepository } from '../types/management';
+import { RelatedIdConverter } from '../utils/RelatedIdConverter';
 
 export interface IdeaStats {
     age: number; // days
@@ -20,16 +22,23 @@ export interface IdeaStats {
 
 export class IdeaStatsModal extends Modal {
     private stats: IdeaStats;
+    private ideaRepository?: IIdeaRepository;
+    private idConverter?: RelatedIdConverter;
 
     constructor(
         app: App,
-        stats: IdeaStats
+        stats: IdeaStats,
+        ideaRepository?: IIdeaRepository
     ) {
         super(app);
         this.stats = stats;
+        this.ideaRepository = ideaRepository;
+        if (ideaRepository) {
+            this.idConverter = new RelatedIdConverter(ideaRepository);
+        }
     }
 
-    onOpen() {
+    async onOpen() {
         const { contentEl } = this;
         contentEl.empty();
 
@@ -126,12 +135,45 @@ export class IdeaStatsModal extends Modal {
                     attr: { style: 'margin: 0; padding-left: 20px; max-height: 150px; overflow-y: auto;' }
                 });
 
-                this.stats.frontmatter.related.forEach(path => {
-                    relatedList.createEl('li', {
-                        text: path,
-                        attr: { style: 'font-size: 12px;' }
+                // Handle both IDs (numbers) and legacy paths (strings)
+                const relatedItems = this.stats.frontmatter.related;
+                const relatedIds = relatedItems.filter((item): item is number => typeof item === 'number' && item !== 0) as number[];
+                
+                if (relatedIds.length > 0 && this.idConverter) {
+                    // Load titles for tooltips
+                    try {
+                        const titles = await this.idConverter.idsToTitles(relatedIds);
+                        relatedIds.forEach(id => {
+                            const listItem = relatedList.createEl('li', {
+                                attr: { style: 'font-size: 12px; cursor: help;' }
+                            });
+                            const idSpan = listItem.createEl('span', {
+                                text: id.toString(),
+                                attr: {
+                                    style: 'text-decoration: underline; text-decoration-style: dotted;',
+                                    title: titles.get(id) || `ID: ${id}`
+                                }
+                            });
+                        });
+                    } catch {
+                        // Fallback if title lookup fails
+                        relatedIds.forEach(id => {
+                            relatedList.createEl('li', {
+                                text: id.toString(),
+                                attr: { style: 'font-size: 12px;' }
+                            });
+                        });
+                    }
+                } else {
+                    // Legacy: handle string paths or if no converter available
+                    relatedItems.forEach(item => {
+                        const text = typeof item === 'number' ? item.toString() : item;
+                        relatedList.createEl('li', {
+                            text: text,
+                            attr: { style: 'font-size: 12px;' }
+                        });
                     });
-                });
+                }
             }
         }
 

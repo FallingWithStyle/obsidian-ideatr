@@ -23,6 +23,8 @@ import { Logger } from '../utils/logger';
 import { createHelpIcon } from '../utils/HelpIcon';
 import { createModelStatusIndicator } from '../utils/ModelStatusIndicator';
 import { createLightbulbIcon } from '../utils/iconUtils';
+import type { IIdeaRepository } from '../types/management';
+import { RelatedIdConverter } from '../utils/RelatedIdConverter';
 
 /**
  * Format keyboard shortcut for display (e.g., "cmd+enter" -> "⌘ Enter")
@@ -108,6 +110,8 @@ export class CaptureModal extends Modal {
     private nameVariantService?: INameVariantService;
     private llmService?: ILLMService;
     private settings: IdeatrSettings;
+    private ideaRepository: IIdeaRepository;
+    private idConverter: RelatedIdConverter;
     private onSuccess?: () => void;
     private isWarningShown: boolean = false;
     private duplicatePaths: string[] = [];
@@ -124,6 +128,7 @@ export class CaptureModal extends Modal {
         webSearchService: WebSearchService,
         nameVariantService?: INameVariantService,
         llmService?: ILLMService,
+        ideaRepository?: IIdeaRepository,
         onSuccess?: () => void
     ) {
         super(app);
@@ -137,6 +142,8 @@ export class CaptureModal extends Modal {
         this.nameVariantService = nameVariantService;
         this.llmService = llmService;
         this.settings = settings;
+        this.ideaRepository = ideaRepository!;
+        this.idConverter = new RelatedIdConverter(this.ideaRepository);
         this.onSuccess = onSuccess;
     }
 
@@ -544,11 +551,13 @@ Response:`;
 
             // Step 5: Update file with title, classification, and expansion
             // First, update frontmatter with classification
-            const allRelated = [...new Set([...classification.related, ...this.duplicatePaths])];
+            // Convert paths to IDs
+            const allRelatedPaths = [...new Set([...classification.related, ...this.duplicatePaths])];
+            const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
             await this.fileManager.updateIdeaFrontmatter(file, {
                 category: classification.category,
                 tags: classification.tags,
-                related: allRelated
+                related: allRelatedIds
             });
 
             // Then, update the body: add title as heading, keep original text, add expansion
@@ -754,7 +763,7 @@ Response:`;
         }
     }
 
-    showClassificationResults(classification: IdeaClassification, file: TFile | null) {
+    async showClassificationResults(classification: IdeaClassification, file: TFile | null) {
         // Convert IdeaClassification to ClassificationResult for the modal
         const classificationResult: ClassificationResult = {
             category: classification.category,
@@ -769,30 +778,36 @@ Response:`;
         const resultsModal = new ClassificationResultsModal(
             this.app,
             classificationResult,
-            (editedResults: ClassificationResult) => {
+            async (editedResults: ClassificationResult) => {
                 // Accept: Merge edited results with related notes and duplicates
+                // Convert paths to IDs
+                const allRelatedPaths = [...new Set([...relatedNotes, ...duplicatePaths])];
+                const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
                 const finalClassification: IdeaClassification = {
                     category: editedResults.category,
                     tags: editedResults.tags,
-                    related: [...new Set([...relatedNotes, ...duplicatePaths])]
+                    related: allRelatedPaths // Keep as paths for IdeaClassification interface, will be converted in acceptClassification
                 };
                 if (file) {
-                    this.acceptClassification(finalClassification, file);
+                    await this.acceptClassification(finalClassification, file);
                 } else {
                     // No file - just show results (for "Classify Now" button)
                     new Notice('Classification complete. Save the idea to apply results.');
                     resultsModal.close();
                 }
             },
-            () => {
+            async () => {
                 // Edit: Open note editor (for now, just accept)
+                // Convert paths to IDs
+                const allRelatedPaths = [...new Set([...relatedNotes, ...duplicatePaths])];
+                const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
                 const finalClassification: IdeaClassification = {
                     category: classificationResult.category,
                     tags: classificationResult.tags,
-                    related: [...new Set([...relatedNotes, ...duplicatePaths])]
+                    related: allRelatedPaths // Keep as paths for IdeaClassification interface, will be converted in acceptClassification
                 };
                 if (file) {
-                    this.acceptClassification(finalClassification, file);
+                    await this.acceptClassification(finalClassification, file);
                 } else {
                     new Notice('Classification complete. Save the idea to apply results.');
                     resultsModal.close();
@@ -816,19 +831,21 @@ Response:`;
         resultsModal.open();
     }
 
-    acceptClassification(classification: IdeaClassification, file: TFile | null) {
+    async acceptClassification(classification: IdeaClassification, file: TFile | null) {
         if (!file) {
             // No file to update - this shouldn't happen, but handle gracefully
             return;
         }
         // Merge duplicates with classification related notes
-        const allRelated = [...new Set([...classification.related, ...this.duplicatePaths])];
+        // Convert paths to IDs
+        const allRelatedPaths = [...new Set([...classification.related, ...this.duplicatePaths])];
+        const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
         
         // Update file with classification results
-        this.fileManager.updateIdeaFrontmatter(file, {
+        await this.fileManager.updateIdeaFrontmatter(file, {
             category: classification.category,
             tags: classification.tags,
-            related: allRelated
+            related: allRelatedIds
         });
 
         new Notice('Classification applied');
@@ -860,11 +877,13 @@ Response:`;
                 ideaCategory = classification.category;
                 
                 // Update file with classification results (merge with duplicates)
-                const allRelated = [...new Set([...classification.related, ...this.duplicatePaths])];
+                // Convert paths to IDs
+                const allRelatedPaths = [...new Set([...classification.related, ...this.duplicatePaths])];
+                const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
                 await this.fileManager.updateIdeaFrontmatter(file, {
                     category: classification.category,
                     tags: classification.tags,
-                    related: allRelated
+                    related: allRelatedIds
                 });
             } catch (error) {
                 Logger.warn('Background classification failed:', error);
