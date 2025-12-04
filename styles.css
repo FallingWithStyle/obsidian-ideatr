@@ -605,3 +605,30 @@ body:has(.modal-container) .metadata-properties-view .menu-container {
   font-family: var(--font-monospace);
   font-size: 0.9em;
 }
+
+/* Progress bar styles */
+.ideatr-progress-bar-fill {
+  transition: width 0.3s ease;
+}
+
+/* Model download modal styles */
+.ideatr-error-message {
+  margin-top: 10px;
+}
+
+.ideatr-error-message.ideatr-error-color {
+  color: var(--text-error);
+}
+
+.ideatr-error-message.ideatr-warning-color {
+  color: var(--text-warning, var(--text-warning-color, #d19a66));
+}
+
+.ideatr-link-accent {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.ideatr-icon-muted {
+  color: var(--text-muted);
+}

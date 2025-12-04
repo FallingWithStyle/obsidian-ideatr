@@ -49,7 +49,7 @@ export class ModelDownloadModal extends Modal {
         // Progress bar
         this.progressBar = progressContainer.createEl('div', { cls: 'ideatr-progress-bar' });
         const progressBarFill = this.progressBar.createEl('div', { cls: 'ideatr-progress-bar-fill' });
-        progressBarFill.style.width = '0%';
+        progressBarFill.setCssProps({ width: '0%' });
 
         // Progress text
         this.progressText = progressContainer.createEl('div', { cls: 'ideatr-progress-text' });
@@ -98,7 +98,8 @@ export class ModelDownloadModal extends Modal {
         this.isDownloading = true;
         this.downloadStartTime = Date.now();
         this.cancelButton.textContent = 'Cancel';
-        this.errorMessage.style.display = 'none';
+        this.errorMessage.addClass('ideatr-hidden');
+        this.errorMessage.removeClass('ideatr-visible');
         this.isWarning = false;
         this.progressText.textContent = overwrite ? 'Re-downloading model...' : 'Starting download...';
 
@@ -165,7 +166,7 @@ export class ModelDownloadModal extends Modal {
         // Update progress bar
         const progressBarFill = this.progressBar.querySelector('.ideatr-progress-bar-fill') as HTMLElement;
         if (progressBarFill) {
-            progressBarFill.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+            progressBarFill.setCssProps({ width: `${Math.min(100, Math.max(0, progress))}%` });
         }
 
         // Update progress text
@@ -199,8 +200,8 @@ export class ModelDownloadModal extends Modal {
     private showError(message: string): void {
         this.isWarning = false;
         this.errorMessage.empty();
-        this.errorMessage.style.display = 'block';
-        this.errorMessage.style.color = 'var(--text-error)';
+        this.errorMessage.addClass('ideatr-visible ideatr-error-color');
+        this.errorMessage.removeClass('ideatr-hidden');
         this.progressText.textContent = 'Download failed';
         
         // Parse message and make URLs clickable
@@ -218,8 +219,7 @@ export class ModelDownloadModal extends Modal {
                         rel: 'noopener noreferrer'
                     }
                 });
-                link.style.color = 'var(--text-accent)';
-                link.style.textDecoration = 'underline';
+                link.addClass('ideatr-link-accent');
             } else if (part.trim()) {
                 this.errorMessage.createEl('span', { text: part });
             }
@@ -228,16 +228,18 @@ export class ModelDownloadModal extends Modal {
         // Reset progress bar
         const progressBarFill = this.progressBar.querySelector('.ideatr-progress-bar-fill') as HTMLElement;
         if (progressBarFill) {
-            progressBarFill.style.width = '0%';
+            progressBarFill.addClass('ideatr-progress-bar-fill');
+        progressBarFill.setCssProps({ width: '0%' });
         }
     }
 
     private showWarning(message: string): void {
         this.isWarning = true;
         this.errorMessage.empty();
-        this.errorMessage.style.display = 'block';
+        this.errorMessage.addClass('ideatr-visible');
+        this.errorMessage.removeClass('ideatr-hidden');
         // Use warning color - fallback to a yellow/orange color if var doesn't exist
-        this.errorMessage.style.color = 'var(--text-warning, var(--text-warning-color, #d19a66))';
+        this.errorMessage.addClass('ideatr-warning-color');
         this.progressText.textContent = 'Model already exists';
         
         this.errorMessage.createEl('span', { text: message });
@@ -245,7 +247,8 @@ export class ModelDownloadModal extends Modal {
         // Reset progress bar
         const progressBarFill = this.progressBar.querySelector('.ideatr-progress-bar-fill') as HTMLElement;
         if (progressBarFill) {
-            progressBarFill.style.width = '0%';
+            progressBarFill.addClass('ideatr-progress-bar-fill');
+        progressBarFill.setCssProps({ width: '0%' });
         }
     }
 

@@ -693,7 +693,7 @@ export class DashboardView extends ItemView {
         for (const idea of uncategorizedIdeas.slice(0, 10)) { // Show first 10
             const li = ideasList.createEl('li');
             li.textContent = idea.filename.replace('.md', '');
-            li.style.cursor = 'pointer';
+            li.addClass('ideatr-cursor-pointer');
             li.addEventListener('click', () => this.openIdea(idea));
         }
 

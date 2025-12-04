@@ -185,7 +185,7 @@ export class CaptureModal extends Modal {
         });
         // Add lightbulb icon (matches the sidebar icon exactly using Obsidian's icon system)
         const lightbulbIcon = createLightbulbIcon();
-        lightbulbIcon.style.color = 'var(--text-muted)';
+        lightbulbIcon.addClass('ideatr-icon-muted');
         helpParagraph.appendChild(lightbulbIcon);
         helpParagraph.appendText(' Tip: Access other Ideatr features via Command Palette (search "Ideatr")');
 
@@ -719,7 +719,8 @@ Response:`;
 
         // Show error message
         this.classificationEl.empty();
-        this.classificationEl.style.display = 'block';
+        this.classificationEl.addClass('ideatr-visible');
+        this.classificationEl.removeClass('ideatr-hidden');
         this.classificationEl.createEl('p', { 
             text: errorMessage,
             cls: 'ideatr-classification-error'
