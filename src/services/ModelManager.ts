@@ -520,8 +520,9 @@ export class ModelManager implements IModelManager {
                             lockResolver();
                         };
                         
-                        stream.on('data', (data: Buffer) => {
-                            chunks.push(new Uint8Array(data));
+                        stream.on('data', (data: string | Buffer) => {
+                            const buffer = typeof data === 'string' ? Buffer.from(data) : data;
+                            chunks.push(new Uint8Array(buffer));
                         });
                         stream.on('end', async () => {
                             try {
@@ -653,8 +654,9 @@ export class ModelManager implements IModelManager {
                         lockResolver();
                     };
                     
-                    stream.on('data', (data: Buffer) => {
-                        chunks.push(new Uint8Array(data));
+                    stream.on('data', (data: string | Buffer) => {
+                        const buffer = typeof data === 'string' ? Buffer.from(data) : data;
+                        chunks.push(new Uint8Array(buffer));
                     });
                     stream.on('end', async () => {
                         try {

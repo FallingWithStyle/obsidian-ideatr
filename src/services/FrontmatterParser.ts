@@ -230,7 +230,7 @@ export class FrontmatterParser implements IFrontmatterParser {
         }
 
         const validStatuses = ['captured', 'elevated', 'archived', 'validated', 'promoted'];
-        if (!frontmatter.status || !validStatuses.includes(frontmatter.status)) {
+        if (!frontmatter.status || !validStatuses.includes(frontmatter.status as string)) {
             return false;
         }
 

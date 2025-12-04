@@ -32,7 +32,7 @@ export class RelatedNotesCommand extends IdeaFileCommand {
         new RelatedNotesModal(
             this.context.app,
             relatedNotes,
-            content.frontmatter.related || [],
+            (Array.isArray(content.frontmatter.related) ? content.frontmatter.related : []) as string[],
             async (selected) => {
                 const relatedPaths = selected.map(n => n.path);
                 await this.updateIdeaFrontmatter(file, { related: relatedPaths });

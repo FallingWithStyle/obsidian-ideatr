@@ -1,5 +1,6 @@
 import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
+import type { IdeaCategory } from '../../types/classification';
 import { CommandContext } from '../base/CommandContext';
 import { MutationSelectionModal } from '../../views/MutationSelectionModal';
 import { generateFilename } from '../../storage/FilenameGenerator';
@@ -36,8 +37,8 @@ export class MutationCommand extends IdeaFileCommand {
         let mutations;
         try {
             mutations = await this.context.llmService.generateMutations(content.ideaText, {
-                category: content.frontmatter.category,
-                tags: content.frontmatter.tags,
+                category: content.frontmatter.category as IdeaCategory | undefined,
+                tags: (Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : undefined) as string[] | undefined,
                 count: 8,
             });
         } catch (error) {

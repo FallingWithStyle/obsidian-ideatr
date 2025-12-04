@@ -63,7 +63,7 @@ export class OpenRouterProvider implements ILLMProvider {
                     throw new Error('Invalid API key. Please check your OpenRouter API key.');
                 }
                 const errorData = (typeof response.json === 'function' ? await response.json() : response.json) || {};
-                throw new Error(`OpenRouter API error: ${errorData.error || response.statusText || 'Request failed'}`);
+                throw new Error(`OpenRouter API error: ${errorData.error || 'Request failed'}`);
             }
 
             const data = typeof response.json === 'function' ? await response.json() : response.json;

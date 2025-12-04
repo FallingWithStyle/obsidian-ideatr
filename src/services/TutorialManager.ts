@@ -221,7 +221,7 @@ export class TutorialManager {
                     files.push(file);
                 }
                 if (file instanceof TFolder && file.children) {
-                    file.children.forEach(processFile);
+                    file.children.forEach((child) => processFile(child as TFile | TFolder));
                 }
             };
             processFile(tutorialDir);

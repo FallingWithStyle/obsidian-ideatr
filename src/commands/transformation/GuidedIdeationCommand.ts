@@ -82,7 +82,10 @@ export class GuidedIdeationCommand extends IdeaFileCommand {
                     try {
                         await this.context.app.vault.rename(file, newPath);
                         const targetFileAbstract = this.context.app.vault.getAbstractFileByPath(newPath);
-                        targetFile = targetFileAbstract instanceof TFile ? targetFileAbstract : null;
+                        const renamedFile = targetFileAbstract instanceof TFile ? targetFileAbstract : null;
+                        if (renamedFile) {
+                            targetFile = renamedFile;
+                        }
                         if (!targetFile) {
                             throw new Error('File rename succeeded but could not find renamed file');
                         }

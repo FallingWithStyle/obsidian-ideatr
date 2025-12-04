@@ -103,7 +103,7 @@ export class WebSearchService implements IWebSearchService {
                 if (response.status === 429) {
                     throw new Error('API rate limit exceeded');
                 }
-                throw new Error(`HTTP ${response.status}: ${response.statusText || 'Request failed'}`);
+                throw new Error(`HTTP ${response.status}: Request failed`);
             }
 
             const data = (typeof response.json === 'function' ? await response.json() : response.json) as GoogleSearchResponse;

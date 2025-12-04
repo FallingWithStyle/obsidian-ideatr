@@ -1,5 +1,6 @@
 import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
+import type { IdeaCategory } from '../../types/classification';
 import { CommandContext } from '../base/CommandContext';
 import { ReorganizationPreviewModal } from '../../views/ReorganizationPreviewModal';
 import { Logger } from '../../utils/logger';
@@ -43,8 +44,8 @@ export class ReorganizeCommand extends IdeaFileCommand {
         }
 
         const reorganization = await this.context.llmService.reorganizeIdea(content.ideaText, {
-            category: content.frontmatter.category,
-            tags: content.frontmatter.tags,
+            category: content.frontmatter.category as IdeaCategory | undefined,
+            tags: (Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : undefined) as string[] | undefined,
         });
 
         // Show preview modal with before/after comparison

@@ -1,4 +1,5 @@
-import { TFile,  IdeaFileCommand } from '../base/IdeaFileCommand';
+import { TFile } from 'obsidian';
+import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { IdeaStatsModal, type IdeaStats } from '../../views/IdeaStatsModal';
 
@@ -21,25 +22,25 @@ export class IdeaStatsCommand extends IdeaFileCommand {
     ): Promise<void> {
         // Calculate stats
         const created = content.frontmatter.created 
-            ? new Date(content.frontmatter.created) 
+            ? new Date(content.frontmatter.created as string | number | Date) 
             : new Date(file.stat.mtime);
         const age = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24)); // days
-        const relatedCount = (content.frontmatter.related || []).length;
-        const tagsCount = (content.frontmatter.tags || []).length;
-        const domainsCount = (content.frontmatter.domains || []).length;
+        const relatedCount = Array.isArray(content.frontmatter.related) ? content.frontmatter.related.length : 0;
+        const tagsCount = Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags.length : 0;
+        const domainsCount = Array.isArray(content.frontmatter.domains) ? content.frontmatter.domains.length : 0;
         const lastModified = new Date(file.stat.mtime);
 
         // Show modal with statistics
         const stats: IdeaStats = {
             age,
-            status: content.frontmatter.status || 'unknown',
-            category: content.frontmatter.category || 'none',
+            status: (content.frontmatter.status as string) || 'unknown',
+            category: (content.frontmatter.category as string) || 'none',
             relatedCount,
             tagsCount,
             domainsCount,
             lastModified,
             created,
-            frontmatter: content.frontmatter
+            frontmatter: content.frontmatter as any // Type assertion needed for compatibility
         };
 
         new IdeaStatsModal(this.context.app, stats).open();

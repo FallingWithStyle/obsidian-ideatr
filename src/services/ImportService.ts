@@ -140,7 +140,7 @@ export class ImportService {
                 created: values[1] || new Date().toISOString().split('T')[0],
                 category: values[2] || '',
                 tags: values[3] ? values[3].split(';').filter(t => t) : [],
-                status: values[4] || 'captured',
+                status: (values[4] || 'captured') as 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted',
                 body: values[5] || '',
                 related: values[6] ? values[6].split(';').filter(r => r) : [],
                 domains: values[7] ? values[7].split(';').filter(d => d) : [],
@@ -211,7 +211,7 @@ export class ImportService {
                 body,
                 created: metadata.created || new Date().toISOString().split('T')[0],
                 category: metadata.category || '',
-                status: metadata.status || 'captured',
+                status: (metadata.status || 'captured') as 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted',
                 tags: metadata.tags ? metadata.tags.split(',').map((t: string) => t.trim()) : []
             });
         }

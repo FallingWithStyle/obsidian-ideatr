@@ -73,7 +73,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
         const content = await this.context.app.vault.read(file);
         const parsed = this.context.frontmatterParser.parse(content);
         return {
-            frontmatter: parsed.frontmatter,
+            frontmatter: parsed.frontmatter as unknown as Record<string, unknown>,
             body: parsed.body,
             content: content
         };

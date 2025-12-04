@@ -1,5 +1,6 @@
 import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
+import type { IdeaCategory } from '../../types/classification';
 import { CommandContext } from '../base/CommandContext';
 import { ExpansionPreviewModal } from '../../views/ExpansionPreviewModal';
 
@@ -34,8 +35,8 @@ export class ExpandCommand extends IdeaFileCommand {
         }
 
         const expansion = await this.context.llmService.expandIdea(content.ideaText, {
-            category: content.frontmatter.category,
-            tags: content.frontmatter.tags,
+            category: content.frontmatter.category as IdeaCategory | undefined,
+            tags: (Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : undefined) as string[] | undefined,
             detailLevel: 'detailed',
         });
 

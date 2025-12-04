@@ -29,9 +29,9 @@ export class TenuousLinksCommand extends IdeaFileCommand {
 
         const links = await this.context.tenuousLinkService.findTenuousLinks(
             content.ideaText,
-            content.frontmatter.category || '',
-            content.frontmatter.tags || [],
-            content.frontmatter.related || []
+            (content.frontmatter.category as string) || '',
+            (Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : []) as string[],
+            (Array.isArray(content.frontmatter.related) ? content.frontmatter.related : []) as string[]
         );
 
         if (links.length === 0) {
@@ -46,7 +46,7 @@ export class TenuousLinksCommand extends IdeaFileCommand {
             async (link, action) => {
                 if (action === 'link') {
                     // Add to related notes
-                    const currentRelated = content.frontmatter.related || [];
+                    const currentRelated = (Array.isArray(content.frontmatter.related) ? content.frontmatter.related : []) as string[];
                     if (!currentRelated.includes(link.idea.path)) {
                         await this.updateIdeaFrontmatter(file, {
                             related: [...currentRelated, link.idea.path]
@@ -60,7 +60,7 @@ type: idea
 status: captured
 created: ${new Date().toISOString().split('T')[0]}
 category: ${content.frontmatter.category || ''}
-tags: ${JSON.stringify([...(content.frontmatter.tags || []), 'combined'])}
+tags: ${JSON.stringify([...(Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : []), 'combined'])}
 related: ${JSON.stringify([file.path, link.idea.path])}
 domains: []
 existence-check: []

@@ -203,7 +203,7 @@ export class HybridLLM implements ILLMService {
                     typeof m === 'object' && m !== null && (('text' in m) || ('title' in m) || ('description' in m))
                 )
                 .map((m) => ({
-                    title: m.title || m.text || '',
+                    title: m.title || (m as { text?: unknown }).text || '',
                     description: m.description || '',
                     differences: Array.isArray(m.differences) ? m.differences : [],
                 } as Mutation));

@@ -10,7 +10,7 @@ import { Platform } from 'obsidian';
  */
 export function getPlatform(): string {
     if (Platform.isMacOS) return 'darwin';
-    if (Platform.isWindows) return 'win32';
+    if (Platform.isWin) return 'win32';
     if (Platform.isLinux) return 'linux';
     // Fallback - try to detect from navigator (for web/unknown platforms)
     if (typeof navigator !== 'undefined') {

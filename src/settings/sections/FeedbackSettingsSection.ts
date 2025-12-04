@@ -31,7 +31,7 @@ export class FeedbackSettingsSection extends BaseSettingsSection {
                     const systemInfo: FeatureRequestModal['systemInfo'] = {
                         obsidianVersion,
                         pluginVersion: this.plugin.manifest.version,
-                        platform: this.app.isMobile ? 'mobile' : 'desktop',
+                        platform: Platform.isMobile ? 'mobile' : 'desktop',
                         os: Platform.isMacOS ? 'Mac' : Platform.isWin ? 'Windows' : Platform.isLinux ? 'Linux' : 'Unknown'
                     };
 

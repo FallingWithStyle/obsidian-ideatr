@@ -79,7 +79,7 @@ export class CustomEndpointProvider implements ILLMProvider {
 
             if (response.status < 200 || response.status >= 300) {
                 const errorData = (typeof response.json === 'function' ? await response.json() : response.json) || {};
-                throw new Error(`Custom endpoint error: ${errorData.error || response.statusText || 'Request failed'}`);
+                throw new Error(`Custom endpoint error: ${errorData.error || 'Request failed'}`);
             }
 
             const data = typeof response.json === 'function' ? await response.json() : response.json;

@@ -79,7 +79,7 @@ export class NameVariantService implements INameVariantService {
         try {
             const data = await this.loadCacheData();
             if (data && typeof data === 'object') {
-                this.cache.loadFromData(data);
+                this.cache.loadFromData(data as Record<string, any>);
             }
         } catch (error) {
             Logger.warn('Failed to load variant cache:', error);
@@ -218,10 +218,10 @@ export class NameVariantService implements INameVariantService {
                 .filter((v: unknown): v is { text: unknown; type: unknown } => 
                     typeof v === 'object' && v !== null && 'text' in v && 'type' in v
                 )
-                .map((v) => ({
-                    text: String(v.text).trim(),
-                    type: this.validateVariantType(v.type),
-                    quality: this.calculateVariantQuality(String(v.text).trim(), this.validateVariantType(v.type))
+                .map((v: { text: unknown; type: unknown }) => ({
+                    text: String(v.text || '').trim(),
+                    type: this.validateVariantType(String(v.type || '')),
+                    quality: this.calculateVariantQuality(String(v.text || '').trim(), this.validateVariantType(String(v.type || '')))
                 }))
                 .slice(0, this.settings.maxVariants || 10);
         } catch (error) {
