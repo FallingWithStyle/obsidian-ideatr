@@ -94,16 +94,21 @@ export class ScaffoldService implements IScaffoldService {
     /**
      * Validate template structure
      */
-    private validateTemplate(template: any): template is ScaffoldTemplate {
+    private validateTemplate(template: unknown): template is ScaffoldTemplate {
+        if (!template || typeof template !== 'object') {
+            return false;
+        }
+        const t = template as Record<string, unknown>;
         return (
-            template &&
-            typeof template.id === 'string' &&
-            typeof template.name === 'string' &&
-            Array.isArray(template.categories) &&
-            Array.isArray(template.sections) &&
-            template.sections.every((s: any) => 
-                typeof s.title === 'string' && typeof s.content === 'string'
-            )
+            typeof t.id === 'string' &&
+            typeof t.name === 'string' &&
+            Array.isArray(t.categories) &&
+            Array.isArray(t.sections) &&
+            t.sections.every((s: unknown) => {
+                if (!s || typeof s !== 'object') return false;
+                const section = s as Record<string, unknown>;
+                return typeof section.title === 'string' && typeof section.content === 'string';
+            })
         );
     }
 

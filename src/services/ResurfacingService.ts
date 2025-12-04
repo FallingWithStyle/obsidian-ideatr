@@ -102,7 +102,7 @@ export class ResurfacingService implements IResurfacingService {
         await fileManager.updateIdeaFrontmatter(file, {
             dismissed: true,
             dismissedAt: new Date().toISOString().split('T')[0]
-        } as any);
+        } as Record<string, unknown>);
     }
 
     /**
@@ -126,7 +126,7 @@ export class ResurfacingService implements IResurfacingService {
         await fileManager.updateIdeaFrontmatter(file, {
             actedUpon: true,
             actedUponAt: new Date().toISOString().split('T')[0]
-        } as any);
+        } as Record<string, unknown>);
     }
 
     /**

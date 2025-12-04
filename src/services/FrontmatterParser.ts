@@ -84,13 +84,14 @@ export class FrontmatterParser implements IFrontmatterParser {
         }
 
         // Parse optional fields (for resurfacing)
+        // These are stored in frontmatter but not part of IdeaFrontmatter interface
         const dismissedMatch = frontmatterBlock.match(/^dismissed:\s*(.+)$/m);
         const actedUponMatch = frontmatterBlock.match(/^actedUpon:\s*(.+)$/m);
         if (dismissedMatch) {
-            (frontmatter as any).dismissed = dismissedMatch[1].trim().toLowerCase() === 'true';
+            (frontmatter as Record<string, unknown>).dismissed = dismissedMatch[1].trim().toLowerCase() === 'true';
         }
         if (actedUponMatch) {
-            (frontmatter as any).actedUpon = actedUponMatch[1].trim().toLowerCase() === 'true';
+            (frontmatter as Record<string, unknown>).actedUpon = actedUponMatch[1].trim().toLowerCase() === 'true';
         }
 
         // Validate parsed frontmatter

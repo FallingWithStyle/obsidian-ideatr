@@ -5,6 +5,22 @@ import { requestUrl } from 'obsidian';
 import { Logger } from '../utils/logger';
 
 /**
+ * Google Custom Search API response types
+ */
+interface GoogleSearchItem {
+    title?: string;
+    link?: string;
+    snippet?: string;
+    pagemap?: {
+        metatags?: Array<Record<string, string>>;
+    };
+}
+
+interface GoogleSearchResponse {
+    items?: GoogleSearchItem[];
+}
+
+/**
  * WebSearchService - Provides web search functionality using Google Custom Search API
  */
 export class WebSearchService implements IWebSearchService {
@@ -59,7 +75,7 @@ export class WebSearchService implements IWebSearchService {
     /**
      * Perform actual API call to Google Custom Search
      */
-    private async performSearch(query: string, maxResults: number): Promise<any> {
+    private async performSearch(query: string, maxResults: number): Promise<GoogleSearchItem[]> {
         if (this.settings.webSearchProvider !== 'google') {
             throw new Error('Only Google Custom Search is currently supported');
         }
@@ -90,7 +106,7 @@ export class WebSearchService implements IWebSearchService {
                 throw new Error(`HTTP ${response.status}: ${response.statusText || 'Request failed'}`);
             }
 
-            const data = typeof response.json === 'function' ? await response.json() : response.json;
+            const data = (typeof response.json === 'function' ? await response.json() : response.json) as GoogleSearchResponse;
             return data.items || [];
         } catch (error) {
             if (error instanceof Error && error.message.includes('Timeout')) {
@@ -103,7 +119,7 @@ export class WebSearchService implements IWebSearchService {
     /**
      * Process and score search results
      */
-    private processResults(items: any[], query: string): SearchResult[] {
+    private processResults(items: GoogleSearchItem[], query: string): SearchResult[] {
         if (!items || items.length === 0) {
             return [];
         }
@@ -111,7 +127,7 @@ export class WebSearchService implements IWebSearchService {
         const queryLower = query.toLowerCase();
         const queryWords = queryLower.split(/\s+/);
 
-        const results: SearchResult[] = items.map((item: any) => {
+        const results: SearchResult[] = items.map((item: GoogleSearchItem) => {
             const title = item.title || '';
             const snippet = item.snippet || '';
             const url = item.link || '';

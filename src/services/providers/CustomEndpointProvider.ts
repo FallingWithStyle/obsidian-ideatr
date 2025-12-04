@@ -39,7 +39,7 @@ export class CustomEndpointProvider implements ILLMProvider {
         const prompt = this.constructPrompt(text);
 
         try {
-            let requestBody: any;
+            let requestBody: Record<string, unknown>;
             let responsePath: string;
 
             if (this.format === 'ollama') {

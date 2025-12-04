@@ -1,4 +1,4 @@
-import { App, TFile, TFolder, Notice } from 'obsidian';
+import { App, Notice, TFile, TFolder } from 'obsidian';
 import * as fs from 'fs';
 import { joinPath } from '../utils/pathUtils';
 
@@ -216,11 +216,11 @@ export class TutorialManager {
 
             // Get all files in the tutorial directory
             const files: TFile[] = [];
-            const processFile = (file: any) => {
+            const processFile = (file: TFile | TFolder) => {
                 if (file instanceof TFile && file.path.startsWith(vaultPath)) {
                     files.push(file);
                 }
-                if (file.children) {
+                if (file instanceof TFolder && file.children) {
                     file.children.forEach(processFile);
                 }
             };
