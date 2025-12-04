@@ -56,6 +56,8 @@ export class ClassificationService implements IClassificationService {
         }
 
         // 2. Related Note Search
+        // Note: ClassificationService returns paths, but they will be converted to IDs
+        // when saved to frontmatter by the calling code
         tasks.push(
             this.searchService.findRelatedNotes(text, 3) // Limit to top 3 related notes
                 .then(relatedNotes => {

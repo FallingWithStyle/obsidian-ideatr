@@ -65,7 +65,7 @@ export class FrontmatterParser implements IFrontmatterParser {
 
         // Array fields
         frontmatter.tags = this.parseArrayField(frontmatterBlock, 'tags');
-        frontmatter.related = this.parseArrayField(frontmatterBlock, 'related');
+        frontmatter.related = this.parseNumberArrayField(frontmatterBlock, 'related');
         frontmatter.domains = this.parseArrayField(frontmatterBlock, 'domains');
         frontmatter['existence-check'] = this.parseArrayField(frontmatterBlock, 'existence-check');
 
@@ -128,6 +128,46 @@ export class FrontmatterParser implements IFrontmatterParser {
                 .split(',')
                 .map(item => item.trim())
                 .filter(item => item.length > 0);
+            return items;
+        }
+
+        return [];
+    }
+
+    /**
+     * Parse number array field from frontmatter block (for related IDs)
+     * Handles formats: [] or [1, 2, 3] or ["1", "2", "3"] (legacy string format)
+     * Also handles legacy file path format and converts them (migration support)
+     */
+    private parseNumberArrayField(block: string, fieldName: string): number[] {
+        const regex = new RegExp(`^${fieldName}:\\s*(.+)$`, 'm');
+        const match = block.match(regex);
+
+        if (!match) {
+            return [];
+        }
+
+        const value = match[1].trim();
+
+        // Empty array
+        if (value === '[]') {
+            return [];
+        }
+
+        // Array with items: [1, 2, 3] or ["1", "2", "3"]
+        const arrayMatch = value.match(/^\[(.+)\]$/);
+        if (arrayMatch) {
+            const items = arrayMatch[1]
+                .split(',')
+                .map(item => {
+                    // Remove quotes if present
+                    const trimmed = item.trim().replace(/^["']|["']$/g, '');
+                    // Try to parse as number
+                    const num = parseInt(trimmed, 10);
+                    // If not a number, it might be a legacy file path - return 0 to mark for migration
+                    return isNaN(num) ? 0 : num;
+                })
+                .filter(item => item !== 0); // Filter out invalid entries (0 means needs migration)
             return items;
         }
 

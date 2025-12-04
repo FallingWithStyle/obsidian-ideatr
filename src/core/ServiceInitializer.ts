@@ -30,6 +30,8 @@ import { ErrorLogService } from '../services/ErrorLogService';
 import { FileOrganizer } from '../utils/fileOrganization';
 import { Logger } from '../utils/logger';
 import { PluginContext } from './PluginContext';
+import { IdeaIdService } from '../services/IdeaIdService';
+import { RelatedMigrationService } from '../services/RelatedMigrationService';
 
 /**
  * Handles initialization of all plugin services
@@ -94,6 +96,22 @@ export class ServiceInitializer {
             errorLogService,
             fileOrganizer
         );
+
+        // Initialize ID and migration services
+        const ideaIdService = new IdeaIdService(app.vault, ideaRepository, fileManager);
+        const relatedMigrationService = new RelatedMigrationService(app.vault, ideaRepository, fileManager);
+
+        // Schedule ID assignment and migration during idle time
+        ideaIdService.scheduleIdleAssignment(3000); // Wait 3 seconds after load
+        
+        // Run migration after a short delay (after IDs are assigned)
+        setTimeout(async () => {
+            try {
+                await relatedMigrationService.migrateRelatedToIds();
+            } catch (error) {
+                Logger.warn('Related migration failed:', error);
+            }
+        }, 5000);
 
         return { context, localLLMService };
     }

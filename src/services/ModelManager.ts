@@ -2,7 +2,7 @@ import * as fs from 'fs/promises';
 import { joinPath } from '../utils/pathUtils';
 import { getHomeDir } from '../utils/platformUtils';
 import { createWriteStream, createReadStream } from 'fs';
-// Note: crypto.createHash replaced with Web Crypto API (crypto.subtle.digest)
+import * as crypto from 'crypto';
 import { Logger } from '../utils/logger';
 
 /**
@@ -495,16 +495,16 @@ export class ModelManager implements IModelManager {
 
                 try {
                     // Calculate SHA-256 hash of the file using streaming for large files
+                    // Use Node.js crypto.createHash() which supports incremental hashing
                     const calculatedChecksum = await new Promise<string>((resolve, reject) => {
                         // Track active hash operations for debugging
                         this.activeHashOperations++;
-                        const beforeMemory = process.memoryUsage().rss;
+                        const beforeMemory = typeof process !== 'undefined' ? process.memoryUsage().rss : 0;
                         
                         Logger.debug('HASH START', this.modelPath, 'Active:', this.activeHashOperations);
                         
-                        // Read file in chunks and accumulate for hashing
-                        // Note: Web Crypto API doesn't support incremental hashing, so we accumulate chunks
-                        const chunks: Uint8Array[] = [];
+                        // Create hash object that supports incremental updates
+                        const hash = crypto.createHash('sha256');
                         const stream = createReadStream(this.modelPath);
                         
                         // Ensure stream is destroyed on any error
@@ -520,25 +520,15 @@ export class ModelManager implements IModelManager {
                             lockResolver();
                         };
                         
+                        // Update hash with each chunk (streaming - no memory accumulation)
                         stream.on('data', (data: string | Buffer) => {
                             const buffer = typeof data === 'string' ? Buffer.from(data) : data;
-                            chunks.push(new Uint8Array(buffer));
+                            hash.update(buffer);
                         });
-                        stream.on('end', async () => {
+                        stream.on('end', () => {
                             try {
-                                // Concatenate all chunks
-                                const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-                                const combined = new Uint8Array(totalLength);
-                                let position = 0;
-                                for (const chunk of chunks) {
-                                    combined.set(chunk, position);
-                                    position += chunk.length;
-                                }
-                                
-                                // Calculate hash using Web Crypto API
-                                const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
-                                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                                const result = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toLowerCase();
+                                // Finalize hash and get hex digest
+                                const result = hash.digest('hex').toLowerCase();
                                 
                                 cleanup();
                                 resolve(result);
@@ -637,8 +627,8 @@ export class ModelManager implements IModelManager {
                     
                     Logger.debug('HASH START', this.modelPath, 'Active:', this.activeHashOperations);
                     
-                    // Read file in chunks and accumulate for hashing
-                    const chunks: Uint8Array[] = [];
+                    // Create hash object that supports incremental updates
+                    const hash = crypto.createHash('sha256');
                     const stream = createReadStream(this.modelPath);
                     
                     // Ensure stream is destroyed on any error
@@ -654,25 +644,15 @@ export class ModelManager implements IModelManager {
                         lockResolver();
                     };
                     
+                    // Update hash with each chunk (streaming - no memory accumulation)
                     stream.on('data', (data: string | Buffer) => {
                         const buffer = typeof data === 'string' ? Buffer.from(data) : data;
-                        chunks.push(new Uint8Array(buffer));
+                        hash.update(buffer);
                     });
-                    stream.on('end', async () => {
+                    stream.on('end', () => {
                         try {
-                            // Concatenate all chunks
-                            const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-                            const combined = new Uint8Array(totalLength);
-                            let position = 0;
-                            for (const chunk of chunks) {
-                                combined.set(chunk, position);
-                                position += chunk.length;
-                            }
-                            
-                            // Calculate hash using Web Crypto API
-                            const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
-                            const hashArray = Array.from(new Uint8Array(hashBuffer));
-                            const result = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                            // Finalize hash and get hex digest
+                            const result = hash.digest('hex');
                             
                             cleanup();
                             resolve(result);
