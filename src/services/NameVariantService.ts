@@ -44,14 +44,14 @@ export class NameVariantService implements INameVariantService {
     private llmService: ILLMService;
     private settings: IdeatrSettings;
     private cache: NameVariantCache;
-    private loadCacheData?: () => Promise<Record<string, any>>;
-    private saveCacheData?: (data: Record<string, any>) => Promise<void>;
+    private loadCacheData?: () => Promise<Record<string, unknown>>;
+    private saveCacheData?: (data: Record<string, unknown>) => Promise<void>;
 
     constructor(
         llmService: ILLMService,
         settings: IdeatrSettings,
-        loadCacheData?: () => Promise<Record<string, any>>,
-        saveCacheData?: (data: Record<string, any>) => Promise<void>
+        loadCacheData?: () => Promise<Record<string, unknown>>,
+        saveCacheData?: (data: Record<string, unknown>) => Promise<void>
     ) {
         this.llmService = llmService;
         this.settings = settings;
@@ -215,8 +215,10 @@ export class NameVariantService implements INameVariantService {
             }
 
             return parsed.variants
-                .filter((v: any) => v.text && v.type)
-                .map((v: any) => ({
+                .filter((v: unknown): v is { text: unknown; type: unknown } => 
+                    typeof v === 'object' && v !== null && 'text' in v && 'type' in v
+                )
+                .map((v) => ({
                     text: String(v.text).trim(),
                     type: this.validateVariantType(v.type),
                     quality: this.calculateVariantQuality(String(v.text).trim(), this.validateVariantType(v.type))

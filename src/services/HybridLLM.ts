@@ -165,7 +165,12 @@ export class HybridLLM implements ILLMService {
         });
 
         const isLocal = this.shouldUseLocalLLM();
-        const llmOptions: any = {
+        const llmOptions: {
+            temperature?: number;
+            n_predict?: number;
+            stop?: string[];
+            grammar?: string;
+        } = {
             temperature: 0.8, // Higher creativity for mutations
             n_predict: 4000, // Increased to handle longer JSON responses
             stop: ['\n]', ']'], // Stop at end of JSON array
@@ -194,8 +199,10 @@ export class HybridLLM implements ILLMService {
 
             // Filter and validate each mutation
             const validMutations = mutations
-                .filter((m: any) => m && typeof m === 'object' && (m.text || m.title || m.description))
-                .map((m: any) => ({
+                .filter((m: unknown): m is { text?: unknown; title?: unknown; description?: unknown; differences?: unknown } => 
+                    typeof m === 'object' && m !== null && (('text' in m) || ('title' in m) || ('description' in m))
+                )
+                .map((m) => ({
                     title: m.title || m.text || '',
                     description: m.description || '',
                     differences: Array.isArray(m.differences) ? m.differences : [],

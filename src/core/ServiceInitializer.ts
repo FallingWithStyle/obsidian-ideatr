@@ -139,7 +139,7 @@ export class ServiceInitializer {
                 const data = await plugin.loadData();
                 return data?.variantCache || {};
             },
-            async (cacheData: Record<string, any>) => {
+            async (cacheData: Record<string, unknown>) => {
                 const data = await plugin.loadData();
                 await plugin.saveData({
                     ...data,

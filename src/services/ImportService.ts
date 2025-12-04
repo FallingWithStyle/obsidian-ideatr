@@ -135,7 +135,7 @@ export class ImportService {
 
         for (let i = 1; i < lines.length; i++) {
             const values = this.parseCSVLine(lines[i]);
-            const item: any = {
+            const item: Partial<IdeaFrontmatter> & { title: string; body: string } = {
                 title: values[0] || 'Untitled',
                 created: values[1] || new Date().toISOString().split('T')[0],
                 category: values[2] || '',
@@ -189,7 +189,7 @@ export class ImportService {
             const title = lines[0].trim();
             
             // Extract metadata from list items
-            const metadata: any = {};
+            const metadata: Record<string, string> = {};
             let bodyStart = 0;
             for (let j = 1; j < lines.length; j++) {
                 const line = lines[j];

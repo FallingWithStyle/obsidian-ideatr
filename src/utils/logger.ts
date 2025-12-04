@@ -151,7 +151,7 @@ export class Logger {
     /**
      * Log debug information (only shown in debug mode)
      */
-    static debug(...args: any[]): void {
+    static debug(...args: unknown[]): void {
         if (Logger.isDebugEnabled()) {
             console.debug('[Ideatr Debug]', ...args);
         }
@@ -160,7 +160,7 @@ export class Logger {
     /**
      * Log informational messages (only shown in debug mode)
      */
-    static info(...args: any[]): void {
+    static info(...args: unknown[]): void {
         if (Logger.isDebugEnabled()) {
             console.debug('[Ideatr]', ...args);
         }
@@ -170,7 +170,7 @@ export class Logger {
      * Log warnings (only shown in debug mode)
      * For warnings that should always be shown, use console.warn directly
      */
-    static warn(...args: any[]): void {
+    static warn(...args: unknown[]): void {
         if (Logger.isDebugEnabled()) {
             console.warn('[Ideatr]', ...args);
         }
@@ -180,7 +180,7 @@ export class Logger {
      * Log errors (always shown - use console.error directly for critical errors)
      * This is for non-critical errors that can be gated
      */
-    static error(...args: any[]): void {
+    static error(...args: unknown[]): void {
         if (Logger.isDebugEnabled()) {
             console.error('[Ideatr]', ...args);
         }
@@ -189,7 +189,7 @@ export class Logger {
     /**
      * Log with a specific tag/context (only shown in debug mode)
      */
-    static log(tag: string, ...args: any[]): void {
+    static log(tag: string, ...args: unknown[]): void {
         if (Logger.isDebugEnabled()) {
             console.debug(`[Ideatr:${tag}]`, ...args);
         }

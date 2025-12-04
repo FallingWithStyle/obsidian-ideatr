@@ -2,6 +2,7 @@ import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { Logger } from '../../utils/logger';
+import type { IdeaFrontmatter } from '../../types/idea';
 
 /**
  * Command: refresh-idea
@@ -22,7 +23,7 @@ export class RefreshIdeaCommand extends IdeaFileCommand {
     ): Promise<void> {
         new Notice('Refreshing idea...');
 
-        const updates: any = {};
+        const updates: Partial<IdeaFrontmatter> = {};
 
         // Re-classify
         if (this.context.classificationService.isAvailable()) {

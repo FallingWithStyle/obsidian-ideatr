@@ -100,7 +100,7 @@ export class FileManager {
             let newFrontmatter = match[1];
 
             // Helper to replace or append field
-            const updateField = (key: keyof IdeaFrontmatter, value: any) => {
+            const updateField = (key: keyof IdeaFrontmatter, value: IdeaFrontmatter[keyof IdeaFrontmatter]) => {
                 const stringValue = Array.isArray(value)
                     ? `[${value.join(', ')}]`
                     : value;

@@ -2,6 +2,7 @@ import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { StatusPickerModal, type IdeaStatus } from '../../views/StatusPickerModal';
+import type { IdeaFrontmatter } from '../../types/idea';
 
 /**
  * Command: change-status
@@ -30,7 +31,7 @@ export class StatusCommand extends IdeaFileCommand {
                 await this.updateIdeaFrontmatter(file, { status: newStatus });
 
                 // Handle file movement based on status
-                const prevStatus: any = content.frontmatter.status;
+                const prevStatus = content.frontmatter.status as IdeaFrontmatter['status'];
                 const wasArchived = prevStatus === 'archived';
                 const isNowArchived = (newStatus as string) === 'archived';
                 if (isNowArchived) {

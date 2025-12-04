@@ -15,6 +15,9 @@ import type { IdeatrSettings } from '../settings';
 import type { IdeaClassification, ClassificationResult } from '../types/classification';
 import type { IdeaCategory } from '../types/classification';
 import type { ILLMService } from '../types/classification';
+import type { IdeaFrontmatter } from '../types/idea';
+import type { IDomainService } from '../types/domain';
+import type { SearchResult } from '../types/search';
 import { ClassificationResultsModal } from '../views/ClassificationResultsModal';
 import { Logger } from '../utils/logger';
 import { createHelpIcon } from '../utils/HelpIcon';
@@ -117,7 +120,7 @@ export class CaptureModal extends Modal {
         classificationService: ClassificationService,
         duplicateDetector: DuplicateDetector,
         settings: IdeatrSettings,
-        _domainService: any, // Domain checking removed - functionality hidden (prefix with _ to avoid unused warning)
+        _domainService: IDomainService, // Domain checking removed - functionality hidden (prefix with _ to avoid unused warning)
         webSearchService: WebSearchService,
         nameVariantService?: INameVariantService,
         llmService?: ILLMService,
@@ -926,7 +929,7 @@ Response:`;
         // Wait for all to complete (or fail)
         try {
             const [searchResults, _variantResult] = await Promise.all([searchPromise, variantPromise]);
-            const updates: any = {};
+            const updates: Partial<IdeaFrontmatter> = {};
             
             // Handle search results
             if (shouldSearchWeb) {
@@ -952,7 +955,7 @@ Response:`;
             // This catch handles unexpected errors in the Promise.all itself
             Logger.warn('Validation orchestration failed:', error);
             // Store error state for validations if they were attempted
-            const errorUpdates: any = {};
+            const errorUpdates: Partial<IdeaFrontmatter> = {};
             if (shouldSearchWeb) {
                 errorUpdates['existence-check'] = ['Search error: Validation failed'];
             }
@@ -971,7 +974,7 @@ Response:`;
         ideaText: string,
         category: IdeaCategory,
         projectName?: string
-    ): Promise<any[]> {
+    ): Promise<SearchResult[]> {
         if (!this.webSearchService.isAvailable()) {
             return [];
         }

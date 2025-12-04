@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
-import type { IIdeaRepository, IClusteringService, IResurfacingService, IProjectElevationService } from '../types/management';
+import type { IIdeaRepository, IClusteringService, IResurfacingService, IProjectElevationService, GraphNode } from '../types/management';
 import type { IdeaFile } from '../types/idea';
 import type { IdeaFilter } from '../types/management';
 import { ManagementError, getManagementErrorMessage } from '../types/management';
@@ -587,7 +587,7 @@ export class DashboardView extends ItemView {
                 renderGraphLayout(graphContainer, previewLayout, {
                     mini: true,
                     onNodeClick: (nodeId) => {
-                        const node = previewLayout.nodes.find((n: any) => n.id === nodeId);
+                        const node = previewLayout.nodes.find((n: GraphNode) => n.id === nodeId);
                         if (node) {
                             this.openIdea(node.idea);
                         }

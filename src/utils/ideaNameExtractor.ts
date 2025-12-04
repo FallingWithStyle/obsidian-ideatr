@@ -1,4 +1,5 @@
 import { Logger } from './logger';
+import type { ILLMService } from '../types/classification';
 
 /**
  * Enhanced idea name extraction utilities
@@ -37,7 +38,7 @@ export function extractIdeaNameRuleBased(ideaText: string): string {
  */
 export async function extractIdeaNameWithLLM(
     ideaText: string,
-    llmService?: { complete?: (prompt: string, options?: any) => Promise<string>; isAvailable?: () => boolean }
+    llmService?: Pick<ILLMService, 'complete' | 'isAvailable'>
 ): Promise<string> {
     // Fallback to rule-based if no LLM service
     if (!llmService?.complete) {

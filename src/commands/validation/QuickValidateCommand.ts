@@ -5,6 +5,7 @@ import type { DomainCheckResult } from '../../types/domain';
 import type { SearchResult } from '../../types/search';
 import type { DuplicateCheckResult } from '../../types/classification';
 import type { IdeaCategory } from '../../types/classification';
+import type { IdeaFrontmatter } from '../../types/idea';
 
 /**
  * Command: quick-validate
@@ -48,7 +49,7 @@ export class QuickValidateCommand extends IdeaFileCommand {
         const duplicateResult = results[2].status === 'fulfilled' ? results[2].value : { isDuplicate: false, duplicates: [], threshold: 0.75 };
 
         // Update frontmatter with all results
-        const updates: any = {};
+        const updates: Partial<IdeaFrontmatter> = {};
 
         if (domainResults.length > 0) {
             const domainStrings = (domainResults as DomainCheckResult[]).map(r => 

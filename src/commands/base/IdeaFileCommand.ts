@@ -1,6 +1,7 @@
 import { TFile, Notice } from 'obsidian';
 import { BaseCommand } from './BaseCommand';
 import { CommandContext } from './CommandContext';
+import type { IdeaFrontmatter } from '../../types/idea';
 
 /**
  * Base class for commands that work with idea files
@@ -83,7 +84,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
      */
     protected async updateIdeaFrontmatter(
         file: TFile,
-        updates: Partial<any>
+        updates: Partial<IdeaFrontmatter>
     ): Promise<void> {
         const content = await this.context.app.vault.read(file);
         const parsed = this.context.frontmatterParser.parse(content);

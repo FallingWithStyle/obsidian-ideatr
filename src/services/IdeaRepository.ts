@@ -12,7 +12,7 @@ import { Logger } from '../utils/logger';
  */
 export class IdeaRepository implements IIdeaRepository {
     private cache: Map<string, IdeaFile> = new Map();
-    private watchers: Set<any> = new Set();
+    private watchers: Set<() => void> = new Set();
     private parser: IFrontmatterParser;
     private readonly MAX_CACHE_SIZE = 10000; // Prevent unbounded cache growth
 
