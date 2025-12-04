@@ -2,6 +2,7 @@ import { Notice } from 'obsidian';
 import { BaseCommand } from '../base/BaseCommand';
 import { CommandContext } from '../base/CommandContext';
 import { ProgressModal } from '../../views/ProgressModal';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: reclassify-all-ideas
@@ -69,8 +70,17 @@ export class ReclassifyAllCommand extends BaseCommand {
                     // Classify
                     const classification = await this.context.classificationService.classifyIdea(ideaText);
 
+                    // Convert related paths to IDs
+                    const idConverter = new RelatedIdConverter(this.context.ideaRepository);
+                    const relatedIds = await idConverter.pathsToIds(classification.related);
+
                     // Update frontmatter
-                    const updated = { ...parsed.frontmatter, ...classification };
+                    const updated = { 
+                        ...parsed.frontmatter, 
+                        category: classification.category,
+                        tags: classification.tags,
+                        related: relatedIds
+                    };
                     const newContent = this.context.frontmatterParser.build(updated, parsed.body);
                     await this.context.app.vault.modify(file, newContent);
 

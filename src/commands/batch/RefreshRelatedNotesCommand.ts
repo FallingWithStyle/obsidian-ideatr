@@ -2,6 +2,7 @@ import { Notice } from 'obsidian';
 import { BaseCommand } from '../base/BaseCommand';
 import { CommandContext } from '../base/CommandContext';
 import { ProgressModal } from '../../views/ProgressModal';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: refresh-all-related-notes
@@ -64,9 +65,11 @@ export class RefreshRelatedNotesCommand extends BaseCommand {
                     // Find related notes
                     const related = await this.context.searchService.findRelatedNotes(ideaText, 5);
 
-                    // Update frontmatter with related notes
+                    // Convert paths to IDs and update frontmatter
+                    const idConverter = new RelatedIdConverter(this.context.ideaRepository);
                     const relatedPaths = related.map(r => r.path);
-                    const updated = { ...parsed.frontmatter, related: relatedPaths };
+                    const relatedIds = await idConverter.pathsToIds(relatedPaths);
+                    const updated = { ...parsed.frontmatter, related: relatedIds };
                     const newContent = this.context.frontmatterParser.build(updated, parsed.body);
                     await this.context.app.vault.modify(file, newContent);
 

@@ -3,6 +3,7 @@ import { BaseCommand } from '../base/BaseCommand';
 import { CommandContext } from '../base/CommandContext';
 import { DuplicatePairsModal, type DuplicatePair, type BulkAction } from '../../views/DuplicatePairsModal';
 import { Logger } from '../../utils/logger';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: find-all-duplicates
@@ -114,14 +115,25 @@ export class FindAllDuplicatesCommand extends BaseCommand {
         const parsed1 = this.context.frontmatterParser.parse(content1);
         const parsed2 = this.context.frontmatterParser.parse(content2);
 
-        const related1 = Array.isArray(parsed1.frontmatter.related) ? [...parsed1.frontmatter.related] : [];
-        const related2 = Array.isArray(parsed2.frontmatter.related) ? [...parsed2.frontmatter.related] : [];
+        const idConverter = new RelatedIdConverter(this.context.ideaRepository);
+        
+        // Get existing related IDs
+        const related1 = Array.isArray(parsed1.frontmatter.related) 
+            ? [...parsed1.frontmatter.related].filter((id): id is number => typeof id === 'number' && id !== 0)
+            : [];
+        const related2 = Array.isArray(parsed2.frontmatter.related)
+            ? [...parsed2.frontmatter.related].filter((id): id is number => typeof id === 'number' && id !== 0)
+            : [];
 
-        if (!related1.includes(pair.file2.path)) {
-            related1.push(pair.file2.path);
+        // Convert paths to IDs and add if not already present
+        const file2Ids = await idConverter.pathsToIds([pair.file2.path]);
+        const file1Ids = await idConverter.pathsToIds([pair.file1.path]);
+        
+        if (file2Ids.length > 0 && !related1.includes(file2Ids[0])) {
+            related1.push(file2Ids[0]);
         }
-        if (!related2.includes(pair.file1.path)) {
-            related2.push(pair.file1.path);
+        if (file1Ids.length > 0 && !related2.includes(file1Ids[0])) {
+            related2.push(file1Ids[0]);
         }
 
         const updated1 = { ...parsed1.frontmatter, related: related1 };
@@ -157,11 +169,21 @@ export class FindAllDuplicatesCommand extends BaseCommand {
         ];
         const uniqueTags = Array.from(new Set(mergedTags));
 
-        const mergedRelated = [
-            ...(Array.isArray(parsed1.frontmatter.related) ? parsed1.frontmatter.related : []),
-            ...(Array.isArray(parsed2.frontmatter.related) ? parsed2.frontmatter.related : []),
-            pair.file2.path
-        ];
+        const idConverter = new RelatedIdConverter(this.context.ideaRepository);
+        
+        // Get existing related IDs
+        const related1 = Array.isArray(parsed1.frontmatter.related)
+            ? [...parsed1.frontmatter.related].filter((id): id is number => typeof id === 'number' && id !== 0)
+            : [];
+        const related2 = Array.isArray(parsed2.frontmatter.related)
+            ? [...parsed2.frontmatter.related].filter((id): id is number => typeof id === 'number' && id !== 0)
+            : [];
+        
+        // Convert file2 path to ID
+        const file2Ids = await idConverter.pathsToIds([pair.file2.path]);
+        
+        // Merge related IDs
+        const mergedRelated = [...related1, ...related2, ...file2Ids];
         const uniqueRelated = Array.from(new Set(mergedRelated));
 
         // Update file1 with merged content
