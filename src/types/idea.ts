@@ -9,10 +9,10 @@ export interface IdeaFrontmatter {
     type: 'idea';
     status: 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted';
     created: string; // ISO 8601 date (YYYY-MM-DD)
-    id: number; // Plain integer ID for linking
+    id: number; // Unique integer ID for linking (auto-generated, never 0)
     category: string; // Empty string for Day 0, populated by AI later
     tags: string[];  // Empty array for Day 0, populated by AI later
-    related: string[]; // Empty array for Day 0, populated later
+    related: number[]; // Array of idea IDs (not file paths) - empty array for Day 0, populated later
     domains: string[]; // Empty array for Day 0, populated later
     'existence-check': string[]; // Empty array for Day 0, populated later
     elevated?: string; // ISO 8601 date (YYYY-MM-DD) - elevation date
