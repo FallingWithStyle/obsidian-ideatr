@@ -251,7 +251,8 @@ export default class IdeatrPlugin extends Plugin {
             this.pluginContext.domainService,
             this.pluginContext.webSearchService,
             this.pluginContext.nameVariantService,
-            this.pluginContext.llmService
+            this.pluginContext.llmService,
+            this.pluginContext.ideaRepository
         ).open();
     }
 

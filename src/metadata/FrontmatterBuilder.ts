@@ -1,4 +1,5 @@
 import type { IdeaFrontmatter, IdeaInput } from '../types/idea';
+import { generateIdeaId, generateUniqueId } from '../utils/IdeaIdGenerator';
 
 /**
  * FrontmatterBuilder - Generates YAML frontmatter for idea files
@@ -6,13 +7,17 @@ import type { IdeaFrontmatter, IdeaInput } from '../types/idea';
 
 /**
  * Build frontmatter object with default values
+ * @param idea - Input data for the idea
+ * @param existingIds - Optional array of existing IDs to avoid conflicts
  */
-export function buildFrontmatter(idea: IdeaInput): IdeaFrontmatter {
+export function buildFrontmatter(idea: IdeaInput, existingIds?: number[]): IdeaFrontmatter {
+    const id = existingIds ? generateUniqueId(existingIds) : generateIdeaId();
+    
     return {
         type: 'idea',
         status: 'captured',
         created: formatDateISO(idea.timestamp),
-        id: 0,
+        id,
         category: '',
         tags: [],
         related: [],
@@ -67,8 +72,9 @@ function formatDateISO(date: Date): string {
  * Convert array to YAML format
  * Empty arrays: []
  * Non-empty arrays: [item1, item2, item3]
+ * Handles both string and number arrays
  */
-function arrayToYAML(arr: string[]): string {
+function arrayToYAML(arr: string[] | number[]): string {
     if (arr.length === 0) {
         return '[]';
     }
