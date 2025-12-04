@@ -13,3 +13,7 @@ deploy-timestamp.json
 # Favicon archive (source files are already in Ideatr_favicon/)
 Ideatr_favicon.zip
 
+# Release packages
+ideatr-*.zip
+release/
+
