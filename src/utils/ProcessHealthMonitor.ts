@@ -1,4 +1,4 @@
-import { ChildProcess } from 'child_process';
+import { ChildProcess, execSync } from 'child_process';
 import { Logger } from './logger';
 
 export interface ProcessHealth {
@@ -62,7 +62,7 @@ export class ProcessHealthMonitor {
             // Use ps to get RSS memory in KB
             // -o rss= outputs just the value without header
             // -p <pid> selects the process
-            const output = require('child_process').execSync(`ps -o rss= -p ${this.process.pid}`, { 
+            const output = execSync(`ps -o rss= -p ${this.process.pid}`, { 
                 encoding: 'utf8',
                 stdio: ['ignore', 'pipe', 'ignore'] // Ignore stdin/stderr to prevent hanging
             }).trim();

@@ -5,6 +5,8 @@ import type { IdeatrSettings } from '../settings';
 import { ModelDownloadModal } from './ModelDownloadModal';
 import { checkModelCompatibility, getSystemInfoString } from '../utils/systemCapabilities';
 import { localModelToDisplayInfo, renderCompactModelCard } from '../utils/modelComparisonRenderer';
+import { showConfirmation } from '../utils/confirmation';
+import { createCheckIcon, createInfoIcon } from '../utils/svgIcons';
 
 /**
  * FirstLaunchSetupModal - Modal for first-launch AI setup
@@ -131,14 +133,14 @@ export class FirstLaunchSetupModal extends Modal {
                             const systemInfo = getSystemInfoString();
                             const message = `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
                             
-                            const proceed = confirm(message);
+                            const proceed = await showConfirmation(this.app, message);
                             if (!proceed) {
                                 return; // User cancelled
                             }
                         } else if (compatibility.warning) {
                             // Show warning but allow proceeding
                             const systemInfo = getSystemInfoString();
-                            const proceed = confirm(`${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed?`);
+                            const proceed = await showConfirmation(this.app, `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed?`);
                             if (!proceed) {
                                 return; // User cancelled
                             }
@@ -176,11 +178,8 @@ export class FirstLaunchSetupModal extends Modal {
                                     const statusIcon = document.createElement('span');
                                     statusIcon.className = `model-status-icon ${isValid ? 'model-status-valid' : 'model-status-invalid'}`;
                                     statusIcon.title = isValid ? 'File verified' : 'File verification failed';
-                                    // Note: SVG strings are static and don't contain user input, so innerHTML is safe here
-                                    // However, we use it only for static SVG icons, not user-generated content
-                                    statusIcon.innerHTML = isValid 
-                                        ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
-                                        : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+                                    const iconSvg = isValid ? createCheckIcon(16) : createInfoIcon(16);
+                                    statusIcon.appendChild(iconSvg);
                                     statusIndicator.appendChild(statusIcon);
                                 } else {
                                     statusIndicator.empty();
@@ -192,8 +191,8 @@ export class FirstLaunchSetupModal extends Modal {
                                 const statusIcon = document.createElement('span');
                                 statusIcon.className = 'model-status-icon model-status-invalid';
                                 statusIcon.title = 'Verification error';
-                                // Note: SVG string is static and doesn't contain user input, so innerHTML is safe here
-                                statusIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+                                const iconSvg = createInfoIcon(16);
+                                statusIcon.appendChild(iconSvg);
                                 statusIndicator.appendChild(statusIcon);
                             }
                         })();

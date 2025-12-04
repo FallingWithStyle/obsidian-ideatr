@@ -3,6 +3,7 @@ import { BaseSettingsSection } from '../components/SettingsSection';
 import { TutorialManager } from '../../services/TutorialManager';
 import type IdeatrPlugin from '../../main';
 import * as path from 'path';
+import { showConfirmation } from '../../utils/confirmation';
 
 export class TutorialSettingsSection extends BaseSettingsSection {
     private tutorialManager: TutorialManager;
@@ -64,7 +65,8 @@ export class TutorialSettingsSection extends BaseSettingsSection {
                 .setWarning()
                 .onClick(async () => {
                     // Confirm deletion
-                    const confirmed = confirm(
+                    const confirmed = await showConfirmation(
+                        this.app,
                         'Are you sure you want to delete all tutorial files? ' +
                         'You can restore them later using "Reset Tutorials".'
                     );

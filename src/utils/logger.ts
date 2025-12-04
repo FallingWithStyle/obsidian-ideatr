@@ -33,7 +33,7 @@ export class Logger {
         }
 
         if (Logger.isDebugEnabled()) {
-            console.log('[Ideatr] Logger initialized in DEBUG mode');
+            console.debug('[Ideatr] Logger initialized in DEBUG mode');
         }
         
         // Log deploy timestamp if available (async, non-blocking)
@@ -68,7 +68,7 @@ export class Logger {
             const timestampData = JSON.parse(content);
             
             const deployedAt = timestampData.deployedAtReadable || timestampData.deployedAt;
-            console.log(`[Ideatr] Last deployed: ${deployedAt}`);
+            console.debug(`[Ideatr] Last deployed: ${deployedAt}`);
             Logger.info(`Last deployed: ${deployedAt}`);
         } catch (error) {
             // Silently fail - deploy timestamp is optional
@@ -153,7 +153,7 @@ export class Logger {
      */
     static debug(...args: any[]): void {
         if (Logger.isDebugEnabled()) {
-            console.log('[Ideatr Debug]', ...args);
+            console.debug('[Ideatr Debug]', ...args);
         }
     }
 
@@ -162,7 +162,7 @@ export class Logger {
      */
     static info(...args: any[]): void {
         if (Logger.isDebugEnabled()) {
-            console.log('[Ideatr]', ...args);
+            console.debug('[Ideatr]', ...args);
         }
     }
 
@@ -191,7 +191,7 @@ export class Logger {
      */
     static log(tag: string, ...args: any[]): void {
         if (Logger.isDebugEnabled()) {
-            console.log(`[Ideatr:${tag}]`, ...args);
+            console.debug(`[Ideatr:${tag}]`, ...args);
         }
     }
 }

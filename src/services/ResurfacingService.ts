@@ -91,7 +91,8 @@ export class ResurfacingService implements IResurfacingService {
             return;
         }
 
-        const file = this.vault.getAbstractFileByPath(ideaPath) as TFile | null;
+        const fileAbstract = this.vault.getAbstractFileByPath(ideaPath);
+        const file = fileAbstract instanceof TFile ? fileAbstract : null;
         if (!file) {
             Logger.warn(`File not found: ${ideaPath}`);
             return;
@@ -114,7 +115,8 @@ export class ResurfacingService implements IResurfacingService {
             return;
         }
 
-        const file = this.vault.getAbstractFileByPath(ideaPath) as TFile | null;
+        const fileAbstract = this.vault.getAbstractFileByPath(ideaPath);
+        const file = fileAbstract instanceof TFile ? fileAbstract : null;
         if (!file) {
             Logger.warn(`File not found: ${ideaPath}`);
             return;

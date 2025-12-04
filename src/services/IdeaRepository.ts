@@ -135,7 +135,8 @@ export class IdeaRepository implements IIdeaRepository {
             return null;
         }
 
-        const file = this.vault.getAbstractFileByPath(path) as TFile | null;
+        const fileAbstract = this.vault.getAbstractFileByPath(path);
+        const file = fileAbstract instanceof TFile ? fileAbstract : null;
         if (!file) {
             return null;
         }

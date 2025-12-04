@@ -4,6 +4,8 @@ import { FirstLaunchSetupModal } from '../../views/FirstLaunchSetupModal';
 import { ModelManager, MODELS } from '../../services/ModelManager';
 import { createHelpIcon } from '../../utils/HelpIcon';
 import { checkModelCompatibility, getSystemInfoString } from '../../utils/systemCapabilities';
+import { showConfirmation } from '../../utils/confirmation';
+import { createCheckIcon, createInfoIcon } from '../../utils/svgIcons';
 
 export class LLMSettingsSection extends BaseSettingsSection {
     /**
@@ -108,8 +110,8 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             const systemInfo = getSystemInfoString();
                             const message = `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
                             
-                            // Use Obsidian's built-in confirm dialog
-                            const proceed = confirm(message);
+                            // Use Obsidian confirmation modal
+                            const proceed = await showConfirmation(this.app, message);
                             if (!proceed) {
                                 // Reset to previous value
                                 const downloadedModels = await this.getDownloadedModels();
@@ -163,10 +165,8 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             cls: `model-status-icon ${isValid ? 'model-status-valid' : 'model-status-invalid'}`,
                             attr: { title: isValid ? 'File verified' : 'File verification failed' }
                         });
-                        // Note: SVG strings are static and don't contain user input, so innerHTML is safe here
-                        statusIcon.innerHTML = isValid 
-                            ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
-                            : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+                        const iconSvg = isValid ? createCheckIcon(14) : createInfoIcon(14);
+                        statusIcon.appendChild(iconSvg);
                     }
                 } else {
                     modelStatusSetting.setDesc(statusText);

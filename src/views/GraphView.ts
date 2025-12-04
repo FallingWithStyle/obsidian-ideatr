@@ -6,6 +6,7 @@ import { ManagementError, getManagementErrorMessage } from '../types/management'
 import { renderGraphLayout } from './GraphRenderer';
 import { Logger } from '../utils/logger';
 import { createHelpIcon } from '../utils/HelpIcon';
+import { showConfirmation } from '../utils/confirmation';
 
 /**
  * GraphView - Displays idea clusters as an interactive graph
@@ -262,7 +263,8 @@ export class GraphView extends ItemView {
         const projectName = this.projectElevationService.generateProjectName(idea);
 
         // Show confirmation dialog
-        const confirmed = confirm(
+        const confirmed = await showConfirmation(
+            this.app,
             `Elevate idea to project?\n\n` +
             `Project name: ${projectName}\n\n` +
             `The idea file will be moved to Projects/${projectName}/README.md\n` +

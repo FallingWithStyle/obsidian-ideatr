@@ -7,6 +7,7 @@ import { paginate, parseTagsInput, parseDateRange } from './dashboardUtils';
 import { renderGraphLayout } from './GraphRenderer';
 import { Logger } from '../utils/logger';
 import { createHelpIcon } from '../utils/HelpIcon';
+import { showConfirmation } from '../utils/confirmation';
 
 /**
  * DashboardView - Displays a table view of all ideas with filtering and search
@@ -734,7 +735,8 @@ export class DashboardView extends ItemView {
         const projectName = this.projectElevationService.generateProjectName(idea);
 
         // Show confirmation dialog
-        const confirmed = confirm(
+        const confirmed = await showConfirmation(
+            this.app,
             `Elevate idea to project?\n\n` +
             `Project name: ${projectName}\n\n` +
             `The idea file will be moved to Projects/${projectName}/README.md\n` +

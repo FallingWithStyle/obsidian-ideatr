@@ -142,7 +142,8 @@ export class ProjectElevationService implements IProjectElevationService {
 
         // Find original file in vault
         const originalPath = `Ideas/${ideaFile.filename}`;
-        const originalFile = this.vault.getAbstractFileByPath(originalPath) as TFile | null;
+        const originalFileAbstract = this.vault.getAbstractFileByPath(originalPath);
+        const originalFile = originalFileAbstract instanceof TFile ? originalFileAbstract : null;
 
         if (!originalFile) {
             return {
@@ -319,12 +320,12 @@ export class ProjectElevationService implements IProjectElevationService {
                 const file = this.vault.getAbstractFileByPath(path);
                 if (file) {
                     // Check if it's a file (TFile) or folder
-                    if ('extension' in file) {
+                    if (file instanceof TFile) {
                         // It's a file
                         if (this.app) {
-                            await this.app.fileManager.trashFile(file as TFile);
+                            await this.app.fileManager.trashFile(file);
                         } else {
-                            await this.vault.delete(file as TFile);
+                            await this.vault.delete(file);
                         }
                     } else {
                         // It's a folder

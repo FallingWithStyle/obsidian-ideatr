@@ -2,6 +2,7 @@ import { Notice } from 'obsidian';
 import { BaseCommand } from '../base/BaseCommand';
 import { CommandContext } from '../base/CommandContext';
 import { Logger } from '../../utils/logger';
+import { showConfirmation } from '../../utils/confirmation';
 
 /**
  * Command: elevate-to-project
@@ -42,9 +43,10 @@ export class ElevateToProjectCommand extends BaseCommand {
                 return;
             }
             
-            // Show confirmation (simple for v1, can be enhanced with modal in v2)
+            // Show confirmation
             const projectName = this.context.projectElevationService.generateProjectName(ideaFile);
-            const confirmed = confirm(
+            const confirmed = await showConfirmation(
+                this.context.app,
                 `Elevate idea to project?\n\n` +
                 `Project name: ${projectName}\n\n` +
                 `The idea file will be moved to Projects/${projectName}/README.md\n` +
