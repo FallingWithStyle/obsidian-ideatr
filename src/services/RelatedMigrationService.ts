@@ -1,6 +1,5 @@
 import type { Vault, TFile } from 'obsidian';
 import type { IIdeaRepository } from '../types/management';
-import type { IdeaFile } from '../types/idea';
 import { FileManager } from '../storage/FileManager';
 import { Logger } from '../utils/logger';
 

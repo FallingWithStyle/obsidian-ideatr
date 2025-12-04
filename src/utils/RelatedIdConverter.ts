@@ -1,5 +1,4 @@
 import type { IIdeaRepository } from '../types/management';
-import type { IdeaFile } from '../types/idea';
 import { Logger } from './logger';
 
 /**
