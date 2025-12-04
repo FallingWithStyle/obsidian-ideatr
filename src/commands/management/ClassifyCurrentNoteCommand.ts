@@ -1,6 +1,7 @@
 import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: classify-current-note
@@ -30,8 +31,12 @@ export class ClassifyCurrentNoteCommand extends IdeaFileCommand {
         const parsed = this.context.frontmatterParser.parse(content.content);
         parsed.frontmatter.category = classification.category;
         parsed.frontmatter.tags = classification.tags;
+        
+        // Convert related paths to IDs
         if (classification.related.length > 0) {
-            parsed.frontmatter.related = classification.related;
+            const idConverter = new RelatedIdConverter(this.context.ideaRepository);
+            const relatedIds = await idConverter.pathsToIds(classification.related);
+            parsed.frontmatter.related = relatedIds;
         }
 
         const updatedContent = this.context.frontmatterParser.build(parsed.frontmatter, parsed.body);

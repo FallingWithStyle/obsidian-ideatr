@@ -3,6 +3,7 @@ import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { Logger } from '../../utils/logger';
 import type { IdeaFrontmatter } from '../../types/idea';
+import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 
 /**
  * Command: refresh-idea
@@ -39,7 +40,9 @@ export class RefreshIdeaCommand extends IdeaFileCommand {
         // Refresh related notes
         try {
             const related = await this.context.searchService.findRelatedNotes(content.ideaText, 5);
-            updates.related = related.map(r => r.path);
+            const idConverter = new RelatedIdConverter(this.context.ideaRepository);
+            const relatedPaths = related.map(r => r.path);
+            updates.related = await idConverter.pathsToIds(relatedPaths);
         } catch (error) {
             Logger.warn('Failed to refresh related notes:', error);
         }
