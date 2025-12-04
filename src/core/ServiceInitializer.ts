@@ -68,7 +68,7 @@ export class ServiceInitializer {
         } = this.initializeManagementServices(app, settings);
 
         // 7. Analysis & IO Services
-        const { tenuousLinkService, exportService, importService } = this.initializeAnalysisServices(app, llmService, embeddingService);
+        const { tenuousLinkService, exportService, importService } = this.initializeAnalysisServices(app, llmService, embeddingService, ideaRepository);
 
         const context = new PluginContext(
             app,
@@ -199,15 +199,16 @@ export class ServiceInitializer {
     private static initializeAnalysisServices(
         app: App,
         llmService: ILLMService,
-        embeddingService: EmbeddingService
+        embeddingService: EmbeddingService,
+        ideaRepository: IdeaRepository
     ) {
         const tenuousLinkService = new TenuousLinkServiceImpl(
             app.vault,
             embeddingService,
             llmService
         );
-        const exportService = new ExportService(app.vault);
-        const importService = new ImportService(app.vault);
+        const exportService = new ExportService(app.vault, ideaRepository);
+        const importService = new ImportService(app.vault, ideaRepository);
         return { tenuousLinkService, exportService, importService };
     }
 
