@@ -31,6 +31,29 @@ export class LLMSettingsSection extends BaseSettingsSection {
         const helpIcon = createHelpIcon(this.app, 'getting-started', 'Learn about AI Configuration');
         titleContainer.appendChild(helpIcon);
 
+        // Local AI Version Warning Banner
+        const warningBanner = containerEl.createDiv({ cls: 'ideatr-local-ai-warning' });
+        warningBanner.style.cssText = 'background: var(--background-modifier-border); padding: 1em; border-radius: 4px; margin-bottom: 1.5em; border-left: 3px solid var(--text-warning);';
+        
+        warningBanner.createEl('strong', { 
+            text: '⚠️ Local AI Version - No Updates',
+            attr: { style: 'display: block; margin-bottom: 0.5em; color: var(--text-warning);' }
+        });
+        
+        warningBanner.createEl('p', {
+            text: 'This version includes local AI but will not receive updates. Watch for the upcoming Ideatr Desktop App for local AI with ongoing support.',
+            attr: { style: 'margin: 0.5em 0; line-height: 1.5;' }
+        });
+        
+        warningBanner.createEl('a', {
+            text: 'Learn more about Desktop App →',
+            href: 'https://ideatr.app/desktop',
+            attr: { 
+                style: 'color: var(--text-accent); text-decoration: none;',
+                target: '_blank'
+            }
+        });
+
         // Local AI settings
         new Setting(containerEl)
             .setName('Local AI')

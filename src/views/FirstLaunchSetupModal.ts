@@ -33,6 +33,15 @@ export class FirstLaunchSetupModal extends Modal {
 
         // Title
         contentEl.createEl('h2', { text: 'Manage AI models' });
+        
+        // Local AI Version Notice
+        const noticeDiv = contentEl.createDiv({ cls: 'ideatr-setup-notice' });
+        noticeDiv.style.cssText = 'background: var(--background-modifier-border); padding: 0.75em; border-radius: 4px; margin-bottom: 1em; border-left: 3px solid var(--text-warning);';
+        noticeDiv.createEl('p', {
+            text: '⚠️ This version includes local AI but will not receive updates. Watch for the upcoming Ideatr Desktop App for local AI with ongoing support.',
+            attr: { style: 'margin: 0; font-size: 0.9em; line-height: 1.4;' }
+        });
+        
         contentEl.createEl('p', {
             text: 'Choose how you want to use AI for idea enhancement:',
             cls: 'ideatr-setup-description'

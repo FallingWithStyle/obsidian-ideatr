@@ -10,6 +10,20 @@ Ideatr is a comprehensive idea management system for Obsidian that captures idea
 
 **Solution**: Ideatr provides a single, intelligent "front door" for ideas with automatic AI enhancement, validation tools, clustering, and seamless integration with your Obsidian vault.
 
+### ⚠️ Local AI Version Notice
+
+**This version (v0.8.6) includes local AI functionality but will not receive updates or bug fixes.**
+
+This is a one-time snapshot release for users who want to try local AI in the Obsidian plugin. We recommend keeping an eye out for the upcoming **Ideatr Desktop App**, which will include:
+- Local AI with ongoing updates and support
+- Native performance
+- System-wide hotkey support
+- Complete privacy
+
+[Learn more about the Desktop App →](https://ideatr.app/desktop)
+
+The main plugin version (v0.9.0+) focuses on cloud AI providers and will continue to receive regular updates.
+
 ## Features
 
 ### Core Capture & AI Enhancement

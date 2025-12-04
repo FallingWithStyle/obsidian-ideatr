@@ -234,17 +234,29 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         containerEl.createEl('h2', { text: 'Ideatr settings' });
 
-        // Beta notice
+        // Beta notice with Local AI version warning
         const betaNotice = containerEl.createDiv({ cls: 'ideatr-beta-notice' });
-        betaNotice.style.cssText = 'background: var(--background-modifier-border); padding: 1em; border-radius: 4px; margin-bottom: 1.5em; border-left: 3px solid var(--text-accent);';
+        betaNotice.style.cssText = 'background: var(--background-modifier-border); padding: 1em; border-radius: 4px; margin-bottom: 1.5em; border-left: 3px solid var(--text-warning);';
         
-        const betaTitle = betaNotice.createEl('strong', { text: '⚠️ Ideatr is in Beta' });
-        betaTitle.style.cssText = 'display: block; margin-bottom: 0.5em; color: var(--text-accent);';
+        const betaTitle = betaNotice.createEl('strong', { text: '⚠️ Local AI Version - No Updates' });
+        betaTitle.style.cssText = 'display: block; margin-bottom: 0.5em; color: var(--text-warning);';
         
         const betaText = betaNotice.createEl('p', { 
-            text: 'Ideatr is currently in beta. AI technology involves many moving parts, so things might not work as expected 100% of the time. We\'d love to hear from you!'
+            text: 'This version (v0.8.6) includes local AI functionality but will not receive updates or bug fixes. This is a one-time snapshot release for users who want to try local AI in the Obsidian plugin.'
         });
-        betaText.style.cssText = 'margin: 0.5em 0;';
+        betaText.style.cssText = 'margin: 0.5em 0; line-height: 1.5;';
+        
+        const desktopAppText = betaNotice.createEl('p', {
+            text: 'We recommend keeping an eye out for the upcoming Ideatr Desktop App, which will include local AI with ongoing support and updates.'
+        });
+        desktopAppText.style.cssText = 'margin: 0.5em 0; line-height: 1.5;';
+        
+        const desktopAppLink = betaNotice.createEl('a', {
+            text: 'Learn more about Desktop App →',
+            href: 'https://ideatr.app/desktop',
+            attr: { target: '_blank', rel: 'noopener' }
+        });
+        desktopAppLink.style.cssText = 'color: var(--text-accent); text-decoration: none; display: inline-block; margin-top: 0.5em;';
         
         const betaActions = betaNotice.createDiv();
         betaActions.style.cssText = 'margin-top: 0.75em; display: flex; gap: 0.5em; flex-wrap: wrap;';
