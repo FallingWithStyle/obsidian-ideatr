@@ -19,6 +19,8 @@ vi.mock('obsidian', async () => {
     }),
     clearTimeout: vi.fn(),
 };
+
+import { Notice, TFile, Vault, App, Workspace } from '../../test/mocks/obsidian';
 import IdeatrPlugin from '../../src/main';
 import { DEFAULT_SETTINGS } from '../../src/settings';
 import { TenuousLinkServiceImpl } from '../../src/services/TenuousLinkService';
@@ -28,6 +30,7 @@ import { ClassificationService } from '../../src/services/ClassificationService'
 
 // Mock Obsidian globals
 global.Notice = Notice;
+Notice;
 
 describe('Plugin Initialization Integration Tests', () => {
     let plugin: IdeatrPlugin;
