@@ -48,8 +48,10 @@ export class CodenameModal extends Modal {
             value: this.currentCodename || ''
         });
         this.inputEl.addClass('ideatr-codename-input');
-        this.inputEl.style.width = '100%';
-        this.inputEl.style.marginBottom = '1rem';
+        this.inputEl.setCssProps({
+            'width': '100%',
+            'margin-bottom': '1rem'
+        });
 
         // Button container
         const buttonContainer = contentEl.createEl('div', {

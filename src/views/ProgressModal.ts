@@ -42,35 +42,46 @@ export class ProgressModal extends Modal {
         // Progress bar
         this.progressContainer = contentEl.createDiv('ideatr-progress-container');
         const progressBar = this.progressContainer.createDiv('ideatr-progress-bar');
-        progressBar.style.width = '100%';
-        progressBar.style.height = '20px';
-        progressBar.style.backgroundColor = 'var(--background-modifier-border)';
-        progressBar.style.borderRadius = '4px';
-        progressBar.style.overflow = 'hidden';
+        (progressBar as HTMLElement).setCssProps({
+            'width': '100%',
+            'height': '20px',
+            'background-color': 'var(--background-modifier-border)',
+            'border-radius': '4px',
+            'overflow': 'hidden'
+        });
         
         const progressFill = progressBar.createDiv('ideatr-progress-fill');
-        progressFill.style.width = '0%';
-        progressFill.style.height = '100%';
-        progressFill.style.backgroundColor = 'var(--interactive-accent)';
-        progressFill.style.transition = 'width 0.3s ease';
-        (progressBar as any).fill = progressFill;
+        (progressFill as HTMLElement).setCssProps({
+            'width': '0%',
+            'height': '100%',
+            'background-color': 'var(--interactive-accent)',
+            'transition': 'width 0.3s ease'
+        });
+        // Store reference on progressBar for updates (not in public API)
+        (progressBar as HTMLElement & { fill?: HTMLElement }).fill = progressFill;
 
         // Status text
         this.statusContainer = contentEl.createDiv('ideatr-progress-status');
-        this.statusContainer.style.marginTop = '10px';
-        this.statusContainer.style.fontSize = '14px';
-        this.statusContainer.style.color = 'var(--text-muted)';
+        (this.statusContainer as HTMLElement).setCssProps({
+            'margin-top': '10px',
+            'font-size': '14px',
+            'color': 'var(--text-muted)'
+        });
 
         // Error container
         this.errorContainer = contentEl.createDiv('ideatr-progress-errors');
-        this.errorContainer.style.marginTop = '10px';
-        this.errorContainer.style.maxHeight = '200px';
-        this.errorContainer.style.overflowY = 'auto';
-        this.errorContainer.style.display = 'none';
+        (this.errorContainer as HTMLElement).setCssProps({
+            'margin-top': '10px',
+            'max-height': '200px',
+            'overflow-y': 'auto',
+            'display': 'none'
+        });
 
         // Cancel button
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
-        buttonContainer.style.marginTop = '20px';
+        (buttonContainer as HTMLElement).setCssProps({
+            'margin-top': '20px'
+        });
         
         this.cancelButton = buttonContainer.createEl('button', {
             text: 'Cancel',
@@ -84,17 +95,19 @@ export class ProgressModal extends Modal {
             this.close();
         });
 
-        // Store references for updates
-        (this as any).progressFill = progressFill;
-        (this as any).progressBar = progressBar;
+        // Store references for updates (private properties)
+        (this as ProgressModal & { progressFill?: HTMLElement; progressBar?: HTMLElement }).progressFill = progressFill;
+        (this as ProgressModal & { progressFill?: HTMLElement; progressBar?: HTMLElement }).progressBar = progressBar;
     }
 
     updateProgress(update: ProgressUpdate): void {
-        const progressFill = (this as any).progressFill;
+        const progressFill = (this as ProgressModal & { progressFill?: HTMLElement }).progressFill;
         if (!progressFill) return;
 
         const percentage = update.total > 0 ? (update.current / update.total) * 100 : 0;
-        progressFill.style.width = `${percentage}%`;
+        (progressFill as HTMLElement).setCssProps({
+            'width': `${percentage}%`
+        });
 
         // Update status text
         this.statusContainer.empty();
@@ -111,7 +124,9 @@ export class ProgressModal extends Modal {
 
         // Show errors if any
         if (update.errors && update.errors.length > 0) {
-            this.errorContainer.style.display = 'block';
+            (this.errorContainer as HTMLElement).setCssProps({
+                'display': 'block'
+            });
             this.errorContainer.empty();
             this.errorContainer.createEl('strong', { text: 'Errors:' });
             update.errors.forEach(error => {
@@ -119,8 +134,10 @@ export class ProgressModal extends Modal {
                     text: error,
                     cls: 'ideatr-progress-error'
                 });
-                errorItem.style.color = 'var(--text-error)';
-                errorItem.style.marginTop = '5px';
+                (errorItem as HTMLElement).setCssProps({
+                    'color': 'var(--text-error)',
+                    'margin-top': '5px'
+                });
             });
         }
 

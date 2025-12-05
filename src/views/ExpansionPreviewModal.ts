@@ -31,17 +31,21 @@ export class ExpansionPreviewModal extends Modal {
         description.addClass('ideatr-modal-description');
 
         const previewContainer = contentEl.createDiv('ideatr-expansion-preview');
-        previewContainer.style.maxHeight = '400px';
-        previewContainer.style.overflowY = 'auto';
-        previewContainer.style.padding = '10px';
-        previewContainer.style.border = '1px solid var(--background-modifier-border)';
-        previewContainer.style.borderRadius = '4px';
+        (previewContainer as HTMLElement).setCssProps({
+            'max-height': '400px',
+            'overflow-y': 'auto',
+            'padding': '10px',
+            'border': '1px solid var(--background-modifier-border)',
+            'border-radius': '4px'
+        });
         
         // Render markdown preview (simplified - in production would use Obsidian's markdown renderer)
         const preview = previewContainer.createDiv('ideatr-expansion-content');
         // Use textContent and CSS to preserve line breaks safely (prevents XSS)
         preview.textContent = this.expansion.expandedText;
-        preview.style.whiteSpace = 'pre-wrap';
+        (preview as HTMLElement).setCssProps({
+            'white-space': 'pre-wrap'
+        });
 
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         

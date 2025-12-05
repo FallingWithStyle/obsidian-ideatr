@@ -50,22 +50,26 @@ export class MutationErrorModal extends Modal {
                 const previewLabel = details.createEl('strong', {
                     text: 'Response preview:'
                 });
-                previewLabel.style.display = 'block';
-                previewLabel.style.marginTop = '10px';
-                previewLabel.style.marginBottom = '5px';
+                (previewLabel as HTMLElement).setCssProps({
+                    'display': 'block',
+                    'margin-top': '10px',
+                    'margin-bottom': '5px'
+                });
 
                 const preview = details.createEl('pre', {
                     text: this.errorDetails.responsePreview,
                     cls: 'ideatr-error-preview'
                 });
-                preview.style.fontSize = '0.9em';
-                preview.style.maxHeight = '200px';
-                preview.style.overflow = 'auto';
-                preview.style.padding = '10px';
-                preview.style.backgroundColor = 'var(--background-secondary)';
-                preview.style.borderRadius = '4px';
-                preview.style.whiteSpace = 'pre-wrap';
-                preview.style.wordBreak = 'break-word';
+                (preview as HTMLElement).setCssProps({
+                    'font-size': '0.9em',
+                    'max-height': '200px',
+                    'overflow': 'auto',
+                    'padding': '10px',
+                    'background-color': 'var(--background-secondary)',
+                    'border-radius': '4px',
+                    'white-space': 'pre-wrap',
+                    'word-break': 'break-word'
+                });
             }
         }
 
@@ -103,7 +107,9 @@ export class MutationErrorModal extends Modal {
 
         // Buttons
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
-        buttonContainer.style.marginTop = '20px';
+        (buttonContainer as HTMLElement).setCssProps({
+            'margin-top': '20px'
+        });
 
         if (this.errorDetails.canRetry && this.onRetry) {
             const retryButton = buttonContainer.createEl('button', {

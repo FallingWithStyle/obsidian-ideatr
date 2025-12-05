@@ -60,27 +60,35 @@ export class GuidedIdeationModal extends Modal {
             }
         });
         this.inputEl.addClass('ideatr-input');
-        this.inputEl.style.width = '100%';
-        this.inputEl.style.marginBottom = '10px';
+        this.inputEl.setCssProps({
+            'width': '100%',
+            'margin-bottom': '10px'
+        });
 
         // Status container
         this.statusEl = contentEl.createDiv('ideatr-status');
-        this.statusEl.style.display = 'none';
+        (this.statusEl as HTMLElement).setCssProps({
+            'display': 'none'
+        });
 
         // Preview container
         this.previewContainer = contentEl.createDiv('ideatr-preview-container');
-        this.previewContainer.style.display = 'none';
-        this.previewContainer.style.maxHeight = '400px';
-        this.previewContainer.style.overflowY = 'auto';
-        this.previewContainer.style.padding = '10px';
-        this.previewContainer.style.border = '1px solid var(--background-modifier-border)';
-        this.previewContainer.style.borderRadius = '4px';
-        this.previewContainer.style.marginTop = '10px';
-        this.previewContainer.style.marginBottom = '10px';
+        (this.previewContainer as HTMLElement).setCssProps({
+            'display': 'none',
+            'max-height': '400px',
+            'overflow-y': 'auto',
+            'padding': '10px',
+            'border': '1px solid var(--background-modifier-border)',
+            'border-radius': '4px',
+            'margin-top': '10px',
+            'margin-bottom': '10px'
+        });
 
         // Button container
         this.buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
-        this.buttonContainer.style.marginTop = '10px';
+        (this.buttonContainer as HTMLElement).setCssProps({
+            'margin-top': '10px'
+        });
 
         // Transform button
         const transformButton = this.buttonContainer.createEl('button', {
@@ -154,25 +162,37 @@ export class GuidedIdeationModal extends Modal {
 
     private showStatus(message: string) {
         this.statusEl.empty();
-        this.statusEl.style.display = 'block';
+        (this.statusEl as HTMLElement).setCssProps({
+            'display': 'block'
+        });
         this.statusEl.createEl('p', { text: message });
-        this.previewContainer.style.display = 'none';
+        (this.previewContainer as HTMLElement).setCssProps({
+            'display': 'none'
+        });
         this.hideAcceptButton();
     }
 
     private showError(message: string) {
         this.statusEl.empty();
-        this.statusEl.style.display = 'block';
+        (this.statusEl as HTMLElement).setCssProps({
+            'display': 'block'
+        });
         this.statusEl.addClass('ideatr-error');
         this.statusEl.createEl('p', { text: message });
-        this.previewContainer.style.display = 'none';
+        (this.previewContainer as HTMLElement).setCssProps({
+            'display': 'none'
+        });
         this.hideAcceptButton();
     }
 
     private showPreview(result: TransformationResult, plan: TransformationPlan) {
-        this.statusEl.style.display = 'none';
+        (this.statusEl as HTMLElement).setCssProps({
+            'display': 'none'
+        });
         this.previewContainer.empty();
-        this.previewContainer.style.display = 'block';
+        (this.previewContainer as HTMLElement).setCssProps({
+            'display': 'block'
+        });
 
         // Show plan description
         const planEl = this.previewContainer.createDiv('ideatr-plan-description');
@@ -196,17 +216,21 @@ export class GuidedIdeationModal extends Modal {
         // Show body preview
         if (result.body) {
             const bodyLabel = this.previewContainer.createEl('strong', { text: 'Body preview:' });
-            bodyLabel.style.display = 'block';
-            bodyLabel.style.marginTop = '10px';
-            bodyLabel.style.marginBottom = '5px';
+            (bodyLabel as HTMLElement).setCssProps({
+                'display': 'block',
+                'margin-top': '10px',
+                'margin-bottom': '5px'
+            });
 
             const bodyPreview = this.previewContainer.createDiv('ideatr-body-preview');
-            bodyPreview.style.whiteSpace = 'pre-wrap';
-            bodyPreview.style.fontFamily = 'var(--font-monospace)';
-            bodyPreview.style.fontSize = '0.9em';
-            bodyPreview.style.padding = '10px';
-            bodyPreview.style.backgroundColor = 'var(--background-secondary)';
-            bodyPreview.style.borderRadius = '4px';
+            (bodyPreview as HTMLElement).setCssProps({
+                'white-space': 'pre-wrap',
+                'font-family': 'var(--font-monospace)',
+                'font-size': '0.9em',
+                'padding': '10px',
+                'background-color': 'var(--background-secondary)',
+                'border-radius': '4px'
+            });
             bodyPreview.textContent = result.body.substring(0, 2000); // Limit preview size
             if (result.body.length > 2000) {
                 bodyPreview.textContent += '\n\n... (content truncated for preview)';
@@ -216,17 +240,21 @@ export class GuidedIdeationModal extends Modal {
         // Show frontmatter changes if applicable
         if (result.frontmatter) {
             const fmLabel = this.previewContainer.createEl('strong', { text: 'Frontmatter changes:' });
-            fmLabel.style.display = 'block';
-            fmLabel.style.marginTop = '10px';
-            fmLabel.style.marginBottom = '5px';
+            (fmLabel as HTMLElement).setCssProps({
+                'display': 'block',
+                'margin-top': '10px',
+                'margin-bottom': '5px'
+            });
 
             const fmPreview = this.previewContainer.createDiv('ideatr-frontmatter-preview');
-            fmPreview.style.whiteSpace = 'pre-wrap';
-            fmPreview.style.fontFamily = 'var(--font-monospace)';
-            fmPreview.style.fontSize = '0.9em';
-            fmPreview.style.padding = '10px';
-            fmPreview.style.backgroundColor = 'var(--background-secondary)';
-            fmPreview.style.borderRadius = '4px';
+            (fmPreview as HTMLElement).setCssProps({
+                'white-space': 'pre-wrap',
+                'font-family': 'var(--font-monospace)',
+                'font-size': '0.9em',
+                'padding': '10px',
+                'background-color': 'var(--background-secondary)',
+                'border-radius': '4px'
+            });
             fmPreview.textContent = JSON.stringify(result.frontmatter, null, 2);
         }
     }
@@ -242,7 +270,9 @@ export class GuidedIdeationModal extends Modal {
             text: 'Accept changes',
             cls: 'mod-cta ideatr-accept-button'
         });
-        acceptButton.style.marginLeft = '10px';
+        (acceptButton as HTMLElement).setCssProps({
+            'margin-left': '10px'
+        });
         acceptButton.addEventListener('click', async () => {
             if (this.transformationResult && this.transformationPlan && this.onAccept) {
                 try {

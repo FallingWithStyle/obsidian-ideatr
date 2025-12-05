@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, App } from 'obsidian';
 import type { IIdeaRepository, IClusteringService, IResurfacingService, IProjectElevationService, GraphNode } from '../types/management';
 import type { IdeaFile } from '../types/idea';
 import type { IdeaFilter } from '../types/management';
@@ -8,6 +8,7 @@ import { renderGraphLayout } from './GraphRenderer';
 import { Logger } from '../utils/logger';
 import { createHelpIcon } from '../utils/HelpIcon';
 import { showConfirmation } from '../utils/confirmation';
+import type IdeatrPlugin from '../main';
 
 /**
  * DashboardView - Displays a table view of all ideas with filtering and search
@@ -355,15 +356,14 @@ export class DashboardView extends ItemView {
         // Pagination footer
         const footer = container.createDiv('dashboard-pagination');
         footer.createSpan({ text: `Page ${this.currentPage} of ${totalPages}` });
-        const that = this;
         const makePageButton = (label: string, delta: number) => {
             const btn = footer.createEl('button', { text: label });
             btn.addEventListener('click', () => {
-                const nextPage = that.currentPage + delta;
+                const nextPage = this.currentPage + delta;
                 const safeNext = Math.min(Math.max(1, nextPage), totalPages);
-                if (safeNext !== that.currentPage) {
-                    that.currentPage = safeNext;
-                    that.renderTable(container);
+                if (safeNext !== this.currentPage) {
+                    this.currentPage = safeNext;
+                    this.renderTable(container);
                 }
             });
             return btn;
@@ -572,8 +572,10 @@ export class DashboardView extends ItemView {
             // Use GraphLayoutService via main wiring; for dashboard we only need a small preview,
             // so we call the same layout logic through the full GraphView pipeline. For now,
             // generate a local layout using a reasonable canvas size.
-            const previewLayout = (this.app as any).plugins
-                ? (this.app as any).plugins?.getPlugin('ideatr')?.graphLayoutService?.layoutGraph(clusters, 220, 180)
+            // App.plugins is not in the public API but exists at runtime
+            const appWithPlugins = this.app as App & { plugins?: { getPlugin: (id: string) => IdeatrPlugin & { graphLayoutService?: { layoutGraph: (clusters: unknown[], width: number, height: number) => unknown } } | null } };
+            const previewLayout = appWithPlugins.plugins
+                ? appWithPlugins.plugins.getPlugin('ideatr')?.graphLayoutService?.layoutGraph(clusters, 220, 180)
                 : null;
 
             container.empty();

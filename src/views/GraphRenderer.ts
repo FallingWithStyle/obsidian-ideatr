@@ -57,10 +57,12 @@ export function renderGraphLayout(
     // Create tooltip element (will be positioned dynamically)
     const tooltip = document.createElement('div');
     tooltip.classList.add('ideatr-graph-tooltip');
-    tooltip.style.display = 'none';
-    tooltip.style.position = 'absolute';
-    tooltip.style.pointerEvents = 'none';
-    tooltip.style.zIndex = '1000';
+    tooltip.setCssProps({
+        'display': 'none',
+        'position': 'absolute',
+        'pointer-events': 'none',
+        'z-index': '1000'
+    });
     wrapper.appendChild(tooltip);
 
     // Track current hovered node for cleanup
@@ -89,7 +91,7 @@ export function renderGraphLayout(
         }
 
         if (options.onNodeClick) {
-            group.style.cursor = 'pointer';
+            (group as any).style.cursor = 'pointer';
             group.addEventListener('click', () => {
                 options.onNodeClick?.(node.id);
             });
@@ -115,7 +117,9 @@ export function renderGraphLayout(
                 }
                 
                 // Show tooltip
-                tooltip.style.display = 'block';
+                tooltip.setCssProps({
+                    'display': 'block'
+                });
                 updateTooltipContent(tooltip, node.idea);
                 positionTooltip(tooltip, e, wrapper);
             });
@@ -128,7 +132,9 @@ export function renderGraphLayout(
 
             group.addEventListener('mouseleave', () => {
                 hoveredNodeId = null;
-                tooltip.style.display = 'none';
+                tooltip.setCssProps({
+                    'display': 'none'
+                });
                 options.onNodeHover?.(null);
             });
         }
@@ -183,8 +189,10 @@ function positionTooltip(tooltip: HTMLElement, event: MouseEvent, container: HTM
     const maxX = rect.width - tooltipRect.width - 10;
     const maxY = rect.height - tooltipRect.height - 10;
     
-    tooltip.style.left = `${Math.min(x, maxX)}px`;
-    tooltip.style.top = `${Math.max(10, Math.min(y, maxY))}px`;
+    tooltip.setCssProps({
+        'left': `${Math.min(x, maxX)}px`,
+        'top': `${Math.max(10, Math.min(y, maxY))}px`
+    });
 }
 
 

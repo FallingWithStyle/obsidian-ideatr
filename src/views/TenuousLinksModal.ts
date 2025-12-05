@@ -37,10 +37,12 @@ export class TenuousLinksModal extends Modal {
 
         this.links.forEach((link) => {
             const item = listContainer.createDiv('ideatr-tenuous-link-item');
-            item.style.marginBottom = '20px';
-            item.style.padding = '10px';
-            item.style.border = '1px solid var(--background-modifier-border)';
-            item.style.borderRadius = '4px';
+            (item as HTMLElement).setCssProps({
+                'margin-bottom': '20px',
+                'padding': '10px',
+                'border': '1px solid var(--background-modifier-border)',
+                'border-radius': '4px'
+            });
 
             item.createEl('strong', { text: link.idea.title });
             item.createEl('div', {
@@ -64,7 +66,9 @@ export class TenuousLinksModal extends Modal {
             }
 
         const buttonContainer = item.createDiv('ideatr-modal-buttons');
-        buttonContainer.style.marginTop = '10px';
+        (buttonContainer as HTMLElement).setCssProps({
+            'margin-top': '10px'
+        });
 
         const linkButton = buttonContainer.createEl('button', {
             text: 'Link ideas',

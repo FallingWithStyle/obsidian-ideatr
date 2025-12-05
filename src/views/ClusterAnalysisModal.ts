@@ -53,10 +53,12 @@ export class ClusterAnalysisModal extends Modal {
         // Statistics section
         if (this.cluster.statistics) {
             const statsSection = contentEl.createDiv('ideatr-cluster-stats');
-            statsSection.style.marginBottom = '20px';
-            statsSection.style.padding = '10px';
-            statsSection.style.backgroundColor = 'var(--background-secondary)';
-            statsSection.style.borderRadius = '4px';
+            (statsSection as HTMLElement).setCssProps({
+                'margin-bottom': '20px',
+                'padding': '10px',
+                'background-color': 'var(--background-secondary)',
+                'border-radius': '4px'
+            });
 
             statsSection.createEl('h4', { 
                 text: 'Statistics',
@@ -86,7 +88,9 @@ export class ClusterAnalysisModal extends Modal {
         // Common themes/tags
         if (this.cluster.commonTags && this.cluster.commonTags.length > 0) {
             const tagsSection = contentEl.createDiv('ideatr-cluster-tags');
-            tagsSection.style.marginBottom = '20px';
+            (tagsSection as HTMLElement).setCssProps({
+                'margin-bottom': '20px'
+            });
 
             tagsSection.createEl('h4', { 
                 text: 'Common tags',
@@ -94,9 +98,11 @@ export class ClusterAnalysisModal extends Modal {
             });
 
             const tagsContainer = tagsSection.createDiv('ideatr-cluster-tags-list');
-            tagsContainer.style.display = 'flex';
-            tagsContainer.style.flexWrap = 'wrap';
-            tagsContainer.style.gap = '5px';
+            (tagsContainer as HTMLElement).setCssProps({
+                'display': 'flex',
+                'flex-wrap': 'wrap',
+                'gap': '5px'
+            });
 
             this.cluster.commonTags.forEach(tag => {
                 tagsContainer.createEl('span', {
@@ -110,7 +116,9 @@ export class ClusterAnalysisModal extends Modal {
 
         if (this.cluster.commonThemes && this.cluster.commonThemes.length > 0) {
             const themesSection = contentEl.createDiv('ideatr-cluster-themes');
-            themesSection.style.marginBottom = '20px';
+            (themesSection as HTMLElement).setCssProps({
+                'margin-bottom': '20px'
+            });
 
             themesSection.createEl('h4', { 
                 text: 'Common themes',
@@ -128,7 +136,9 @@ export class ClusterAnalysisModal extends Modal {
 
         // Cluster members
         const membersSection = contentEl.createDiv('ideatr-cluster-members');
-        membersSection.style.marginBottom = '20px';
+        (membersSection as HTMLElement).setCssProps({
+            'margin-bottom': '20px'
+        });
 
         membersSection.createEl('h4', { 
             text: 'Cluster members',
@@ -136,25 +146,33 @@ export class ClusterAnalysisModal extends Modal {
         });
 
         const membersList = membersSection.createDiv('ideatr-cluster-members-list');
-        membersList.style.maxHeight = '300px';
-        membersList.style.overflowY = 'auto';
-        membersList.style.border = '1px solid var(--background-modifier-border)';
-        membersList.style.borderRadius = '4px';
-        membersList.style.padding = '10px';
+        (membersList as HTMLElement).setCssProps({
+            'max-height': '300px',
+            'overflow-y': 'auto',
+            'border': '1px solid var(--background-modifier-border)',
+            'border-radius': '4px',
+            'padding': '10px'
+        });
 
         this.cluster.ideas.forEach(idea => {
             const memberItem = membersList.createDiv('ideatr-cluster-member-item');
-            memberItem.style.marginBottom = '8px';
-            memberItem.style.padding = '8px';
-            memberItem.style.cursor = 'pointer';
-            memberItem.style.borderRadius = '4px';
-            memberItem.style.transition = 'background-color 0.2s';
+            (memberItem as HTMLElement).setCssProps({
+                'margin-bottom': '8px',
+                'padding': '8px',
+                'cursor': 'pointer',
+                'border-radius': '4px',
+                'transition': 'background-color 0.2s'
+            });
 
             memberItem.addEventListener('mouseenter', () => {
-                memberItem.style.backgroundColor = 'var(--background-modifier-hover)';
+                (memberItem as HTMLElement).setCssProps({
+                    'background-color': 'var(--background-modifier-hover)'
+                });
             });
             memberItem.addEventListener('mouseleave', () => {
-                memberItem.style.backgroundColor = 'transparent';
+                (memberItem as HTMLElement).setCssProps({
+                    'background-color': 'transparent'
+                });
             });
 
             memberItem.addEventListener('click', () => {
@@ -176,7 +194,9 @@ export class ClusterAnalysisModal extends Modal {
         // Related clusters
         if (this.cluster.relatedClusters && this.cluster.relatedClusters.length > 0) {
             const relatedSection = contentEl.createDiv('ideatr-cluster-related');
-            relatedSection.style.marginBottom = '20px';
+            (relatedSection as HTMLElement).setCssProps({
+                'margin-bottom': '20px'
+            });
 
             relatedSection.createEl('h4', { 
                 text: 'Related clusters',
@@ -207,7 +227,9 @@ export class ClusterAnalysisModal extends Modal {
 
         // Close button
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
-        buttonContainer.style.marginTop = '20px';
+        (buttonContainer as HTMLElement).setCssProps({
+            'margin-top': '20px'
+        });
 
         const closeButton = buttonContainer.createEl('button', {
             text: 'Close',

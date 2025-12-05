@@ -52,24 +52,30 @@ export class DuplicatePairsModal extends Modal {
         description.addClass('ideatr-modal-description');
 
         const listContainer = contentEl.createDiv('ideatr-duplicate-pairs-list');
-        listContainer.style.maxHeight = '400px';
-        listContainer.style.overflowY = 'auto';
-        listContainer.style.marginBottom = '20px';
+        (listContainer as HTMLElement).setCssProps({
+            'max-height': '400px',
+            'overflow-y': 'auto',
+            'margin-bottom': '20px'
+        });
 
         this.pairs.forEach((pair, index) => {
             const item = listContainer.createDiv('ideatr-duplicate-pair-item');
-            item.style.marginBottom = '15px';
-            item.style.padding = '10px';
-            item.style.border = '1px solid var(--background-modifier-border)';
-            item.style.borderRadius = '4px';
+            (item as HTMLElement).setCssProps({
+                'margin-bottom': '15px',
+                'padding': '10px',
+                'border': '1px solid var(--background-modifier-border)',
+                'border-radius': '4px'
+            });
             
             const checkbox = item.createEl('input', {
                 type: 'checkbox',
                 attr: { checked: 'true' }
             });
             this.selected.add(index);
-            checkbox.style.marginRight = '10px';
-            checkbox.style.marginBottom = '10px';
+            (checkbox as HTMLElement).setCssProps({
+                'margin-right': '10px',
+                'margin-bottom': '10px'
+            });
 
             checkbox.addEventListener('change', (e) => {
                 const target = e.target as HTMLInputElement;
@@ -86,25 +92,33 @@ export class DuplicatePairsModal extends Modal {
                 text: `Similarity: ${(pair.similarity * 100).toFixed(1)}%`,
                 cls: 'ideatr-duplicate-pair-similarity'
             });
-            similarity.style.fontWeight = 'bold';
-            similarity.style.marginBottom = '8px';
-            similarity.style.color = 'var(--text-accent)';
+            (similarity as HTMLElement).setCssProps({
+                'font-weight': 'bold',
+                'margin-bottom': '8px',
+                'color': 'var(--text-accent)'
+            });
 
             const file1Div = pairInfo.createDiv('ideatr-duplicate-pair-file');
             file1Div.createEl('strong', { text: 'File 1: ' });
             file1Div.createEl('span', { text: pair.file1.name });
-            file1Div.style.marginBottom = '4px';
+            (file1Div as HTMLElement).setCssProps({
+                'margin-bottom': '4px'
+            });
 
             const file2Div = pairInfo.createDiv('ideatr-duplicate-pair-file');
             file2Div.createEl('strong', { text: 'File 2: ' });
             file2Div.createEl('span', { text: pair.file2.name });
-            file2Div.style.marginBottom = '8px';
+            (file2Div as HTMLElement).setCssProps({
+                'margin-bottom': '8px'
+            });
 
             // Individual action buttons for this pair
             const pairActions = item.createDiv('ideatr-duplicate-pair-actions');
-            pairActions.style.marginTop = '8px';
-            pairActions.style.display = 'flex';
-            pairActions.style.gap = '8px';
+            (pairActions as HTMLElement).setCssProps({
+                'margin-top': '8px',
+                'display': 'flex',
+                'gap': '8px'
+            });
 
             const linkBtn = pairActions.createEl('button', {
                 text: 'Link',
@@ -139,9 +153,11 @@ export class DuplicatePairsModal extends Modal {
 
         // Bulk actions section
         const bulkSection = contentEl.createDiv('ideatr-duplicate-bulk-actions');
-        bulkSection.style.marginTop = '20px';
-        bulkSection.style.paddingTop = '20px';
-        bulkSection.style.borderTop = '1px solid var(--background-modifier-border)';
+        (bulkSection as HTMLElement).setCssProps({
+            'margin-top': '20px',
+            'padding-top': '20px',
+            'border-top': '1px solid var(--background-modifier-border)'
+        });
 
         bulkSection.createEl('h3', { 
             text: 'Bulk actions',
@@ -154,8 +170,10 @@ export class DuplicatePairsModal extends Modal {
         });
 
         const bulkButtonContainer = bulkSection.createDiv('ideatr-modal-buttons');
-        bulkButtonContainer.style.display = 'flex';
-        bulkButtonContainer.style.gap = '10px';
+        (bulkButtonContainer as HTMLElement).setCssProps({
+            'display': 'flex',
+            'gap': '10px'
+        });
 
         const bulkLinkButton = bulkButtonContainer.createEl('button', {
             text: 'Link selected',

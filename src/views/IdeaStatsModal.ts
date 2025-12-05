@@ -44,10 +44,12 @@ export class IdeaStatsModal extends Modal {
 
         // Stats grid
         const statsGrid = contentEl.createDiv('ideatr-stats-grid');
-        statsGrid.style.display = 'grid';
-        statsGrid.style.gridTemplateColumns = '1fr 1fr';
-        statsGrid.style.gap = '15px';
-        statsGrid.style.marginBottom = '20px';
+        (statsGrid as HTMLElement).setCssProps({
+            'display': 'grid',
+            'grid-template-columns': '1fr 1fr',
+            'gap': '15px',
+            'margin-bottom': '20px'
+        });
 
         // Age
         this.createStatCard(statsGrid, 'Age', `${this.stats.age} day${this.stats.age !== 1 ? 's' : ''}`);
@@ -69,10 +71,12 @@ export class IdeaStatsModal extends Modal {
 
         // Dates section
         const datesSection = contentEl.createDiv('ideatr-stats-dates');
-        datesSection.style.marginBottom = '20px';
-        datesSection.style.padding = '10px';
-        datesSection.style.backgroundColor = 'var(--background-secondary)';
-        datesSection.style.borderRadius = '4px';
+        (datesSection as HTMLElement).setCssProps({
+            'margin-bottom': '20px',
+            'padding': '10px',
+            'background-color': 'var(--background-secondary)',
+            'border-radius': '4px'
+        });
 
         datesSection.createEl('h4', { 
             text: 'Dates',
@@ -94,11 +98,15 @@ export class IdeaStatsModal extends Modal {
         // Additional info if frontmatter available
         if (this.stats.frontmatter) {
             const additionalSection = contentEl.createDiv('ideatr-stats-additional');
-            additionalSection.style.marginBottom = '20px';
+            (additionalSection as HTMLElement).setCssProps({
+                'margin-bottom': '20px'
+            });
 
             if (this.stats.frontmatter.tags && this.stats.frontmatter.tags.length > 0) {
                 const tagsSection = additionalSection.createDiv('ideatr-stats-tags');
-                tagsSection.style.marginBottom = '10px';
+                (tagsSection as HTMLElement).setCssProps({
+                    'margin-bottom': '10px'
+                });
 
                 tagsSection.createEl('h4', { 
                     text: 'Tags',
@@ -106,9 +114,11 @@ export class IdeaStatsModal extends Modal {
                 });
 
                 const tagsContainer = tagsSection.createDiv('ideatr-stats-tags-list');
-                tagsContainer.style.display = 'flex';
-                tagsContainer.style.flexWrap = 'wrap';
-                tagsContainer.style.gap = '5px';
+                (tagsContainer as HTMLElement).setCssProps({
+                    'display': 'flex',
+                    'flex-wrap': 'wrap',
+                    'gap': '5px'
+                });
 
                 this.stats.frontmatter.tags.forEach(tag => {
                     tagsContainer.createEl('span', {
@@ -122,7 +132,9 @@ export class IdeaStatsModal extends Modal {
 
             if (this.stats.frontmatter.related && this.stats.frontmatter.related.length > 0) {
                 const relatedSection = additionalSection.createDiv('ideatr-stats-related');
-                relatedSection.style.marginBottom = '10px';
+                (relatedSection as HTMLElement).setCssProps({
+                    'margin-bottom': '10px'
+                });
 
                 relatedSection.createEl('h4', { 
                     text: 'Related notes',
@@ -135,7 +147,7 @@ export class IdeaStatsModal extends Modal {
 
                 // Handle both IDs (numbers) and legacy paths (strings)
                 const relatedItems = this.stats.frontmatter.related;
-                const relatedIds = relatedItems.filter((item): item is number => typeof item === 'number' && item !== 0) as number[];
+                const relatedIds = relatedItems.filter((item): item is number => typeof item === 'number' && item !== 0);
                 
                 if (relatedIds.length > 0 && this.idConverter) {
                     // Load titles for tooltips
@@ -177,7 +189,9 @@ export class IdeaStatsModal extends Modal {
 
         // Close button
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
-        buttonContainer.style.marginTop = '20px';
+        (buttonContainer as HTMLElement).setCssProps({
+            'margin-top': '20px'
+        });
 
         const closeButton = buttonContainer.createEl('button', {
             text: 'Close',
@@ -190,10 +204,12 @@ export class IdeaStatsModal extends Modal {
 
     private createStatCard(container: HTMLElement, label: string, value: string): HTMLElement {
         const card = container.createDiv('ideatr-stat-card');
-        card.style.padding = '10px';
-        card.style.backgroundColor = 'var(--background-secondary)';
-        card.style.borderRadius = '4px';
-        card.style.border = '1px solid var(--background-modifier-border)';
+        (card as HTMLElement).setCssProps({
+            'padding': '10px',
+            'background-color': 'var(--background-secondary)',
+            'border-radius': '4px',
+            'border': '1px solid var(--background-modifier-border)'
+        });
 
         card.createEl('div', {
             text: label,

@@ -66,12 +66,14 @@ export class ReorganizationPreviewModal extends Modal {
         });
 
         const previewContainer = contentEl.createDiv('ideatr-reorganization-preview');
-        previewContainer.style.maxHeight = '400px';
-        previewContainer.style.overflowY = 'auto';
-        previewContainer.style.padding = '10px';
-        previewContainer.style.border = '1px solid var(--background-modifier-border)';
-        previewContainer.style.borderRadius = '4px';
-        previewContainer.style.marginTop = '10px';
+        (previewContainer as HTMLElement).setCssProps({
+            'max-height': '400px',
+            'overflow-y': 'auto',
+            'padding': '10px',
+            'border': '1px solid var(--background-modifier-border)',
+            'border-radius': '4px',
+            'margin-top': '10px'
+        });
 
         let currentView: 'before' | 'after' = 'after';
         const updateView = () => {
@@ -80,7 +82,9 @@ export class ReorganizationPreviewModal extends Modal {
             const preview = previewContainer.createDiv('ideatr-reorganization-content');
             // Use textContent and CSS to preserve line breaks safely (prevents XSS)
             preview.textContent = text;
-            preview.style.whiteSpace = 'pre-wrap';
+            (preview as HTMLElement).setCssProps({
+                'white-space': 'pre-wrap'
+            });
             
             // Update tab styles
             beforeTab.classList.toggle('mod-cta', currentView === 'before');
