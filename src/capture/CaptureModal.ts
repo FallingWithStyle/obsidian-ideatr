@@ -949,7 +949,7 @@ Response:`;
 
         // Wait for all to complete (or fail)
         try {
-            const [searchResults, _variantResult] = await Promise.all([searchPromise, variantPromise]);
+            const [searchResults] = await Promise.all([searchPromise, variantPromise]);
             const updates: Partial<IdeaFrontmatter> = {};
 
             // Handle search results

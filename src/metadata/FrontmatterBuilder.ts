@@ -36,7 +36,7 @@ export function frontmatterToYAML(frontmatter: IdeaFrontmatter): string {
         `status: ${frontmatter.status}`,
         `created: ${frontmatter.created}`,
         `id: ${frontmatter.id ?? 0}`,
-        `category: ${frontmatter.category || ''}`,
+        `category: ${typeof frontmatter.category === 'string' ? frontmatter.category : ''}`,
         `tags: ${arrayToYAML(frontmatter.tags)}`,
         `related: ${arrayToYAML(frontmatter.related)}`,
         `domains: ${arrayToYAML(frontmatter.domains)}`,
