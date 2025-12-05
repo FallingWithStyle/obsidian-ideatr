@@ -1,4 +1,3 @@
-import { joinPath, resolvePath, isAbsolutePath } from '../utils/pathUtils';
 import { App, Notice } from 'obsidian';
 import type IdeatrPlugin from '../main';
 import type { IdeatrSettings } from '../settings';
@@ -214,8 +213,8 @@ export class ServiceInitializer {
      * Initialize LLM services (local and cloud)
      */
     private static async initializeLLMServices(
-        app: App,
-        plugin: IdeatrPlugin,
+        _app: App,
+        _plugin: IdeatrPlugin,
         settings: IdeatrSettings
     ): Promise<ILLMService> {
         // Initialize cloud LLM if configured
@@ -298,15 +297,13 @@ export class ServiceInitializer {
         // Preload model on startup if enabled
         if (settings.preloadOnStartup && cloudLLM.isAvailable()) {
             cloudLLM.ensureReady?.().then((_ready: unknown) => {
-                if (!ready) {
-                    Logger.debug('LLM not ready for preload (paths not configured or model not downloaded)');
-                }
+                Logger.debug('LLM preloaded on startup');
             }).catch((error: unknown) => {
                 Logger.warn('Failed to preload LLM on startup:', error);
             });
         }
 
-        return { localLLMService, llmService };
+        return cloudLLM;
     }
 }
 

@@ -111,7 +111,6 @@ export default class IdeatrPlugin extends Plugin {
         // Initialize all services using ServiceInitializer
         const { context } = await ServiceInitializer.initialize(this.app, this, this.settings);
         this.pluginContext = context;
-        this.localLLMService = localLLM;
 
         // Add status indicator to status bar
         this.addStatusBarIndicator();

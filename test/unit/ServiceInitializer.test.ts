@@ -58,7 +58,7 @@ describe('ServiceInitializer', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        
+
         mockApp = {
             vault: {
                 getMarkdownFiles: vi.fn(() => []),
@@ -75,7 +75,14 @@ describe('ServiceInitializer', () => {
             saveData: vi.fn().mockResolvedValue(undefined),
         };
 
-        mockSettings = { ...DEFAULT_SETTINGS };
+        mockSettings = {
+            ...DEFAULT_SETTINGS,
+            cloudProvider: 'anthropic',
+            cloudApiKeys: {
+                ...DEFAULT_SETTINGS.cloudApiKeys,
+                anthropic: 'test-api-key'
+            }
+        };
     });
 
     describe('initialize', () => {
