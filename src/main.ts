@@ -109,7 +109,7 @@ export default class IdeatrPlugin extends Plugin {
         }
 
         // Initialize all services using ServiceInitializer
-        const { context, localLLMService: localLLM } = await ServiceInitializer.initialize(this.app, this, this.settings);
+        const { context } = await ServiceInitializer.initialize(this.app, this, this.settings);
         this.pluginContext = context;
         this.localLLMService = localLLM;
 

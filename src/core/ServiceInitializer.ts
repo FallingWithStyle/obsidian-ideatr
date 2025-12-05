@@ -46,8 +46,8 @@ export class ServiceInitializer {
         // 1. Core Services
         const { fileManager, fileOrganizer, errorLogService } = this.initializeCoreServices(app, settings);
 
-        // 2. LLM Services
-        const { localLLMService, llmService } = await this.initializeLLMServices(app, plugin, settings);
+        // 2. LLM Services (cloud only)
+        const llmService = await this.initializeLLMServices(app, plugin, settings);
 
         // 3. Search & Classification Services
         const { searchService, classificationService, duplicateDetector } = this.initializeSearchServices(app, llmService);
@@ -217,18 +217,7 @@ export class ServiceInitializer {
         app: App,
         plugin: IdeatrPlugin,
         settings: IdeatrSettings
-    ): Promise<{ localLLMService: LlamaService; llmService: ILLMService }> {
-        // Initialize local LLM using singleton pattern
-        const vaultBasePath = (app.vault.adapter as any).basePath || app.vault.configDir;
-        const configDir = isAbsolutePath(app.vault.configDir)
-            ? app.vault.configDir
-            : joinPath(vaultBasePath, app.vault.configDir);
-        const pluginDir = resolvePath(joinPath(configDir, 'plugins', plugin.manifest.id));
-        Logger.debug('Plugin directory:', pluginDir);
-
-        // Use singleton getInstance instead of new to ensure only one instance
-        const localLLMService = LlamaService.getInstance(settings, pluginDir);
-
+    ): Promise<ILLMService> {
         // Initialize cloud LLM if configured
         let cloudLLM: ILLMService | null = null;
         if (settings.cloudProvider !== 'none' && settings.cloudProvider !== 'custom' && settings.cloudProvider !== 'custom-model') {
@@ -301,20 +290,18 @@ export class ServiceInitializer {
             }
         }
 
-        // Create HybridLLM to manage both local and cloud
-        const llmService = new HybridLLM(
-            localLLMService,
-            cloudLLM,
-            settings.preferCloud
-        );
+        // If no cloud LLM configured, throw error
+        if (!cloudLLM) {
+            throw new Error('No LLM service configured. Please configure a cloud AI provider in settings.');
+        }
 
         // Preload model on startup if enabled
-        if (settings.preloadOnStartup && llmService.isAvailable()) {
-            llmService.ensureReady?.().then((ready) => {
+        if (settings.preloadOnStartup && cloudLLM.isAvailable()) {
+            cloudLLM.ensureReady?.().then((_ready: unknown) => {
                 if (!ready) {
                     Logger.debug('LLM not ready for preload (paths not configured or model not downloaded)');
                 }
-            }).catch((error) => {
+            }).catch((error: unknown) => {
                 Logger.warn('Failed to preload LLM on startup:', error);
             });
         }
