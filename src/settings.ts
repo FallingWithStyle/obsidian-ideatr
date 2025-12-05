@@ -1,4 +1,4 @@
-import { App, PluginSettingTab } from 'obsidian';
+import { App, PluginSettingTab, Setting } from 'obsidian';
 import type IdeatrPlugin from './main';
 import { LLMSettingsSection } from './settings/sections/LLMSettingsSection';
 import { CloudAISettingsSection } from './settings/sections/CloudAISettingsSection';
@@ -232,40 +232,70 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Ideatr settings' });
+        new Setting(containerEl).setName('Ideatr settings').setHeading();
 
         // Beta notice with Local AI version warning
         const betaNotice = containerEl.createDiv({ cls: 'ideatr-beta-notice' });
-        betaNotice.style.cssText = 'background: var(--background-modifier-border); padding: 1em; border-radius: 4px; margin-bottom: 1.5em; border-left: 3px solid var(--text-warning);';
+        (betaNotice as HTMLElement).setCssProps({
+            'background': 'var(--background-modifier-border)',
+            'padding': '1em',
+            'border-radius': '4px',
+            'margin-bottom': '1.5em',
+            'border-left': '3px solid var(--text-warning)'
+        });
         
         const betaTitle = betaNotice.createEl('strong', { text: '⚠️ Local AI Version - No Updates' });
-        betaTitle.style.cssText = 'display: block; margin-bottom: 0.5em; color: var(--text-warning);';
+        (betaTitle as HTMLElement).setCssProps({
+            'display': 'block',
+            'margin-bottom': '0.5em',
+            'color': 'var(--text-warning)'
+        });
         
         const betaText = betaNotice.createEl('p', { 
             text: 'This version (v0.8.6) includes local AI functionality but will not receive updates or bug fixes. This is a one-time snapshot release for users who want to try local AI in the Obsidian plugin.'
         });
-        betaText.style.cssText = 'margin: 0.5em 0; line-height: 1.5;';
+        (betaText as HTMLElement).setCssProps({
+            'margin': '0.5em 0',
+            'line-height': '1.5'
+        });
         
         const desktopAppText = betaNotice.createEl('p', {
             text: 'We recommend keeping an eye out for the upcoming Ideatr Desktop App, which will include local AI with ongoing support and updates.'
         });
-        desktopAppText.style.cssText = 'margin: 0.5em 0; line-height: 1.5;';
+        (desktopAppText as HTMLElement).setCssProps({
+            'margin': '0.5em 0',
+            'line-height': '1.5'
+        });
         
         const desktopAppLink = betaNotice.createEl('a', {
             text: 'Learn more about Desktop App →',
             href: 'https://ideatr.app/desktop',
             attr: { target: '_blank', rel: 'noopener' }
         });
-        desktopAppLink.style.cssText = 'color: var(--text-accent); text-decoration: none; display: inline-block; margin-top: 0.5em;';
+        (desktopAppLink as HTMLElement).setCssProps({
+            'color': 'var(--text-accent)',
+            'text-decoration': 'none',
+            'display': 'inline-block',
+            'margin-top': '0.5em'
+        });
         
         const betaActions = betaNotice.createDiv();
-        betaActions.style.cssText = 'margin-top: 0.75em; display: flex; gap: 0.5em; flex-wrap: wrap;';
+        (betaActions as HTMLElement).setCssProps({
+            'margin-top': '0.75em',
+            'display': 'flex',
+            'gap': '0.5em',
+            'flex-wrap': 'wrap'
+        });
         
         const reportButton = betaActions.createEl('a', { 
             text: '📝 Report Bug or Request Feature',
             href: '#ideatr-feedback-section'
         });
-        reportButton.style.cssText = 'color: var(--text-accent); text-decoration: none; cursor: pointer;';
+        (reportButton as HTMLElement).setCssProps({
+            'color': 'var(--text-accent)',
+            'text-decoration': 'none',
+            'cursor': 'pointer'
+        });
         reportButton.addEventListener('click', (e) => {
             e.preventDefault();
             // Scroll to feedback section after a short delay to ensure it's rendered
@@ -282,14 +312,20 @@ export class IdeatrSettingTab extends PluginSettingTab {
             href: 'https://github.com/FallingWithStyle/obsidian-ideatr#roadmap',
             attr: { target: '_blank', rel: 'noopener' }
         });
-        roadmapLink.style.cssText = 'color: var(--text-accent); text-decoration: none;';
+        (roadmapLink as HTMLElement).setCssProps({
+            'color': 'var(--text-accent)',
+            'text-decoration': 'none'
+        });
         
         const githubLink = betaActions.createEl('a', { 
             text: '🐛 GitHub Issues',
             href: 'https://github.com/FallingWithStyle/obsidian-ideatr/issues',
             attr: { target: '_blank', rel: 'noopener' }
         });
-        githubLink.style.cssText = 'color: var(--text-accent); text-decoration: none;';
+        (githubLink as HTMLElement).setCssProps({
+            'color': 'var(--text-accent)',
+            'text-decoration': 'none'
+        });
 
         // Initialize sections
         const llmSection = new LLMSettingsSection(this.app, this.plugin, this);
@@ -311,7 +347,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         // Validation Tools Section
         const validationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
-        validationTitle.createEl('h2', { text: 'Validation tools' });
+        new Setting(validationTitle).setName('Validation tools').setHeading();
         const validationHelpIcon = createHelpIcon(this.app, 'validation', 'Learn about Validation Tools');
         validationTitle.appendChild(validationHelpIcon);
         // Domain checking settings hidden - functionality removed
@@ -320,7 +356,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         // Transformation Tools Section
         const transformationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
-        transformationTitle.createEl('h2', { text: 'Transformation tools' });
+        new Setting(transformationTitle).setName('Transformation tools').setHeading();
         const transformationHelpIcon = createHelpIcon(this.app, 'transformation', 'Learn about Transformation Tools');
         transformationTitle.appendChild(transformationHelpIcon);
         nameVariantSection.display(containerEl);
@@ -331,16 +367,16 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         // Feedback Section
         const feedbackTitle = containerEl.createDiv({ cls: 'settings-section-title', attr: { id: 'ideatr-feedback-section' } });
-        feedbackTitle.createEl('h2', { text: 'Feedback & support' });
+        new Setting(feedbackTitle).setName('Feedback & support').setHeading();
         feedbackSection.display(containerEl);
 
         // Error Logging Settings
-        containerEl.createEl('h3', { text: 'Error logging' });
+        new Setting(containerEl).setName('Error logging').setHeading();
         errorLoggingSection.display(containerEl);
 
         // Capture Modal Settings
         const captureTitle = containerEl.createDiv({ cls: 'settings-section-title' });
-        captureTitle.createEl('h2', { text: 'Capture modal' });
+        new Setting(captureTitle).setName('Capture modal').setHeading();
         const captureHelpIcon = createHelpIcon(this.app, 'capture-workflows', 'Learn about Capture Modal');
         captureTitle.appendChild(captureHelpIcon);
         captureModalSection.display(containerEl);

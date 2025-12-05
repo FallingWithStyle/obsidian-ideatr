@@ -12,7 +12,8 @@ export class TutorialSettingsSection extends BaseSettingsSection {
         super(app, plugin, settingsTab);
         
         // Get plugin directory for tutorial manager (same approach as ServiceInitializer)
-        const vaultBasePath = (app.vault.adapter as any).basePath || app.vault.configDir;
+        // Vault adapter may have basePath property but it's not in the public API
+        const vaultBasePath = (app.vault.adapter as { basePath?: string }).basePath || app.vault.configDir;
         const configDir = isAbsolutePath(app.vault.configDir) 
             ? app.vault.configDir
             : joinPath(vaultBasePath, app.vault.configDir);

@@ -1,5 +1,6 @@
 import { Setting, Notice } from 'obsidian';
 import { BaseSettingsSection } from '../components/SettingsSection';
+import type { IdeatrSettings } from '../../settings';
 import { ProviderFactory } from '../../services/providers/ProviderFactory';
 import type { CloudProviderType } from '../../types/llm-provider';
 import { getCloudModelsByProvider, type CloudModelConfig } from '../../utils/ModelValidator';
@@ -17,19 +18,25 @@ export class CloudAISettingsSection extends BaseSettingsSection {
             text: this.showComparison ? '▼ Hide Model Comparison' : '▶ Show Model Comparison',
             cls: 'mod-link'
         });
-        comparisonButton.style.marginBottom = '1em';
+        (comparisonButton as HTMLElement).setCssProps({
+            'margin-bottom': '1em'
+        });
         comparisonButton.addEventListener('click', () => {
             this.showComparison = !this.showComparison;
             comparisonButton.textContent = this.showComparison ? '▼ Hide Model Comparison' : '▶ Show Model Comparison';
             const comparisonSection = containerEl.querySelector('.cloud-model-comparison-section') as HTMLElement;
             if (comparisonSection) {
-                comparisonSection.style.display = this.showComparison ? 'block' : 'none';
+                (comparisonSection as HTMLElement).setCssProps({
+                    'display': this.showComparison ? 'block' : 'none'
+                });
             }
         });
 
         // Model comparison section (hidden by default)
         const comparisonSection = containerEl.createDiv({ cls: 'cloud-model-comparison-section' });
-        comparisonSection.style.display = 'none';
+        (comparisonSection as HTMLElement).setCssProps({
+            'display': 'none'
+        });
         this.renderModelComparison(comparisonSection);
 
         new Setting(containerEl)
@@ -72,7 +79,8 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .addOption('none', 'None')
                         .setValue(this.plugin.settings.cloudProvider === 'none' ? 'none' : this.plugin.settings.cloudProvider)
                         .onChange(async (value) => {
-                            this.plugin.settings.cloudProvider = value as any;
+                            // Type-safe assignment - value is guaranteed to be one of the valid options
+                            this.plugin.settings.cloudProvider = value as IdeatrSettings['cloudProvider'];
                             // Don't clear API keys when switching - they're stored per provider
                             await this.saveSettings();
                             this.refresh();
@@ -137,7 +145,9 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         });
 
                     const helpText = containerEl.createDiv('setting-item-description');
-                    helpText.style.marginTop = '5px';
+                    (helpText as HTMLElement).setCssProps({
+                        'margin-top': '5px'
+                    });
                     const providerName = providerNames[this.plugin.settings.cloudProvider] || 'provider';
                     const apiKeyUrl = apiKeyUrls[this.plugin.settings.cloudProvider] || '#';
                     helpText.createEl('a', {
@@ -155,8 +165,10 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     };
                     const costEstimate = costEstimates[this.plugin.settings.cloudProvider] || 'Varies';
                     const costText = containerEl.createDiv('setting-item-description');
-                    costText.style.marginTop = '5px';
-                    costText.style.color = 'var(--text-muted)';
+                    (costText as HTMLElement).setCssProps({
+                        'margin-top': '5px',
+                        'color': 'var(--text-muted)'
+                    });
                     costText.textContent = `Cost estimate: ${costEstimate}`;
 
                     new Setting(containerEl)
@@ -242,8 +254,10 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                             }));
 
                     const customCostText = containerEl.createDiv('setting-item-description');
-                    customCostText.style.marginTop = '5px';
-                    customCostText.style.color = 'var(--text-muted)';
+                    (customCostText as HTMLElement).setCssProps({
+                        'margin-top': '5px',
+                        'color': 'var(--text-muted)'
+                    });
                     customCostText.textContent = 'Cost estimate: Free (self-hosted)';
 
                     new Setting(containerEl)

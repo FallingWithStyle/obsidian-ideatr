@@ -52,10 +52,12 @@ export class ProjectElevationSettingsSection extends BaseSettingsSection {
                 }));
 
         const elevationHelp = containerEl.createDiv('setting-item-description');
-        elevationHelp.style.marginTop = '10px';
-        elevationHelp.style.padding = '10px';
-        elevationHelp.style.backgroundColor = 'var(--background-secondary)';
-        elevationHelp.style.borderRadius = '4px';
+        (elevationHelp as HTMLElement).setCssProps({
+            'margin-top': '10px',
+            'padding': '10px',
+            'background-color': 'var(--background-secondary)',
+            'border-radius': '4px'
+        });
         
         // Build help text safely (prevents XSS from settings values)
         const projectsDir = this.plugin.settings.elevationProjectsDirectory || 'Projects';

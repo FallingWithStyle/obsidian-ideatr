@@ -6,6 +6,7 @@ import { createHelpIcon } from '../../utils/HelpIcon';
 import { checkModelCompatibility, getSystemInfoString } from '../../utils/systemCapabilities';
 import { showConfirmation } from '../../utils/confirmation';
 import { createCheckIcon, createInfoIcon } from '../../utils/svgIcons';
+import type { IdeatrSettings } from '../../settings';
 
 export class LLMSettingsSection extends BaseSettingsSection {
     /**
@@ -33,7 +34,13 @@ export class LLMSettingsSection extends BaseSettingsSection {
 
         // Local AI Version Warning Banner
         const warningBanner = containerEl.createDiv({ cls: 'ideatr-local-ai-warning' });
-        warningBanner.style.cssText = 'background: var(--background-modifier-border); padding: 1em; border-radius: 4px; margin-bottom: 1.5em; border-left: 3px solid var(--text-warning);';
+        (warningBanner as HTMLElement).setCssProps({
+            'background': 'var(--background-modifier-border)',
+            'padding': '1em',
+            'border-radius': '4px',
+            'margin-bottom': '1.5em',
+            'border-left': '3px solid var(--text-warning)'
+        });
         
         warningBanner.createEl('strong', { 
             text: '⚠️ Local AI Version - No Updates',
@@ -114,7 +121,8 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             
                             // Update settings if we had to change the model
                             if (selectedModel !== currentModel) {
-                                this.plugin.settings.localModel = selectedModel as any;
+                                // Type-safe assignment - selectedModel is guaranteed to be a valid model key
+                                this.plugin.settings.localModel = selectedModel as IdeatrSettings['localModel'];
                                 this.saveSettings(); // Don't await to avoid blocking
                             }
                         }
