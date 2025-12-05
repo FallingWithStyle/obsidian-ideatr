@@ -25,7 +25,7 @@ export class CommandErrorHandler {
         if (error instanceof UserFacingError) {
             new Notice(error.userMessage);
         } else if (error instanceof NetworkError || error instanceof ClassificationError) {
-            const cause = (error as ClassificationError).cause;
+            const cause = error.cause;
             if (cause && (cause.message.includes('CONNECTION_REFUSED') || 
                          cause.message.includes('Failed to fetch'))) {
                 new Notice('LLM service is not running. Please start your local LLM server or configure a cloud provider.');

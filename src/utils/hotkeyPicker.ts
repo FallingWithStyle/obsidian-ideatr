@@ -99,21 +99,27 @@ export function createHotkeyPicker(
     inputEl.placeholder = 'Click and press keys...';
     
     // Style the input to indicate it's a hotkey picker
-    inputEl.style.cursor = 'text';
-    inputEl.style.fontFamily = 'monospace';
+    inputEl.setCssProps({
+        'cursor': 'text',
+        'font-family': 'monospace'
+    });
     
     // Handle focus - start capturing
     inputEl.addEventListener('focus', () => {
         isCapturing = true;
         inputEl.value = '';
         inputEl.placeholder = 'Press keys...';
-        inputEl.style.backgroundColor = 'var(--background-modifier-active-hover)';
+        inputEl.setCssProps({
+            'background-color': 'var(--background-modifier-active-hover)'
+        });
     });
     
     // Handle blur - stop capturing and save
     inputEl.addEventListener('blur', () => {
         isCapturing = false;
-        inputEl.style.backgroundColor = '';
+        inputEl.setCssProps({
+            'background-color': ''
+        });
         if (capturedShortcut) {
             inputEl.value = formatShortcut(capturedShortcut);
         } else {

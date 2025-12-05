@@ -139,30 +139,36 @@ export function createHelpIcon(
     icon.addClass('ideatr-help-icon');
     icon.setAttribute('aria-label', tooltip || 'Get help');
     icon.textContent = '?';
-    icon.style.cursor = 'pointer';
-    icon.style.display = 'inline-flex';
-    icon.style.alignItems = 'center';
-    icon.style.justifyContent = 'center';
-    icon.style.width = '16px';
-    icon.style.height = '16px';
-    icon.style.borderRadius = '50%';
-    icon.style.backgroundColor = 'var(--background-modifier-border)';
-    icon.style.color = 'var(--text-muted)';
-    icon.style.fontSize = '12px';
-    icon.style.fontWeight = 'bold';
-    icon.style.marginLeft = '4px';
-    icon.style.verticalAlign = 'middle';
-    icon.style.lineHeight = '1';
+    icon.setCssProps({
+        'cursor': 'pointer',
+        'display': 'inline-flex',
+        'align-items': 'center',
+        'justify-content': 'center',
+        'width': '16px',
+        'height': '16px',
+        'border-radius': '50%',
+        'background-color': 'var(--background-modifier-border)',
+        'color': 'var(--text-muted)',
+        'font-size': '12px',
+        'font-weight': 'bold',
+        'margin-left': '4px',
+        'vertical-align': 'middle',
+        'line-height': '1'
+    });
     
     // Hover effect
     icon.addEventListener('mouseenter', () => {
-        icon.style.backgroundColor = 'var(--interactive-accent)';
-        icon.style.color = 'var(--text-on-accent)';
+        icon.setCssProps({
+            'background-color': 'var(--interactive-accent)',
+            'color': 'var(--text-on-accent)'
+        });
     });
     
     icon.addEventListener('mouseleave', () => {
-        icon.style.backgroundColor = 'var(--background-modifier-border)';
-        icon.style.color = 'var(--text-muted)';
+        icon.setCssProps({
+            'background-color': 'var(--background-modifier-border)',
+            'color': 'var(--text-muted)'
+        });
     });
 
     // Click handler
