@@ -1,9 +1,6 @@
 import type { App } from 'obsidian';
 import type { ILLMService } from '../types/classification';
 import type { IdeatrSettings } from '../settings';
-import { MODELS } from '../services/ModelManager';
-import { LlamaService } from '../services/LlamaService';
-import { HybridLLM } from '../services/HybridLLM';
 import { createStatusIcon } from './iconUtils';
 
 /**
@@ -48,105 +45,9 @@ export function getModelStatus(
         };
     }
 
-    // Handle HybridLLM (which wraps local and cloud)
-    if (llmService instanceof HybridLLM) {
-        const hybridLLM = llmService as HybridLLM;
-        const preferCloud = settings.preferCloud;
-        
-        // Determine which provider to check
-        if (preferCloud && settings.cloudProvider !== 'none') {
-            // Get the API key for the current provider
-            const hasApiKey = settings.cloudProvider === 'custom' 
-                ? (settings.customEndpointUrl && settings.customEndpointUrl.trim().length > 0)
-                : settings.cloudProvider === 'custom-model'
-                ? (settings.customModelProvider && settings.cloudApiKeys && 
-                    settings.customModelProvider in settings.cloudApiKeys &&
-                    (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] || '').trim().length > 0)
-                : (settings.cloudApiKeys && 
-                    settings.cloudProvider in settings.cloudApiKeys &&
-                    (settings.cloudApiKeys[settings.cloudProvider as keyof typeof settings.cloudApiKeys] || '').trim().length > 0);
-            
-            if (hasApiKey) {
-                // Prefer cloud - check cloud status
-                const cloudStatus = getCloudProviderStatus(settings);
-                if (cloudStatus.status === 'connected') {
-                    return cloudStatus;
-                }
-                // Fall back to local if cloud not available
-            }
-        }
-        
-        // Check local status using public getter
-        const localService = hybridLLM.getLocalLLM();
-        if (localService instanceof LlamaService) {
-            return getLocalModelStatus(localService, settings);
-        }
-        
-        // Fallback: return basic status
-        const modelKey = settings.localModel || 'phi-3.5-mini';
-        const modelConfig = MODELS[modelKey];
-        const modelName = modelConfig ? modelConfig.name : 'Unknown Model';
-        return {
-            status: 'loading',
-            modelName,
-            provider: 'hybrid',
-            details: 'Checking status...'
-        };
-    }
-
-    // Handle LlamaService (local)
-    if (llmService instanceof LlamaService) {
-        return getLocalModelStatus(llmService, settings);
-    }
-
     // Handle cloud providers (ProviderAdapter)
     // Cloud providers are typically always ready if configured
     return getCloudProviderStatus(settings);
-}
-
-/**
- * Get status for local Llama model
- */
-function getLocalModelStatus(
-    llmService: ILLMService,
-    settings: IdeatrSettings
-): ModelStatus {
-    const llamaService = llmService as LlamaService;
-    
-    // Get model name from ModelManager
-    const modelKey = settings.localModel || 'phi-3.5-mini';
-    const modelConfig = MODELS[modelKey];
-    const modelName = modelConfig ? modelConfig.name : 'Unknown Model';
-
-    // Check connection state using public getters
-    const loadingState = llamaService.getLoadingState();
-    const isServerReady = llamaService.getIsServerReady();
-    const hasServerProcess = llamaService.hasServerProcess();
-
-    // Determine status
-    let status: ModelConnectionStatus;
-    let details: string | undefined;
-
-    if (loadingState === 'ready' && isServerReady) {
-        status = 'connected';
-        details = 'Model loaded and ready';
-    } else if (loadingState === 'loading' || (hasServerProcess && !isServerReady)) {
-        status = 'loading';
-        details = 'Loading model...';
-    } else if (loadingState === 'not-loaded' && !hasServerProcess) {
-        status = 'not-connected';
-        details = 'Model not loaded';
-    } else {
-        status = 'error';
-        details = 'Connection issue';
-    }
-
-    return {
-        status,
-        modelName,
-        provider: 'local',
-        details
-    };
 }
 
 /**
