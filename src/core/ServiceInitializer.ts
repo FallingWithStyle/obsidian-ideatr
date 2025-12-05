@@ -3,7 +3,6 @@ import { App, Notice } from 'obsidian';
 import type IdeatrPlugin from '../main';
 import type { IdeatrSettings } from '../settings';
 import { FileManager } from '../storage/FileManager';
-import { LlamaService } from '../services/LlamaService';
 import { SearchService } from '../services/SearchService';
 import { ClassificationService } from '../services/ClassificationService';
 import { DuplicateDetector } from '../services/DuplicateDetector';
@@ -22,7 +21,6 @@ import { ProjectElevationService } from '../services/ProjectElevationService';
 import { TenuousLinkServiceImpl } from '../services/TenuousLinkService';
 import { ExportService } from '../services/ExportService';
 import { ImportService } from '../services/ImportService';
-import { HybridLLM } from '../services/HybridLLM';
 import { ProviderFactory } from '../services/providers/ProviderFactory';
 import { ProviderAdapter } from '../services/providers/ProviderAdapter';
 import type { ILLMService } from '../types/classification';
@@ -44,7 +42,7 @@ export class ServiceInitializer {
         app: App,
         plugin: IdeatrPlugin,
         settings: IdeatrSettings
-    ): Promise<{ context: PluginContext; localLLMService: LlamaService }> {
+    ): Promise<{ context: PluginContext }> {
         // 1. Core Services
         const { fileManager, fileOrganizer, errorLogService } = this.initializeCoreServices(app, settings);
 
@@ -103,7 +101,7 @@ export class ServiceInitializer {
 
         // Schedule ID assignment and migration during idle time
         ideaIdService.scheduleIdleAssignment(3000); // Wait 3 seconds after load
-        
+
         // Run migration after a short delay (after IDs are assigned)
         setTimeout(async () => {
             try {
@@ -113,7 +111,7 @@ export class ServiceInitializer {
             }
         }, 5000);
 
-        return { context, localLLMService };
+        return { context };
     }
 
     private static initializeCoreServices(app: App, settings: IdeatrSettings) {
