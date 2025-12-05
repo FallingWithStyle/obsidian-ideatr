@@ -4,11 +4,9 @@ import { DashboardView } from './views/DashboardView';
 import { GraphView } from './views/GraphView';
 import { IdeatrSettings, DEFAULT_SETTINGS, IdeatrSettingTab } from './settings';
 import { FirstLaunchSetupModal, isFirstLaunch } from './views/FirstLaunchSetupModal';
-import { ModelManager } from './services/ModelManager';
 import { Logger } from './utils/logger';
 import { ServiceInitializer } from './core/ServiceInitializer';
 import { CommandRegistry } from './commands/CommandRegistry';
-import { LlamaService } from './services/LlamaService';
 import { PluginContext } from './core/PluginContext';
 import { NameVariantService } from './services/NameVariantService';
 import { ErrorLogService } from './services/ErrorLogService';
@@ -18,14 +16,13 @@ import { MemoryMonitor } from './utils/MemoryMonitor';
 import { IDEATR_ICON_ID, IDEATR_ICON_GREEN, IDEATR_ICON_YELLOW, IDEATR_ICON_RED, createPNGIconSVG } from './utils/iconUtils';
 import { PURPLE_ICON_BASE64, GREEN_ICON_BASE64, YELLOW_ICON_BASE64, RED_ICON_BASE64 } from './utils/iconData';
 import { joinPath, resolvePath, isAbsolutePath } from './utils/pathUtils';
+import type { ILLMService } from './types/classification';
 
 /**
  * Ideatr Plugin - Fast idea capture with intelligent classification
  */
 export default class IdeatrPlugin extends Plugin {
     settings!: IdeatrSettings;
-    private localLLMService!: LlamaService;
-    private modelManager!: ModelManager;
     private pluginContext!: PluginContext;
     private statusBarItem!: HTMLElement;
     private statusUpdateInterval?: number;
@@ -62,35 +59,10 @@ export default class IdeatrPlugin extends Plugin {
         };
         process.on('uncaughtException', this.uncaughtExceptionHandler);
 
-        // Process exit handlers to ensure llama-server cleanup
-        // These prevent orphaned processes when Obsidian quits
-        this.exitHandler = () => {
-            Logger.debug('Process exit handler triggered - cleaning up llama-server');
-            LlamaService.destroyInstance();
-        };
-
-        this.sigintHandler = () => {
-            Logger.debug('SIGINT received - cleaning up and exiting');
-            LlamaService.destroyInstance();
-            process.exit(0);
-        };
-
-        this.sigtermHandler = () => {
-            Logger.debug('SIGTERM received - cleaning up and exiting');
-            LlamaService.destroyInstance();
-            process.exit(0);
-        };
-
-        process.on('exit', this.exitHandler);
-        process.on('SIGINT', this.sigintHandler);
-        process.on('SIGTERM', this.sigtermHandler);
 
 
         // Initialize Logger with app instance and debug mode setting
         await Logger.initialize(this.app, this.settings.debugMode);
-
-        // Initialize ModelManager for first-launch detection
-        this.modelManager = new ModelManager();
 
         // Check for first launch and show setup modal if needed
         if (isFirstLaunch(this.settings)) {
@@ -98,7 +70,7 @@ export default class IdeatrPlugin extends Plugin {
             setTimeout(() => {
                 new FirstLaunchSetupModal(
                     this.app,
-                    this.modelManager,
+                    null, // No ModelManager - local models not supported
                     this.settings,
                     async () => {
                         // Save settings after setup completion
@@ -192,17 +164,6 @@ export default class IdeatrPlugin extends Plugin {
                 void this.openCaptureModal();
             });
 
-            // Add Force Kill command
-            this.addCommand({
-                id: 'force-kill-server',
-                name: 'Force Kill AI Server',
-                callback: () => {
-                    if (this.localLLMService) {
-                        void this.localLLMService.stopServer();
-                        new Notice('AI Server stopped (Force Kill)');
-                    }
-                }
-            });
 
             // Add Memory Report command
             this.addCommand({
@@ -308,11 +269,10 @@ export default class IdeatrPlugin extends Plugin {
 
         // Cleanup HybridLLM if it has cleanup method
         if (this.pluginContext?.llmService) {
-            (this.pluginContext.llmService as any).cleanup?.();
+            const llmService = this.pluginContext.llmService as ILLMService & { cleanup?: () => void };
+            llmService.cleanup?.();
         }
 
-        // Stop local LLM service using singleton destroy
-        LlamaService.destroyInstance();
 
         Logger.debug('Ideatr plugin unloaded successfully');
     }
@@ -363,10 +323,6 @@ export default class IdeatrPlugin extends Plugin {
     async saveSettings() {
         await this.saveData(this.settings);
 
-        // Update LlamaService singleton with new settings
-        if (this.localLLMService) {
-            this.localLLMService.updateSettings(this.settings);
-        }
     }
 
     /**
@@ -409,7 +365,9 @@ export default class IdeatrPlugin extends Plugin {
     private async ensureTutorialsAvailable(): Promise<void> {
         try {
             // Get plugin directory
-            const vaultBasePath = (this.app.vault.adapter as any).basePath || this.app.vault.configDir;
+            // Vault adapter may have basePath property for file system access
+            const vaultAdapter = this.app.vault.adapter as { basePath?: string };
+            const vaultBasePath = vaultAdapter.basePath || this.app.vault.configDir;
             const configDir = isAbsolutePath(this.app.vault.configDir)
                 ? this.app.vault.configDir
                 : joinPath(vaultBasePath, this.app.vault.configDir);
