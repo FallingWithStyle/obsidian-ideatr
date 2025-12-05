@@ -71,7 +71,14 @@ describe('Plugin Initialization Integration Tests', () => {
         // Create plugin instance
         plugin = new IdeatrPlugin();
         plugin.app = mockApp;
-        plugin.settings = { ...DEFAULT_SETTINGS };
+        plugin.settings = {
+            ...DEFAULT_SETTINGS,
+            cloudProvider: 'anthropic',
+            cloudApiKeys: {
+                ...DEFAULT_SETTINGS.cloudApiKeys,
+                anthropic: 'test-api-key'
+            }
+        };
         // Add manifest for plugin directory resolution
         (plugin as any).manifest = {
             id: 'ideatr'
@@ -103,7 +110,7 @@ describe('Plugin Initialization Integration Tests', () => {
             // Assert - Verify plugin context is initialized
             expect((plugin as any).pluginContext).toBeDefined();
             const context = (plugin as any).pluginContext;
-            
+
             // Verify all services are initialized in context
             expect(context.fileManager).toBeDefined();
             expect(context.fileOrganizer).toBeDefined();
@@ -130,7 +137,7 @@ describe('Plugin Initialization Integration Tests', () => {
             expect(context.exportService).toBeInstanceOf(ExportService);
             expect(context.importService).toBeDefined();
             expect(context.importService).toBeInstanceOf(ImportService);
-            
+
             // Verify public getters still work
             expect(plugin.nameVariantService).toBeDefined();
             expect(plugin.errorLogService).toBeDefined();

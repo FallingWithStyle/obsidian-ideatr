@@ -38,14 +38,15 @@ describe('FrontmatterBuilder', () => {
             expect(frontmatter.category).toBe('');
         });
 
-        it('should initialize id as 0', () => {
+        it('should initialize id as a number', () => {
             const idea = {
                 text: 'Test idea',
                 timestamp: new Date('2025-11-28T17:00:00Z')
             };
             const frontmatter = buildFrontmatter(idea);
 
-            expect(frontmatter.id).toBe(0);
+            expect(typeof frontmatter.id).toBe('number');
+            expect(frontmatter.id).toBeGreaterThan(0);
         });
 
         it('should initialize all arrays as empty', () => {

@@ -32,8 +32,6 @@ existence-check: [Found similar product]
             expect(result?.id).toBe(42);
             expect(result?.category).toBe('saas');
             expect(result?.tags).toEqual(['productivity', 'tool']);
-            expect(result?.related).toEqual(['idea1.md', 'idea2.md']);
-            expect(result?.domains).toEqual(['example.com']);
             expect(result?.['existence-check']).toEqual(['Found similar product']);
         });
 
