@@ -5,7 +5,20 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Notice, TFile, Vault, App, Workspace } from '../../test/mocks/obsidian';
+
+// Mock Obsidian modules
+vi.mock('obsidian', async () => {
+    const actual = await vi.importActual('../../test/mocks/obsidian');
+    return actual;
+});
+
+// Mock window for setTimeout/clearTimeout
+(global as any).window = {
+    setTimeout: vi.fn((fn: () => void, _delay: number) => {
+        return 1 as any;
+    }),
+    clearTimeout: vi.fn(),
+};
 import IdeatrPlugin from '../../src/main';
 import { DEFAULT_SETTINGS } from '../../src/settings';
 import { TenuousLinkServiceImpl } from '../../src/services/TenuousLinkService';
