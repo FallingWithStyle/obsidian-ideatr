@@ -52,12 +52,12 @@ export class GeminiProvider implements ILLMProvider {
             const client = this.getClient();
             const genModel = client.getGenerativeModel({ model: this.model });
             const result = await genModel.generateContent(prompt);
-            const response = await result.response;
+            const response = result.response;
             const content = response.text();
 
             return this.parseResponse(content);
         } catch (error: unknown) {
-            const err = error as any;
+            const err = error as { status?: number; response?: { status?: number } };
             if (err?.status === 429 || err?.response?.status === 429) {
                 throw new Error('Rate limit exceeded. Please try again later.');
             }

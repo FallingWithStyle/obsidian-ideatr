@@ -47,8 +47,9 @@ export class ProviderAdapter implements ILLMService {
         }
     ): Promise<string> {
         // Check if provider has complete method (optional)
-        if ((this.provider as any).complete && typeof (this.provider as any).complete === 'function') {
-            return await (this.provider as any).complete(prompt, options);
+        const providerWithComplete = this.provider as ILLMProvider & { complete?: (prompt: string, options?: { temperature?: number; n_predict?: number; stop?: string[]; grammar?: string }) => Promise<string> };
+        if (providerWithComplete.complete && typeof providerWithComplete.complete === 'function') {
+            return await providerWithComplete.complete(prompt, options);
         }
 
         throw new Error('Provider does not support generic completions. Use local LLM or a provider with complete() method.');

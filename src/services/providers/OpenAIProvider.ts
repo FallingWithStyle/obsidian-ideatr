@@ -69,7 +69,7 @@ export class OpenAIProvider implements ILLMProvider {
             return this.parseResponse(content);
         } catch (error: unknown) {
             // Handle rate limiting
-            const err = error as any;
+            const err = error as { status?: number; response?: { status?: number } };
             if (err?.status === 429 || err?.response?.status === 429) {
                 throw new Error('Rate limit exceeded. Please try again later.');
             }

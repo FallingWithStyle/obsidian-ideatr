@@ -68,7 +68,8 @@ export class AnthropicProvider implements ILLMProvider {
             return this.parseResponse(content.text);
         } catch (error: unknown) {
             // Handle rate limiting
-            const err = error as any;
+            // Error may have status property from API responses
+            const err = error as { status?: number; response?: { status?: number }; message?: string };
             if (err?.status === 429 || err?.response?.status === 429) {
                 throw new Error('Rate limit exceeded. Please try again later.');
             }
