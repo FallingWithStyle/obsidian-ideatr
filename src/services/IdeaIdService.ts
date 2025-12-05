@@ -107,8 +107,13 @@ export class IdeaIdService {
         }
 
         // Schedule idle assignment using requestIdleCallback if available, otherwise setTimeout
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            this.idleTimeoutId = window.requestIdleCallback(
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        const win = window as any;
+        if ('requestIdleCallback' in win && typeof win.requestIdleCallback === 'function') {
+            this.idleTimeoutId = win.requestIdleCallback(
                 () => {
                     this.assignMissingIds().catch(error => {
                         Logger.warn('Idle ID assignment failed:', error);
@@ -116,9 +121,9 @@ export class IdeaIdService {
                 },
                 { timeout: delay }
             );
-        } else if (typeof window !== 'undefined' && typeof window.setTimeout === 'function') {
+        } else if (typeof win.setTimeout === 'function') {
             // Fallback to setTimeout
-            this.idleTimeoutId = window.setTimeout(() => {
+            this.idleTimeoutId = win.setTimeout(() => {
                 this.assignMissingIds().catch(error => {
                     Logger.warn('Idle ID assignment failed:', error);
                 });

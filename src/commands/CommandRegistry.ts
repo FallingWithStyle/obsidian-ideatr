@@ -59,13 +59,13 @@ export class CommandRegistry {
                 Logger.error(`Callback error for ${commandName}:`, error);
             }
         };
-        
+
         // Verify the callback is a function
         if (typeof callback !== 'function') {
             console.error(`[Ideatr] ERROR: Callback for ${commandName} is not a function! Type: ${typeof callback}`);
             Logger.error(`Callback for ${commandName} is not a function! Type: ${typeof callback}`);
         }
-        
+
         return callback;
     }
 
@@ -74,14 +74,14 @@ export class CommandRegistry {
      */
     private static async safeExecute(commandName: string, operation: () => Promise<void>): Promise<void> {
         Logger.info(`Starting command: ${commandName}`);
-        
+
         // Show visual loading indicator with spinner
         // Create notice first - this should always work
         let loadingNotice: Notice | null = null;
         try {
             loadingNotice = new Notice(`⏳ Processing ${commandName}...`, 0); // 0 = don't auto-hide
             Logger.debug(`Created loading notice for: ${commandName}`);
-            
+
             // Try to add spinner styling (optional enhancement)
             try {
                 const noticeEl = (loadingNotice as any).noticeEl as HTMLElement;
@@ -100,12 +100,12 @@ export class CommandRegistry {
             console.error(`[Ideatr] Failed to create loading notice for ${commandName}:`, noticeError);
             Logger.error(`Failed to create loading notice for ${commandName}:`, noticeError);
         }
-        
+
         try {
             Logger.debug(`Executing operation for: ${commandName}`);
             await operation();
             Logger.info(`Finished command: ${commandName}`);
-            
+
             // Hide loading notice and show success
             if (loadingNotice) {
                 loadingNotice.hide();
@@ -114,12 +114,12 @@ export class CommandRegistry {
         } catch (error) {
             console.error(`[Ideatr] Command '${commandName}' failed:`, error);
             Logger.error(`Command '${commandName}' failed:`, error);
-            
+
             // Hide loading notice (error notice will be shown by BaseCommand.handleError)
             if (loadingNotice) {
                 loadingNotice.hide();
             }
-            
+
             // We don't show a Notice here because BaseCommand.handleError might have already shown one.
             // But if the constructor failed, BaseCommand wasn't instantiated.
             // So we should check if it's a critical failure that wasn't handled.
@@ -132,9 +132,9 @@ export class CommandRegistry {
      */
     static registerAll(plugin: Plugin, context: CommandContext): void {
         Logger.debug('Registering commands...');
-        
+
         // Capture commands
-        const captureCallback = CommandRegistry.createCommandCallback('Capture Idea', () => new CaptureCommand(context).execute());
+        const captureCallback = CommandRegistry.createCommandCallback('Capture Idea', async () => await new CaptureCommand(context).execute());
         plugin.addCommand({
             id: 'capture-idea',
             name: 'Capture Idea',
@@ -147,35 +147,35 @@ export class CommandRegistry {
         // plugin.addCommand({
         //     id: 'check-domains',
         //     name: 'Check Domains',
-        //     callback: CommandRegistry.createCommandCallback('Check Domains', () => new DomainCheckCommand(context).execute())
+        //     callback: CommandRegistry.createCommandCallback('Check Domains', async () => await new DomainCheckCommand(context).execute())
         // });
 
         plugin.addCommand({
             id: 'search-existence',
             name: 'Search Existence',
-            callback: CommandRegistry.createCommandCallback('Search Existence', () => new ExistenceSearchCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Search Existence', async () => await new ExistenceSearchCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'check-duplicates',
             name: 'Check Duplicates',
-            callback: CommandRegistry.createCommandCallback('Check Duplicates', () => new DuplicateCheckCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Check Duplicates', async () => await new DuplicateCheckCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'find-related-notes',
             name: 'Find Related Notes',
-            callback: CommandRegistry.createCommandCallback('Find Related Notes', () => new RelatedNotesCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Find Related Notes', async () => await new RelatedNotesCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'quick-validate',
             name: 'Quick Validate',
-            callback: CommandRegistry.createCommandCallback('Quick Validate', () => new QuickValidateCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Quick Validate', async () => await new QuickValidateCommand(context).execute())
         });
 
         // Transformation commands
-        const nameVariantCallback = CommandRegistry.createCommandCallback('Generate Name Variants', () => new NameVariantCommand(context).execute());
+        const nameVariantCallback = CommandRegistry.createCommandCallback('Generate Name Variants', async () => await new NameVariantCommand(context).execute());
         Logger.debug('Created nameVariantCallback, type:', typeof nameVariantCallback);
         plugin.addCommand({
             id: 'generate-name-variants',
@@ -187,16 +187,16 @@ export class CommandRegistry {
         plugin.addCommand({
             id: 'generate-scaffold',
             name: 'Generate Scaffold',
-            callback: CommandRegistry.createCommandCallback('Generate Scaffold', () => new ScaffoldCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Generate Scaffold', async () => await new ScaffoldCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'generate-mutations',
             name: 'Generate Mutations',
-            callback: CommandRegistry.createCommandCallback('Generate Mutations', () => new MutationCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Generate Mutations', async () => await new MutationCommand(context).execute())
         });
 
-        const expandCallback = CommandRegistry.createCommandCallback('Expand Idea', () => new ExpandCommand(context).execute());
+        const expandCallback = CommandRegistry.createCommandCallback('Expand Idea', async () => await new ExpandCommand(context).execute());
         Logger.debug('Created expandCallback, type:', typeof expandCallback, 'is function:', typeof expandCallback === 'function');
         plugin.addCommand({
             id: 'expand-idea',
@@ -208,132 +208,132 @@ export class CommandRegistry {
         plugin.addCommand({
             id: 'reorganize-idea',
             name: 'Reorganize Idea',
-            callback: CommandRegistry.createCommandCallback('Reorganize Idea', () => new ReorganizeCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Reorganize Idea', async () => await new ReorganizeCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'guided-ideation',
             name: 'Transform',
-            callback: CommandRegistry.createCommandCallback('Transform', () => new GuidedIdeationCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Transform', async () => await new GuidedIdeationCommand(context).execute())
         });
 
         // Lifecycle commands
         plugin.addCommand({
             id: 'change-status',
             name: 'Change Status',
-            callback: CommandRegistry.createCommandCallback('Change Status', () => new StatusCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Change Status', async () => await new StatusCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'archive-idea',
             name: 'Archive Idea',
-            callback: CommandRegistry.createCommandCallback('Archive Idea', () => new ArchiveCommand(context, true).execute())
+            callback: CommandRegistry.createCommandCallback('Archive Idea', async () => await new ArchiveCommand(context, true).execute())
         });
 
         plugin.addCommand({
             id: 'unarchive-idea',
             name: 'Unarchive Idea',
-            callback: CommandRegistry.createCommandCallback('Unarchive Idea', () => new ArchiveCommand(context, false).execute())
+            callback: CommandRegistry.createCommandCallback('Unarchive Idea', async () => await new ArchiveCommand(context, false).execute())
         });
 
         plugin.addCommand({
             id: 'add-codename',
             name: 'Generate Codename',
-            callback: CommandRegistry.createCommandCallback('Generate Codename', () => new CodenameCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Generate Codename', async () => await new CodenameCommand(context).execute())
         });
 
         // View commands
         plugin.addCommand({
             id: 'open-dashboard',
             name: 'Open Dashboard',
-            callback: CommandRegistry.createCommandCallback('Open Dashboard', () => new DashboardCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Open Dashboard', async () => await new DashboardCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'open-graph',
             name: 'Open Graph View',
-            callback: CommandRegistry.createCommandCallback('Open Graph View', () => new GraphViewCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Open Graph View', async () => await new GraphViewCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'open-tutorials',
             name: 'Open Tutorials',
-            callback: CommandRegistry.createCommandCallback('Open Tutorials', () => new OpenTutorialsCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Open Tutorials', async () => await new OpenTutorialsCommand(context).execute())
         });
 
         // Management commands
         plugin.addCommand({
             id: 'classify-current-note',
             name: 'Classify Current Note',
-            callback: CommandRegistry.createCommandCallback('Classify Current Note', () => new ClassifyCurrentNoteCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Classify Current Note', async () => await new ClassifyCurrentNoteCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'refresh-idea',
             name: 'Refresh Idea',
-            callback: CommandRegistry.createCommandCallback('Refresh Idea', () => new RefreshIdeaCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Refresh Idea', async () => await new RefreshIdeaCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'export-ideas',
             name: 'Export Ideas',
-            callback: CommandRegistry.createCommandCallback('Export Ideas', () => new ExportCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Export Ideas', async () => await new ExportCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'import-ideas',
             name: 'Import Ideas',
-            callback: CommandRegistry.createCommandCallback('Import Ideas', () => new ImportCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Import Ideas', async () => await new ImportCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'generate-digest',
             name: 'Generate Weekly Digest',
-            callback: CommandRegistry.createCommandCallback('Generate Weekly Digest', () => new DigestCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Generate Weekly Digest', async () => await new DigestCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'elevate-to-project',
             name: 'Elevate to Project',
-            callback: CommandRegistry.createCommandCallback('Elevate to Project', () => new ElevateToProjectCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Elevate to Project', async () => await new ElevateToProjectCommand(context).execute())
         });
 
         // Batch operations commands
         plugin.addCommand({
             id: 'reclassify-all-ideas',
             name: 'Reclassify All Ideas',
-            callback: CommandRegistry.createCommandCallback('Reclassify All Ideas', () => new ReclassifyAllCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Reclassify All Ideas', async () => await new ReclassifyAllCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'find-all-duplicates',
             name: 'Find All Duplicates',
-            callback: CommandRegistry.createCommandCallback('Find All Duplicates', () => new FindAllDuplicatesCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Find All Duplicates', async () => await new FindAllDuplicatesCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'refresh-all-related-notes',
             name: 'Refresh All Related Notes',
-            callback: CommandRegistry.createCommandCallback('Refresh All Related Notes', () => new RefreshRelatedNotesCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Refresh All Related Notes', async () => await new RefreshRelatedNotesCommand(context).execute())
         });
 
         // Analysis commands
         plugin.addCommand({
             id: 'find-tenuous-links',
             name: 'Find Tenuous Links',
-            callback: CommandRegistry.createCommandCallback('Find Tenuous Links', () => new TenuousLinksCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Find Tenuous Links', async () => await new TenuousLinksCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'analyze-idea-cluster',
             name: 'Analyze Idea Cluster',
-            callback: CommandRegistry.createCommandCallback('Analyze Idea Cluster', () => new ClusterAnalysisCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Analyze Idea Cluster', async () => await new ClusterAnalysisCommand(context).execute())
         });
 
         plugin.addCommand({
             id: 'show-idea-stats',
             name: 'Show Idea Statistics',
-            callback: CommandRegistry.createCommandCallback('Show Idea Statistics', () => new IdeaStatsCommand(context).execute())
+            callback: CommandRegistry.createCommandCallback('Show Idea Statistics', async () => await new IdeaStatsCommand(context).execute())
         });
 
         // DEBUG: Add a test command via CommandRegistry (only in debug mode)

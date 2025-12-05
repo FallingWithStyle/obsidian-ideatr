@@ -1291,7 +1291,7 @@ Output: {`;
                 if (health.memoryUsageMB > limit) {
                     Logger.warn(`Llama server memory usage (${health.memoryUsageMB.toFixed(0)}MB) exceeded limit (${limit.toFixed(0)}MB). Restarting...`);
                     new Notice('Restarting AI Server (Memory Limit Exceeded)');
-                    this.restartServer();
+                    void this.restartServer();
                 }
             }
         }, LLM_CONSTANTS.HEALTH_CHECK_INTERVAL);

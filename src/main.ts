@@ -189,7 +189,7 @@ export default class IdeatrPlugin extends Plugin {
 
             // Use IDEATR_ICON_ID constant to ensure consistency across ribbon and other icons
             this.addRibbonIcon(IDEATR_ICON_ID, 'Capture Idea', () => {
-                this.openCaptureModal();
+                void this.openCaptureModal();
             });
 
             // Add Force Kill command
@@ -198,7 +198,7 @@ export default class IdeatrPlugin extends Plugin {
                 name: 'Force Kill AI Server',
                 callback: () => {
                     if (this.localLLMService) {
-                        this.localLLMService.stopServer();
+                        void this.localLLMService.stopServer();
                         new Notice('AI Server stopped (Force Kill)');
                     }
                 }
