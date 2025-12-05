@@ -1,4 +1,5 @@
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { IIdeaRepository } from '../types/management';
 import { generateUniqueId } from '../utils/IdeaIdGenerator';
 import { FileManager } from '../storage/FileManager';
@@ -45,7 +46,7 @@ export class IdeaIdService {
             // Get all existing IDs
             const existingIds = allIdeas
                 .map(idea => idea.frontmatter.id)
-                .filter(id => id !== 0 && id !== undefined) as number[];
+                .filter((id): id is number => id !== 0 && id !== undefined);
 
             // Find ideas that need IDs
             const ideasNeedingIds = allIdeas.filter(
@@ -58,15 +59,17 @@ export class IdeaIdService {
             for (const idea of ideasNeedingIds) {
                 try {
                     // Get the file
-                    const file = this.vault.getAbstractFileByPath(
+                    const abstractFile = this.vault.getAbstractFileByPath(
                         `Ideas/${idea.filename}`
-                    ) as TFile;
+                    );
 
-                    if (!file) {
+                    if (!abstractFile || !(abstractFile instanceof TFile)) {
                         Logger.warn(`File not found for idea: ${idea.filename}`);
                         errors++;
                         continue;
                     }
+
+                    const file = abstractFile;
 
                     // Generate unique ID
                     const newId = generateUniqueId(existingIds);
@@ -111,8 +114,9 @@ export class IdeaIdService {
             return;
         }
 
-        const win = window as any;
-        if ('requestIdleCallback' in win && typeof win.requestIdleCallback === 'function') {
+        // requestIdleCallback is not in standard Window type but may be available
+        const win = window as Window & { requestIdleCallback?: (callback: () => void) => number };
+        if (win.requestIdleCallback && typeof win.requestIdleCallback === 'function') {
             this.idleTimeoutId = win.requestIdleCallback(
                 () => {
                     this.assignMissingIds().catch(error => {

@@ -101,7 +101,7 @@ export class ExportService {
             case 'markdown':
                 return this.exportMarkdown(exportData);
             default:
-                throw new Error(`Unsupported export format: ${format}`);
+                throw new Error(`Unsupported export format: ${String(format)}`);
         }
     }
 

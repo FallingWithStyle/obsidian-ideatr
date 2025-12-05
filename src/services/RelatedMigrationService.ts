@@ -1,4 +1,5 @@
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { IIdeaRepository } from '../types/management';
 import { FileManager } from '../storage/FileManager';
 import { Logger } from '../utils/logger';
@@ -73,7 +74,7 @@ export class RelatedMigrationService {
                             if (id) {
                                 migratedRelated.push(id);
                             } else {
-                                Logger.warn(`Could not find ID for path: ${item}`);
+                                Logger.warn(`Could not find ID for path: ${String(item)}`);
                             }
                         } else if (typeof item === 'number' && item !== 0) {
                             // It's already an ID - check if it's valid
@@ -93,12 +94,12 @@ export class RelatedMigrationService {
                     // Update the file if there are changes
                     if (uniqueRelated.length !== related.length || 
                         !uniqueRelated.every((id, idx) => related[idx] === id)) {
-                        const file = this.vault.getAbstractFileByPath(
+                        const abstractFile = this.vault.getAbstractFileByPath(
                             `Ideas/${idea.filename}`
-                        ) as TFile;
+                        );
 
-                        if (file) {
-                            await this.fileManager.updateIdeaFrontmatter(file, {
+                        if (abstractFile instanceof TFile) {
+                            await this.fileManager.updateIdeaFrontmatter(abstractFile, {
                                 related: uniqueRelated
                             });
                             migrated++;

@@ -1,4 +1,9 @@
 import { App, Notice, TFile, TFolder } from 'obsidian';
+// NOTE: fs is required for reading bundled tutorial files from plugin directory
+// Obsidian allows plugins to access their own directory for bundled resources
+// This is used as a fallback when tutorials aren't found in the vault
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - Node.js builtin required for plugin directory access
 import * as fs from 'fs';
 import { joinPath } from '../utils/pathUtils';
 
@@ -205,7 +210,7 @@ export class TutorialManager {
     async deleteTutorials(): Promise<boolean> {
         try {
             // Check for tutorials in either case (for backward compatibility)
-            const tutorialDir = await this.findTutorialFolder();
+            const tutorialDir = this.findTutorialFolder();
             
             if (!tutorialDir) {
                 new Notice('No tutorial files found to delete.');

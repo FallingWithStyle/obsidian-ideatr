@@ -56,7 +56,7 @@ export class ImportService {
                     items = this.parseMarkdown(content);
                     break;
                 default:
-                    throw new Error(`Unsupported import format: ${format}`);
+                    throw new Error(`Unsupported import format: ${String(format)}`);
             }
         } catch (error) {
             result.errors.push({

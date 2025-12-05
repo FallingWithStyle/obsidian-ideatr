@@ -194,9 +194,15 @@ export class IdeaRepository implements IIdeaRepository {
         };
 
         // Register watchers for modify/create/delete and track their unregister functions (QA 4.5)
-        const unregisterModify = (this.vault.on as any)('modify', onFileChange);
-        const unregisterCreate = (this.vault.on as any)('create', onFileChange);
-        const unregisterDelete = (this.vault.on as any)('delete', onDelete);
+        // vault.on() returns a function that can be called to unsubscribe
+        const vaultOn = this.vault.on.bind(this.vault) as {
+            (event: 'modify', callback: (file: TFile) => void): () => void;
+            (event: 'create', callback: (file: TFile) => void): () => void;
+            (event: 'delete', callback: (file: TFile) => void): () => void;
+        };
+        const unregisterModify = vaultOn('modify', onFileChange);
+        const unregisterCreate = vaultOn('create', onFileChange);
+        const unregisterDelete = vaultOn('delete', onDelete);
 
         this.watchers.add(unregisterModify);
         this.watchers.add(unregisterCreate);
@@ -204,10 +210,9 @@ export class IdeaRepository implements IIdeaRepository {
 
         // Return unsubscribe function that cleans up all listeners
         return () => {
-            // EventRef is callable in Obsidian, but TypeScript doesn't know that
-            (unregisterModify as any)();
-            (unregisterCreate as any)();
-            (unregisterDelete as any)();
+            unregisterModify();
+            unregisterCreate();
+            unregisterDelete();
             this.watchers.delete(unregisterModify);
             this.watchers.delete(unregisterCreate);
             this.watchers.delete(unregisterDelete);

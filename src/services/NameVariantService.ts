@@ -79,7 +79,9 @@ export class NameVariantService implements INameVariantService {
         try {
             const data = await this.loadCacheData();
             if (data && typeof data === 'object') {
-                this.cache.loadFromData(data as Record<string, any>);
+                // Type assertion needed because loadCacheData returns Record<string, unknown>
+                // but we validate the structure matches CacheEntry in loadFromData
+                this.cache.loadFromData(data as Record<string, { variants: NameVariant[]; timestamp: number; quality?: number }>);
             }
         } catch (error) {
             Logger.warn('Failed to load variant cache:', error);
@@ -218,11 +220,15 @@ export class NameVariantService implements INameVariantService {
                 .filter((v: unknown): v is { text: unknown; type: unknown } => 
                     typeof v === 'object' && v !== null && 'text' in v && 'type' in v
                 )
-                .map((v: { text: unknown; type: unknown }) => ({
-                    text: String(v.text || '').trim(),
-                    type: this.validateVariantType(String(v.type || '')),
-                    quality: this.calculateVariantQuality(String(v.text || '').trim(), this.validateVariantType(String(v.type || '')))
-                }))
+                .map((v: { text: unknown; type: unknown }) => {
+                    const textValue = typeof v.text === 'string' ? v.text : (v.text != null && typeof v.text !== 'object' ? String(v.text) : '');
+                    const typeValue = typeof v.type === 'string' ? v.type : (v.type != null && typeof v.type !== 'object' ? String(v.type) : '');
+                    return {
+                        text: textValue.trim(),
+                        type: this.validateVariantType(typeValue),
+                        quality: this.calculateVariantQuality(textValue.trim(), this.validateVariantType(typeValue))
+                    };
+                })
                 .slice(0, this.settings.maxVariants || 10);
         } catch (error) {
             Logger.warn('Failed to parse variant response:', content, error);

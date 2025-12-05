@@ -1,6 +1,6 @@
 import type { IResurfacingService } from '../types/management';
 import type { Digest } from '../types/management';
-import type { IdeaFile } from '../types/idea';
+import type { IdeaFile, IdeaFrontmatter } from '../types/idea';
 import type { IIdeaRepository } from '../types/management';
 import type { IdeatrSettings } from '../settings';
 import { FileManager } from '../storage/FileManager';
@@ -142,7 +142,8 @@ export class ResurfacingService implements IResurfacingService {
         }
 
         // Check frontmatter for dismissed or actedUpon flags
-        const frontmatter = idea.frontmatter as any;
+        // These are optional properties not in the base IdeaFrontmatter type
+        const frontmatter = idea.frontmatter as IdeaFrontmatter & { dismissed?: boolean; actedUpon?: boolean };
         return !!(frontmatter.dismissed || frontmatter.actedUpon);
     }
 

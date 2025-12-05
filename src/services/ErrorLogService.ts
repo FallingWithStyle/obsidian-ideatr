@@ -159,8 +159,8 @@ export class ErrorLogService {
      */
     private sanitizeString(str: string): string {
         // Remove file paths (replace with placeholders)
-        str = str.replace(/\/Users\/[^\/]+/g, '[USER_HOME]');
-        str = str.replace(/\/home\/[^\/]+/g, '[USER_HOME]');
+        str = str.replace(new RegExp('/Users/[^/]+', 'g'), '[USER_HOME]');
+        str = str.replace(new RegExp('/home/[^/]+', 'g'), '[USER_HOME]');
         str = str.replace(/C:\\Users\\[^\\]+/gi, '[USER_HOME]');
         str = str.replace(/[A-Z]:\\[^:]+/g, '[DRIVE_PATH]');
         

@@ -125,10 +125,10 @@ export class SearchService implements ISearchService {
         const normalized = text.toLowerCase();
         // Remove markdown formatting, links, and special characters
         const cleaned = normalized
-            .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove markdown links but keep text
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links but keep text
             .replace(/#{1,6}\s+/g, '') // Remove markdown headings
-            .replace(/\*\*([^\*]+)\*\*/g, '$1') // Remove bold
-            .replace(/\*([^\*]+)\*/g, '$1') // Remove italic
+            .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
+            .replace(/\*([^*]+)\*/g, '$1') // Remove italic
             .replace(/`([^`]+)`/g, '$1') // Remove code
             .replace(/[^\w\s]/g, ' '); // Replace punctuation with spaces
 

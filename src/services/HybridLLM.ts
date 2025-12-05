@@ -30,7 +30,8 @@ export class HybridLLM implements ILLMService {
             try {
                 const result = await this.cloudLLM.classify(text);
                 this.lastProvider = 'cloud';
-                Logger.debug('Used cloud provider:', (this.cloudLLM as any).name || 'cloud');
+                const providerName = (this.cloudLLM as ILLMProvider & { name?: string }).name || 'cloud';
+                Logger.debug('Used cloud provider:', providerName);
                 return result;
             } catch (error) {
                 Logger.warn('Cloud provider failed, falling back to local:', error);
@@ -366,7 +367,8 @@ export class HybridLLM implements ILLMService {
         // Local LLM cleanup is handled by singleton destroy
         // Just cleanup cloud provider if it has cleanup method
         if (this.cloudLLM) {
-            (this.cloudLLM as any).cleanup?.();
+            const cloudLLM = this.cloudLLM as ILLMService & { cleanup?: () => void };
+            cloudLLM.cleanup?.();
         }
 
         Logger.debug('HybridLLM cleanup completed');
