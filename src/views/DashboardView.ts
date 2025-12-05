@@ -75,7 +75,7 @@ export class DashboardView extends ItemView {
 
         const toolbar = header.createDiv('dashboard-toolbar');
         const refreshBtn = toolbar.createEl('button', { text: 'Refresh' });
-        refreshBtn.addEventListener('click', () => this.refresh());
+        refreshBtn.addEventListener('click', () => void this.refresh());
 
         // Create filter panel
         const filterPanel = container.createDiv('dashboard-filters');
@@ -87,7 +87,7 @@ export class DashboardView extends ItemView {
 
         // Create side panels
         const sidePanels = container.createDiv('dashboard-side-panels');
-        
+
         // Clusters mini-graph
         if (this.clusteringService) {
             const clustersPanel = sidePanels.createDiv('dashboard-panel clusters-panel');
@@ -307,7 +307,7 @@ export class DashboardView extends ItemView {
         const { pageItems, totalPages } = paginate(this.filteredIdeas, this.currentPage, this.itemsPerPage);
         for (const idea of pageItems) {
             const row = tbody.createEl('tr');
-            row.addEventListener('click', () => this.openIdea(idea));
+            row.addEventListener('click', () => void this.openIdea(idea));
 
             // Date column
             const dateCell = row.createEl('td');
@@ -343,7 +343,7 @@ export class DashboardView extends ItemView {
                     });
                     elevateBtn.addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent row click
-                        this.elevateIdea(idea);
+                        void this.elevateIdea(idea);
                     });
                 } else {
                     // Show disabled state or nothing for already elevated ideas
@@ -441,7 +441,7 @@ export class DashboardView extends ItemView {
         try {
             this.ideas = await this.ideaRepository.getAllIdeas();
             this.applyFilters();
-            
+
             // Refresh panels
             if (this.clusteringService) {
                 const clustersPanel = this.contentEl.querySelector('.clusters-panel') as HTMLElement;
@@ -449,14 +449,14 @@ export class DashboardView extends ItemView {
                     this.renderClustersMiniGraph(clustersPanel);
                 }
             }
-            
+
             if (this.resurfacingService) {
                 const resurfacingPanel = this.contentEl.querySelector('.resurfacing-panel') as HTMLElement;
                 if (resurfacingPanel) {
                     this.renderResurfacingPanel(resurfacingPanel);
                 }
             }
-            
+
             const triagePanel = this.contentEl.querySelector('.triage-panel') as HTMLElement;
             if (triagePanel) {
                 this.renderTriageInbox(triagePanel);
@@ -484,7 +484,7 @@ export class DashboardView extends ItemView {
             this.filteredIdeas = await this.ideaRepository.getIdeasByFilter(this.filters);
             this.currentPage = 1; // Reset to first page on filter change
             this.renderTable(this.contentEl.querySelector('.dashboard-table-container') as HTMLElement);
-            
+
             // Save filter state if persistence is enabled (QA 4.1)
             if (this.persistFilters) {
                 await this.saveFilterState();
@@ -577,7 +577,7 @@ export class DashboardView extends ItemView {
                 : null;
 
             container.empty();
-            container.createEl('div', { 
+            container.createEl('div', {
                 text: `${clusters.length} clusters found`,
                 cls: 'cluster-summary'
             });
@@ -622,15 +622,15 @@ export class DashboardView extends ItemView {
 
         try {
             const oldIdeas = await this.resurfacingService!.identifyOldIdeas();
-            
+
             container.empty();
-            
+
             if (oldIdeas.length === 0) {
                 container.createEl('div', { text: 'No old ideas found.' });
                 return;
             }
 
-            container.createEl('div', { 
+            container.createEl('div', {
                 text: `${oldIdeas.length} old ideas need attention`,
                 cls: 'resurfacing-summary'
             });
@@ -641,7 +641,7 @@ export class DashboardView extends ItemView {
                 const age = this.calculateAge(idea.frontmatter.created);
                 li.textContent = `${idea.filename.replace('.md', '')} (${age} days old)`;
                 li.addClass('ideatr-cursor-pointer');
-                li.addEventListener('click', () => this.openIdea(idea));
+                li.addEventListener('click', () => void this.openIdea(idea));
             }
 
             if (oldIdeas.length > 5) {
@@ -684,7 +684,7 @@ export class DashboardView extends ItemView {
             return;
         }
 
-        container.createEl('div', { 
+        container.createEl('div', {
             text: `${uncategorizedIdeas.length} uncategorized ideas`,
             cls: 'triage-summary'
         });
@@ -694,7 +694,7 @@ export class DashboardView extends ItemView {
             const li = ideasList.createEl('li');
             li.textContent = idea.filename.replace('.md', '');
             li.addClass('ideatr-cursor-pointer');
-            li.addEventListener('click', () => this.openIdea(idea));
+            li.addEventListener('click', () => void this.openIdea(idea));
         }
 
         if (uncategorizedIdeas.length > 10) {
@@ -753,11 +753,11 @@ export class DashboardView extends ItemView {
 
             if (result.success) {
                 new Notice(`Idea elevated to project: ${result.projectPath}`);
-                
+
                 // Refresh ideas to update the table
                 await this.ideaRepository.refresh();
                 await this.loadIdeas();
-                
+
                 // Show warnings if any
                 if (result.warnings && result.warnings.length > 0) {
                     Logger.warn('Elevation warnings:', result.warnings);

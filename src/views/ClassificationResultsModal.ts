@@ -111,19 +111,19 @@ export class ClassificationResultsModal extends Modal {
             text: 'Accept',
             cls: 'mod-cta'
         });
-        acceptButton.addEventListener('click', () => this.handleAccept());
+        acceptButton.addEventListener('click', () => void this.handleAccept());
 
         // Edit button (opens note editor)
         const editButton = buttonContainer.createEl('button', {
             text: 'Edit in Note'
         });
-        editButton.addEventListener('click', () => this.handleEdit());
+        editButton.addEventListener('click', () => void this.handleEdit());
 
         // Retry button
         const retryButton = buttonContainer.createEl('button', {
             text: 'Retry'
         });
-        retryButton.addEventListener('click', () => this.handleRetry());
+        retryButton.addEventListener('click', () => void this.handleRetry());
 
         // Cancel button
         const cancelButton = buttonContainer.createEl('button', {

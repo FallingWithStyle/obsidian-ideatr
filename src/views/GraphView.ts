@@ -59,7 +59,7 @@ export class GraphView extends ItemView {
 
         const toolbar = header.createDiv('graph-toolbar');
         const refreshBtn = toolbar.createEl('button', { text: 'Refresh' });
-        refreshBtn.addEventListener('click', () => this.refresh());
+        refreshBtn.addEventListener('click', () => void this.refresh());
 
         // Create graph container
         const graphContainer = container.createDiv('graph-container');
@@ -105,7 +105,7 @@ export class GraphView extends ItemView {
 
         try {
             this.ideas = await this.ideaRepository.getAllIdeas();
-            
+
             if (this.ideas.length >= 2) {
                 // Generate clusters
                 const clusters = await this.clusteringService.clusterIdeas(this.ideas);
@@ -261,11 +261,11 @@ export class GraphView extends ItemView {
 
             if (result.success) {
                 new Notice(`Idea elevated to project: ${result.projectPath}`);
-                
+
                 // Refresh ideas and reload graph
                 await this.ideaRepository.refresh();
                 await this.loadGraph();
-                
+
                 // Show warnings if any
                 if (result.warnings && result.warnings.length > 0) {
                     Logger.warn('Elevation warnings:', result.warnings);

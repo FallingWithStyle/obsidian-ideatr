@@ -87,7 +87,7 @@ export class GuidedIdeationModal extends Modal {
             text: 'Transform',
             cls: 'mod-cta'
         });
-        transformButton.addEventListener('click', () => this.handleTransform());
+        transformButton.addEventListener('click', () => void this.handleTransform());
 
         // Cancel button
         const cancelButton = this.buttonContainer.createEl('button', {
@@ -100,7 +100,7 @@ export class GuidedIdeationModal extends Modal {
             if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
                 e.preventDefault();
                 if (!this.isProcessing) {
-                    this.handleTransform();
+                    void this.handleTransform();
                 }
             }
         });

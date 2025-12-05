@@ -33,7 +33,7 @@ export class FirstLaunchSetupModal extends Modal {
 
         // Title
         contentEl.createEl('h2', { text: 'Manage AI models' });
-        
+
         // Local AI Version Notice
         const noticeDiv = contentEl.createDiv({ cls: 'ideatr-setup-notice' });
         noticeDiv.style.cssText = 'background: var(--background-modifier-border); padding: 0.75em; border-radius: 4px; margin-bottom: 1em; border-left: 3px solid var(--text-warning);';
@@ -41,7 +41,7 @@ export class FirstLaunchSetupModal extends Modal {
             text: '⚠️ This version includes local AI but will not receive updates. Watch for the upcoming Ideatr Desktop App for local AI with ongoing support.',
             attr: { style: 'margin: 0; font-size: 0.9em; line-height: 1.4;' }
         });
-        
+
         contentEl.createEl('p', {
             text: 'Choose how you want to use AI for idea enhancement:',
             cls: 'ideatr-setup-description'
@@ -68,7 +68,7 @@ export class FirstLaunchSetupModal extends Modal {
             text: 'Choose & Download Model',
             cls: 'mod-cta'
         });
-        downloadButton.addEventListener('click', () => this.handleDownloadOption());
+        downloadButton.addEventListener('click', () => void this.handleDownloadOption());
 
         // Option 2: Use API Key
         const apiKeyOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
@@ -87,7 +87,7 @@ export class FirstLaunchSetupModal extends Modal {
             text: 'Enter API key',
             cls: 'mod-cta'
         });
-        apiKeyButton.addEventListener('click', () => this.handleApiKeyOption());
+        apiKeyButton.addEventListener('click', () => void this.handleApiKeyOption());
 
         // Option 3: Skip
         const skipOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
@@ -99,7 +99,7 @@ export class FirstLaunchSetupModal extends Modal {
             text: 'Skip setup',
             cls: 'mod-cancel'
         });
-        skipButton.addEventListener('click', () => this.handleSkipOption());
+        skipButton.addEventListener('click', () => void this.handleSkipOption());
     }
 
     private async handleDownloadOption(): Promise<void> {
@@ -125,40 +125,40 @@ export class FirstLaunchSetupModal extends Modal {
 
             // Select button with checksum indicator (add to container, below card)
             const selectButtonSetting = new Setting(container);
-            
+
             selectButtonSetting
                 .addButton(btn => {
                     btn
                         .setButtonText(`Select ${config.name}`)
                         .setCta()
                         .onClick(async () => {
-                        const modelKeyTyped = modelKey as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
-                        
-                        // Check system compatibility
-                        const compatibility = checkModelCompatibility(modelKey);
-                        
-                        if (!compatibility.isCompatible) {
-                            // Show warning and ask for confirmation
-                            const systemInfo = getSystemInfoString();
-                            const message = `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
-                            
-                            const proceed = await showConfirmation(this.app, message);
-                            if (!proceed) {
-                                return; // User cancelled
+                            const modelKeyTyped = modelKey as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
+
+                            // Check system compatibility
+                            const compatibility = checkModelCompatibility(modelKey);
+
+                            if (!compatibility.isCompatible) {
+                                // Show warning and ask for confirmation
+                                const systemInfo = getSystemInfoString();
+                                const message = `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
+
+                                const proceed = await showConfirmation(this.app, message);
+                                if (!proceed) {
+                                    return; // User cancelled
+                                }
+                            } else if (compatibility.warning) {
+                                // Show warning but allow proceeding
+                                const systemInfo = getSystemInfoString();
+                                const proceed = await showConfirmation(this.app, `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed?`);
+                                if (!proceed) {
+                                    return; // User cancelled
+                                }
                             }
-                        } else if (compatibility.warning) {
-                            // Show warning but allow proceeding
-                            const systemInfo = getSystemInfoString();
-                            const proceed = await showConfirmation(this.app, `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed?`);
-                            if (!proceed) {
-                                return; // User cancelled
-                            }
-                        }
-                        
-                        this.settings.localModel = modelKeyTyped;
-                        await this.startDownload(modelKey);
-                    });
-                    
+
+                            this.settings.localModel = modelKeyTyped;
+                            await this.startDownload(modelKey);
+                        });
+
                     // Add status indicator to the left of button
                     // Insert it before the button in the controlEl
                     const controlEl = selectButtonSetting.controlEl;
@@ -170,16 +170,16 @@ export class FirstLaunchSetupModal extends Modal {
                         checkingText.className = 'model-status-text';
                         checkingText.textContent = 'Checking...';
                         statusIndicator.appendChild(checkingText);
-                        
+
                         // Insert at the beginning of controlEl (before the button)
                         controlEl.insertBefore(statusIndicator, controlEl.firstChild);
-                        
+
                         // Check download status and verify integrity
                         (async () => {
                             try {
                                 const modelManager = new ModelManager(modelKey);
                                 const isDownloaded = await modelManager.isModelDownloaded();
-                                
+
                                 if (isDownloaded) {
                                     // Verify integrity
                                     const isValid = await modelManager.verifyModelIntegrity();
@@ -326,7 +326,7 @@ export class FirstLaunchSetupModal extends Modal {
                 openrouter: ''
             };
         }
-        
+
         // Store API key for the specific provider
         this.settings.cloudApiKeys[provider] = apiKey;
         this.settings.cloudProvider = provider;
@@ -359,10 +359,10 @@ export class FirstLaunchSetupModal extends Modal {
  * Check if this is the first launch
  */
 export function isFirstLaunch(settings: IdeatrSettings): boolean {
-    const hasAnyApiKey = settings.cloudApiKeys && 
+    const hasAnyApiKey = settings.cloudApiKeys &&
         Object.values(settings.cloudApiKeys).some(key => key && key.length > 0);
     const hasLegacyApiKey = settings.cloudApiKey && settings.cloudApiKey.length > 0;
-    
+
     return !settings.setupCompleted &&
         !settings.modelDownloaded &&
         !hasAnyApiKey &&

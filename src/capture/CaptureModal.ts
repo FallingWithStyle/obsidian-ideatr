@@ -50,25 +50,25 @@ function formatShortcut(shortcut: string): string {
 function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
     const parts = shortcut.toLowerCase().split('+').map(p => p.trim());
     const key = e.key.toLowerCase();
-    
+
     // Check modifiers
     const hasCmd = parts.includes('cmd') || parts.includes('meta');
     const hasCtrl = parts.includes('ctrl');
     const hasAlt = parts.includes('alt');
     const hasShift = parts.includes('shift');
-    
+
     // Check if modifiers match
     if (hasCmd && !e.metaKey) return false;
     if (hasCtrl && !e.ctrlKey) return false;
     if (hasAlt && !e.altKey) return false;
     if (hasShift && !e.shiftKey) return false;
-    
+
     // Check that no other modifiers are pressed (unless they're part of the shortcut)
     if (!hasCmd && e.metaKey) return false;
     if (!hasCtrl && e.ctrlKey) return false;
     if (!hasAlt && e.altKey) return false;
     if (!hasShift && e.shiftKey) return false;
-    
+
     // Check the key
     const keyPart = parts.find(p => !['cmd', 'meta', 'ctrl', 'alt', 'shift'].includes(p));
     if (keyPart) {
@@ -87,7 +87,7 @@ function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
         // No key specified in shortcut, so it's invalid
         return false;
     }
-    
+
     return true;
 }
 
@@ -155,7 +155,7 @@ export class CaptureModal extends Modal {
         // Title with status indicator
         const titleContainer = contentEl.createDiv({ cls: 'ideatr-capture-title-container' });
         titleContainer.createEl('h2', { text: 'Capture idea' });
-        
+
         // Add model status indicator
         const statusIndicator = createModelStatusIndicator(this.llmService, this.settings, this.app);
         titleContainer.appendChild(statusIndicator);
@@ -210,7 +210,7 @@ export class CaptureModal extends Modal {
                 text: 'Classify now',
                 cls: 'mod-cta'
             });
-            classifyButton.addEventListener('click', () => this.handleClassifyNow());
+            classifyButton.addEventListener('click', () => void this.handleClassifyNow());
         }
 
         // Ideate button (always show, but disabled if LLM is not available)
@@ -220,7 +220,7 @@ export class CaptureModal extends Modal {
             text: 'Ideate',
             cls: 'mod-cta ideatr-ideate-button'
         });
-        
+
         if (!isLLMAvailable) {
             this.ideateButton.disabled = true;
             this.ideateButton.addClass('ideatr-ideate-button-disabled');
@@ -228,9 +228,9 @@ export class CaptureModal extends Modal {
         } else {
             const ideateShortcut = formatShortcut(this.settings.captureIdeateShortcut || 'cmd+enter');
             this.ideateButton.setAttribute('title', `Ideate (${ideateShortcut})`);
-            this.ideateButton.addEventListener('click', () => this.handleIdeate());
+            this.ideateButton.addEventListener('click', () => void this.handleIdeate());
         }
-        
+
         // Add help icon
         const ideateHelpIcon = createHelpIcon(this.app, 'ideate-button', 'Learn about the Ideate button');
         ideateContainer.appendChild(ideateHelpIcon);
@@ -243,8 +243,8 @@ export class CaptureModal extends Modal {
         });
         const saveShortcut = formatShortcut(this.settings.captureSaveShortcut || 'alt+enter');
         this.saveButton.setAttribute('title', `Save (${saveShortcut})`);
-        this.saveButton.addEventListener('click', () => this.handleSubmit());
-        
+        this.saveButton.addEventListener('click', () => void this.handleSubmit());
+
         // Add help icon
         const saveHelpIcon = createHelpIcon(this.app, 'save-button', 'Learn about the Save button');
         saveContainer.appendChild(saveHelpIcon);
@@ -259,19 +259,19 @@ export class CaptureModal extends Modal {
             if (matchesShortcut(e, ideateShortcut)) {
                 e.preventDefault();
                 if (this.llmService?.isAvailable() && this.ideateButton && !this.ideateButton.disabled) {
-                    this.handleIdeate();
+                    void this.handleIdeate();
                 }
                 return;
             }
-            
+
             // Check Save shortcut
             const saveShortcut = this.settings.captureSaveShortcut || 'alt+enter';
             if (matchesShortcut(e, saveShortcut)) {
                 e.preventDefault();
-                this.handleSubmit();
+                void this.handleSubmit();
                 return;
             }
-            
+
             // Reset warning on typing
             if (this.isWarningShown) {
                 this.hideError();
@@ -304,18 +304,18 @@ export class CaptureModal extends Modal {
             if (this.classificationAbortController?.signal.aborted) {
                 return; // Classification was cancelled
             }
-            this.showClassificationResults(classification, null);
+            void this.showClassificationResults(classification, null);
         } catch (error) {
             if (this.classificationAbortController?.signal.aborted) {
                 return; // Classification was cancelled
             }
             console.error('Classification failed:', error);
-            
+
             // Show error with manual mode option
             this.classificationEl.empty();
             this.classificationEl.addClass('ideatr-visible');
             this.classificationEl.removeClass('ideatr-hidden');
-            
+
             let errorMessage = 'Classification unavailable. Please configure AI in settings.';
             if (error instanceof Error) {
                 const errorMsg = error.message.toLowerCase();
@@ -327,19 +327,19 @@ export class CaptureModal extends Modal {
                     errorMessage = 'AI server not available. Please configure AI in settings.';
                 }
             }
-            
-            this.classificationEl.createEl('p', { 
+
+            this.classificationEl.createEl('p', {
                 text: errorMessage,
                 cls: 'ideatr-classification-error'
             });
-            
+
             // Allow retry
             const retryButton = this.classificationEl.createEl('button', {
                 text: 'Retry',
                 cls: 'mod-cta'
             });
             retryButton.addEventListener('click', () => {
-                this.handleClassifyNow();
+                void this.handleClassifyNow();
             });
         }
     }
@@ -583,7 +583,9 @@ Response:`;
             });
 
             // Step 6: Trigger validation in background (non-blocking)
-            this.triggerValidation(file, idea.text, classification.category);
+            void this.triggerValidation(file, idea.text, classification.category).catch(error => {
+                Logger.warn('Background validation failed:', error);
+            });
 
             // Success notification
             new Notice('Idea processed with AI!');
@@ -597,12 +599,12 @@ Response:`;
             if (this.classificationAbortController?.signal.aborted) {
                 return;
             }
-            
+
             // If the file was created, the idea was saved - show alert to user
             if (file) {
                 new Notice('Ideate command failed, but your idea has been saved to your list of ideas.');
             }
-            
+
             this.showError('Failed to process idea. Please try again.');
             console.error('Error processing idea:', error);
             // Show manual mode option
@@ -662,14 +664,14 @@ Response:`;
         this.classificationEl.empty();
         this.classificationEl.addClass('ideatr-visible');
         this.classificationEl.removeClass('ideatr-hidden');
-        
-        const message = isFirstTime 
+
+        const message = isFirstTime
             ? 'Loading AI model (first use)... ~10 seconds'
             : 'Classifying idea... ~2-3 seconds';
-        
+
         const statusEl = this.classificationEl.createEl('p', { text: message });
         statusEl.addClass('ideatr-classification-status');
-        
+
         // Add cancellation button
         const cancelButton = this.classificationEl.createEl('button', {
             text: 'Cancel',
@@ -685,16 +687,16 @@ Response:`;
             this.classificationAbortController.abort();
             this.classificationAbortController = null;
         }
-        
+
         // Show manual mode option
         this.classificationEl.empty();
         this.classificationEl.addClass('ideatr-visible');
         this.classificationEl.removeClass('ideatr-hidden');
-        this.classificationEl.createEl('p', { 
+        this.classificationEl.createEl('p', {
             text: 'Classification cancelled. Idea saved without classification.',
             cls: 'ideatr-classification-status'
         });
-        
+
         // Show manual mode button
         const manualButton = this.classificationEl.createEl('button', {
             text: 'Continue',
@@ -714,7 +716,7 @@ Response:`;
 
         if (error instanceof Error) {
             const errorMsg = error.message.toLowerCase();
-            
+
             if (errorMsg.includes('connection_refused') || errorMsg.includes('server not available')) {
                 errorMessage = 'AI server not available. Idea saved without classification.';
             } else if (errorMsg.includes('invalid api key') || errorMsg.includes('unauthorized')) {
@@ -733,7 +735,7 @@ Response:`;
         this.classificationEl.empty();
         this.classificationEl.addClass('ideatr-visible');
         this.classificationEl.removeClass('ideatr-hidden');
-        this.classificationEl.createEl('p', { 
+        this.classificationEl.createEl('p', {
             text: errorMessage,
             cls: 'ideatr-classification-error'
         });
@@ -745,7 +747,9 @@ Response:`;
                 cls: 'mod-cta'
             });
             manualButton.addEventListener('click', () => {
-                this.triggerValidation(file, ideaText, '');
+                void this.triggerValidation(file, ideaText, '').catch(error => {
+                    Logger.warn('Background validation failed:', error);
+                });
                 this.close();
                 if (this.onSuccess) {
                     this.onSuccess();
@@ -754,7 +758,9 @@ Response:`;
         } else {
             // Auto-close after a delay
             setTimeout(() => {
-                this.triggerValidation(file, ideaText, '');
+                void this.triggerValidation(file, ideaText, '').catch(error => {
+                    Logger.warn('Background validation failed:', error);
+                });
                 this.close();
                 if (this.onSuccess) {
                     this.onSuccess();
@@ -816,7 +822,7 @@ Response:`;
                     const retryClassification = await this.classificationService.classifyIdea(ideaText);
                     // Close current modal and show new results
                     resultsModal.close();
-                    this.showClassificationResults(retryClassification, file);
+                    void this.showClassificationResults(retryClassification, file);
                 } catch (error) {
                     console.error('Retry classification failed:', error);
                     new Notice('Failed to retry classification. Please try again.');
@@ -836,7 +842,7 @@ Response:`;
         // Convert paths to IDs
         const allRelatedPaths = [...new Set([...classification.related, ...this.duplicatePaths])];
         const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
-        
+
         // Update file with classification results
         await this.fileManager.updateIdeaFrontmatter(file, {
             category: classification.category,
@@ -871,7 +877,7 @@ Response:`;
             try {
                 const classification = await this.classificationService.classifyIdea(ideaText);
                 ideaCategory = classification.category;
-                
+
                 // Update file with classification results (merge with duplicates)
                 // Convert paths to IDs
                 const allRelatedPaths = [...new Set([...classification.related, ...this.duplicatePaths])];
@@ -906,9 +912,9 @@ Response:`;
         // Track which validations were attempted
         // Domain checking removed - functionality hidden
         const shouldSearchWeb = this.settings.enableWebSearch && this.settings.autoSearchExistence;
-        const shouldGenerateVariants = this.settings.enableNameVariants && 
-                                       this.settings.autoGenerateVariants && 
-                                       this.nameVariantService?.isAvailable();
+        const shouldGenerateVariants = this.settings.enableNameVariants &&
+            this.settings.autoGenerateVariants &&
+            this.nameVariantService?.isAvailable();
 
         // If no validations are enabled, skip
         if (!shouldSearchWeb && !shouldGenerateVariants) {
@@ -945,7 +951,7 @@ Response:`;
         try {
             const [searchResults, _variantResult] = await Promise.all([searchPromise, variantPromise]);
             const updates: Partial<IdeaFrontmatter> = {};
-            
+
             // Handle search results
             if (shouldSearchWeb) {
                 if (searchResults === null) {
@@ -961,7 +967,7 @@ Response:`;
                 }
                 // If searchResults is empty array, don't update (no results found is not an error)
             }
-            
+
             // Update frontmatter if we have updates (including error states)
             if (Object.keys(updates).length > 0) {
                 await this.fileManager.updateIdeaFrontmatter(file, updates);
