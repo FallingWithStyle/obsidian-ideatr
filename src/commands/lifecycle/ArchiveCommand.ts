@@ -27,9 +27,9 @@ export class ArchiveCommand extends IdeaFileCommand {
             new Notice('Idea archived successfully.');
         } else {
             // Determine previous status
-            const previousStatus = (content.frontmatter.status === 'archived' ? 'captured' : (content.frontmatter.status as 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted') || 'captured');
+            const previousStatus = (content.frontmatter.status === 'archived' ? 'captured' : content.frontmatter.status || 'captured');
             // Update status from archived
-            await this.updateIdeaFrontmatter(file, { status: previousStatus as 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted' });
+            await this.updateIdeaFrontmatter(file, { status: previousStatus });
             // Move from archive if enabled
             await this.context.fileOrganizer.moveFromArchive(file);
             new Notice('Idea unarchived successfully.');

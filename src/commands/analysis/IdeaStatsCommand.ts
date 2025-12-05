@@ -2,6 +2,8 @@ import { TFile } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { IdeaStatsModal, type IdeaStats } from '../../views/IdeaStatsModal';
+import type { IdeaFrontmatter } from '../../types/idea';
+import type { IdeaFrontmatter } from '../../types/idea';
 
 /**
  * Command: show-idea-stats
@@ -40,7 +42,7 @@ export class IdeaStatsCommand extends IdeaFileCommand {
             domainsCount,
             lastModified,
             created,
-            frontmatter: content.frontmatter as any // Type assertion needed for compatibility
+            frontmatter: content.frontmatter as IdeaFrontmatter
         };
 
         new IdeaStatsModal(this.context.app, stats, this.context.ideaRepository).open();

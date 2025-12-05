@@ -52,14 +52,14 @@ export class QuickValidateCommand extends IdeaFileCommand {
         const updates: Partial<IdeaFrontmatter> = {};
 
         if (domainResults.length > 0) {
-            const domainStrings = (domainResults as DomainCheckResult[]).map(r => 
+            const domainStrings = domainResults.map(r => 
                 r.available ? `${r.domain}: available` : `${r.domain}: unavailable${r.error ? ` (${r.error})` : ''}`
             );
             updates.domains = domainStrings;
         }
 
         if (searchResults.length > 0) {
-            const summaries = (searchResults as SearchResult[]).map(r => 
+            const summaries = searchResults.map(r => 
                 `${r.title}: ${r.snippet} (${r.url})`
             );
             updates['existence-check'] = summaries;

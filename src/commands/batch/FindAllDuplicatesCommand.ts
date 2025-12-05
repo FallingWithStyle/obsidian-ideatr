@@ -72,34 +72,42 @@ export class FindAllDuplicatesCommand extends BaseCommand {
                 this.context.app,
                 duplicatePairs,
                 {
-                    onBulkAction: async (pairs: DuplicatePair[], action: BulkAction) => {
-                        for (const pair of pairs) {
-                            try {
-                                if (action === 'link') {
-                                    await this.linkDuplicatePair(pair);
-                                } else if (action === 'archive') {
-                                    await this.archiveDuplicatePair(pair);
-                                } else if (action === 'merge') {
-                                    await this.mergeDuplicatePair(pair);
+                    onBulkAction: (pairs: DuplicatePair[], action: BulkAction) => {
+                        void (async () => {
+                            for (const pair of pairs) {
+                                try {
+                                    if (action === 'link') {
+                                        await this.linkDuplicatePair(pair);
+                                    } else if (action === 'archive') {
+                                        await this.archiveDuplicatePair(pair);
+                                    } else if (action === 'merge') {
+                                        await this.mergeDuplicatePair(pair);
+                                    }
+                                } catch (error) {
+                                    console.error(`Failed to ${action} pair:`, error);
                                 }
-                            } catch (error) {
-                                console.error(`Failed to ${action} pair:`, error);
                             }
-                        }
-                        new Notice(`Applied ${action} to ${pairs.length} pair${pairs.length > 1 ? 's' : ''}.`);
-                        modal.close();
+                            new Notice(`Applied ${action} to ${pairs.length} pair${pairs.length > 1 ? 's' : ''}.`);
+                            modal.close();
+                        })();
                     },
-                    onLink: async (pair: DuplicatePair) => {
-                        await this.linkDuplicatePair(pair);
-                        new Notice('Duplicates linked in frontmatter.');
+                    onLink: (pair: DuplicatePair) => {
+                        void (async () => {
+                            await this.linkDuplicatePair(pair);
+                            new Notice('Duplicates linked in frontmatter.');
+                        })();
                     },
-                    onArchive: async (pair: DuplicatePair) => {
-                        await this.archiveDuplicatePair(pair);
-                        new Notice('Duplicate archived.');
+                    onArchive: (pair: DuplicatePair) => {
+                        void (async () => {
+                            await this.archiveDuplicatePair(pair);
+                            new Notice('Duplicate archived.');
+                        })();
                     },
-                    onMerge: async (pair: DuplicatePair) => {
-                        await this.mergeDuplicatePair(pair);
-                        new Notice('Duplicates merged.');
+                    onMerge: (pair: DuplicatePair) => {
+                        void (async () => {
+                            await this.mergeDuplicatePair(pair);
+                            new Notice('Duplicates merged.');
+                        })();
                     }
                 }
             );

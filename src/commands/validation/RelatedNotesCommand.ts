@@ -33,9 +33,9 @@ export class RelatedNotesCommand extends IdeaFileCommand {
         }
 
         // Get existing related IDs and convert to paths for display
-        const existingRelatedIds = (Array.isArray(content.frontmatter.related) 
+        const existingRelatedIds = Array.isArray(content.frontmatter.related) 
             ? content.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
-            : []) as number[];
+            : [];
         const existingRelatedPaths = await this.idConverter.idsToPaths(existingRelatedIds);
 
         // Show modal with related notes (still uses paths for display)

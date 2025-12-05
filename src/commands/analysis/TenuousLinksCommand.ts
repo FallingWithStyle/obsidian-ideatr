@@ -32,9 +32,9 @@ export class TenuousLinksCommand extends IdeaFileCommand {
         new Notice('Finding tenuous links... This may take a moment.');
 
         // Convert related IDs to paths for the service (it expects paths)
-        const relatedIds = (Array.isArray(content.frontmatter.related) 
+        const relatedIds = Array.isArray(content.frontmatter.related) 
             ? content.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
-            : []) as number[];
+            : [];
         const relatedPaths = await this.idConverter.idsToPaths(relatedIds);
 
         const links = await this.context.tenuousLinkService.findTenuousLinks(
@@ -56,9 +56,9 @@ export class TenuousLinksCommand extends IdeaFileCommand {
             async (link, action) => {
                 if (action === 'link') {
                     // Add to related notes - convert path to ID
-                    const currentRelatedIds = (Array.isArray(content.frontmatter.related) 
+                    const currentRelatedIds = Array.isArray(content.frontmatter.related) 
                         ? content.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
-                        : []) as number[];
+                        : [];
                     const linkId = await this.idConverter.pathsToIds([link.idea.path]);
                     if (linkId.length > 0 && !currentRelatedIds.includes(linkId[0])) {
                         await this.updateIdeaFrontmatter(file, {
@@ -77,7 +77,7 @@ type: idea
 status: captured
 created: ${new Date().toISOString().split('T')[0]}
 id: 0
-category: ${content.frontmatter.category || ''}
+category: ${typeof content.frontmatter.category === 'string' ? content.frontmatter.category : String(content.frontmatter.category || '')}
 tags: ${JSON.stringify([...(Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : []), 'combined'])}
 related: ${JSON.stringify(relatedIds)}
 domains: []
