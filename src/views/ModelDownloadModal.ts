@@ -71,7 +71,9 @@ export class ModelDownloadModal extends Modal {
             text: 'Download in Background',
             cls: 'mod-cta'
         });
-        backgroundButton.style.marginRight = '10px';
+        (backgroundButton as HTMLElement).setCssProps({
+            'margin-right': '10px'
+        });
         backgroundButton.addEventListener('click', () => {
             // Allow modal to close, but continue download
             this.allowBackgroundDownload = true;

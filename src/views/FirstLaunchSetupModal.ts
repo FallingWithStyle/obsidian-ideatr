@@ -1,12 +1,6 @@
 import { Modal, App, Notice, Setting } from 'obsidian';
-import type { IModelManager } from '../services/ModelManager';
-import { ModelManager } from '../services/ModelManager';
 import type { IdeatrSettings } from '../settings';
-import { ModelDownloadModal } from './ModelDownloadModal';
-import { checkModelCompatibility, getSystemInfoString } from '../utils/systemCapabilities';
-import { localModelToDisplayInfo, renderCompactModelCard } from '../utils/modelComparisonRenderer';
 import { showConfirmation } from '../utils/confirmation';
-import { createCheckIcon, createInfoIcon } from '../utils/svgIcons';
 
 /**
  * FirstLaunchSetupModal - Modal for first-launch AI setup
@@ -17,7 +11,7 @@ export class FirstLaunchSetupModal extends Modal {
 
     constructor(
         app: App,
-        _modelManager: IModelManager,
+        _modelManager: null,
         settings: IdeatrSettings,
         onComplete: () => void
     ) {
@@ -34,43 +28,12 @@ export class FirstLaunchSetupModal extends Modal {
         // Title
         contentEl.createEl('h2', { text: 'Manage AI models' });
 
-        // Local AI Version Notice
-        const noticeDiv = contentEl.createDiv({ cls: 'ideatr-setup-notice' });
-        noticeDiv.style.cssText = 'background: var(--background-modifier-border); padding: 0.75em; border-radius: 4px; margin-bottom: 1em; border-left: 3px solid var(--text-warning);';
-        noticeDiv.createEl('p', {
-            text: '⚠️ This version includes local AI but will not receive updates. Watch for the upcoming Ideatr Desktop App for local AI with ongoing support.',
-            attr: { style: 'margin: 0; font-size: 0.9em; line-height: 1.4;' }
-        });
-
         contentEl.createEl('p', {
             text: 'Choose how you want to use AI for idea enhancement:',
             cls: 'ideatr-setup-description'
         });
 
-        // Option 1: Download AI Model
-        const downloadOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
-        downloadOption.createEl('h3', { text: 'Download AI model' });
-        // Use smallest model as default for display
-        const defaultModelManager = new ModelManager('phi-3.5-mini');
-        const modelConfig = defaultModelManager.getModelConfig();
-        const modelSizeGB = (modelConfig.sizeMB / 1024).toFixed(1);
-        downloadOption.createEl('p', {
-            text: `Download a local AI model (${modelSizeGB} GB for default model) for offline, free AI idea enhancement including classification, expansion, and more. Choose from multiple models optimized for different needs.`
-        });
-        const featuresList = downloadOption.createEl('ul', {
-            cls: 'ideatr-setup-features'
-        });
-        featuresList.createEl('li', { text: '✅ Works offline' });
-        featuresList.createEl('li', { text: '✅ Free to use' });
-        featuresList.createEl('li', { text: '✅ No API keys needed' });
-        featuresList.createEl('li', { text: `⚠️ Requires ${modelSizeGB} GB download (varies by model)` });
-        const downloadButton = downloadOption.createEl('button', {
-            text: 'Choose & Download Model',
-            cls: 'mod-cta'
-        });
-        downloadButton.addEventListener('click', () => void this.handleDownloadOption());
-
-        // Option 2: Use API Key
+        // Option 1: Use API Key
         const apiKeyOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
         apiKeyOption.createEl('h3', { text: 'Use my API key' });
         apiKeyOption.createEl('p', {
@@ -89,7 +52,7 @@ export class FirstLaunchSetupModal extends Modal {
         });
         apiKeyButton.addEventListener('click', () => void this.handleApiKeyOption());
 
-        // Option 3: Skip
+        // Option 2: Skip
         const skipOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
         skipOption.createEl('h3', { text: 'Skip for Now' });
         skipOption.createEl('p', {
@@ -100,141 +63,6 @@ export class FirstLaunchSetupModal extends Modal {
             cls: 'mod-cancel'
         });
         skipButton.addEventListener('click', () => void this.handleSkipOption());
-    }
-
-    private async handleDownloadOption(): Promise<void> {
-        this.contentEl.empty();
-        this.contentEl.createEl('h2', { text: 'Choose AI model' });
-        this.contentEl.createEl('p', {
-            text: 'Select which model to download. You can change this later in settings.',
-            cls: 'model-selection-intro'
-        });
-
-        // Get all models from ModelManager
-        const modelManager = new ModelManager();
-        const availableModels = modelManager.getAvailableModels();
-
-        // Create a card for each model using standardized format
-        for (const modelKey of Object.keys(availableModels) as Array<keyof typeof availableModels>) {
-            const config = availableModels[modelKey];
-            const container = this.contentEl.createDiv({ cls: 'model-option-card' });
-
-            // Render compact model card
-            const modelDisplay = localModelToDisplayInfo(config);
-            renderCompactModelCard(container, modelDisplay, true);
-
-            // Select button with checksum indicator (add to container, below card)
-            const selectButtonSetting = new Setting(container);
-
-            selectButtonSetting
-                .addButton(btn => {
-                    btn
-                        .setButtonText(`Select ${config.name}`)
-                        .setCta()
-                        .onClick(async () => {
-                            const modelKeyTyped = modelKey as 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b';
-
-                            // Check system compatibility
-                            const compatibility = checkModelCompatibility(modelKey);
-
-                            if (!compatibility.isCompatible) {
-                                // Show warning and ask for confirmation
-                                const systemInfo = getSystemInfoString();
-                                const message = `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
-
-                                const proceed = await showConfirmation(this.app, message);
-                                if (!proceed) {
-                                    return; // User cancelled
-                                }
-                            } else if (compatibility.warning) {
-                                // Show warning but allow proceeding
-                                const systemInfo = getSystemInfoString();
-                                const proceed = await showConfirmation(this.app, `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed?`);
-                                if (!proceed) {
-                                    return; // User cancelled
-                                }
-                            }
-
-                            this.settings.localModel = modelKeyTyped;
-                            await this.startDownload(modelKey);
-                        });
-
-                    // Add status indicator to the left of button
-                    // Insert it before the button in the controlEl
-                    const controlEl = selectButtonSetting.controlEl;
-                    if (controlEl) {
-                        // Create indicator and insert it at the beginning
-                        const statusIndicator = document.createElement('div');
-                        statusIndicator.className = 'model-status-indicator';
-                        const checkingText = document.createElement('span');
-                        checkingText.className = 'model-status-text';
-                        checkingText.textContent = 'Checking...';
-                        statusIndicator.appendChild(checkingText);
-
-                        // Insert at the beginning of controlEl (before the button)
-                        controlEl.insertBefore(statusIndicator, controlEl.firstChild);
-
-                        // Check download status and verify integrity
-                        (async () => {
-                            try {
-                                const modelManager = new ModelManager(modelKey);
-                                const isDownloaded = await modelManager.isModelDownloaded();
-
-                                if (isDownloaded) {
-                                    // Verify integrity
-                                    const isValid = await modelManager.verifyModelIntegrity();
-                                    statusIndicator.empty();
-                                    const statusIcon = document.createElement('span');
-                                    statusIcon.className = `model-status-icon ${isValid ? 'model-status-valid' : 'model-status-invalid'}`;
-                                    statusIcon.title = isValid ? 'File verified' : 'File verification failed';
-                                    const iconSvg = isValid ? createCheckIcon(16) : createInfoIcon(16);
-                                    statusIcon.appendChild(iconSvg);
-                                    statusIndicator.appendChild(statusIcon);
-                                } else {
-                                    statusIndicator.empty();
-                                }
-                            } catch (error) {
-                                // If verification fails due to error, show error icon
-                                console.error('Error verifying model integrity:', error);
-                                statusIndicator.empty();
-                                const statusIcon = document.createElement('span');
-                                statusIcon.className = 'model-status-icon model-status-invalid';
-                                statusIcon.title = 'Verification error';
-                                const iconSvg = createInfoIcon(16);
-                                statusIcon.appendChild(iconSvg);
-                                statusIndicator.appendChild(statusIcon);
-                            }
-                        })();
-                    }
-                });
-        }
-    }
-
-    private async startDownload(modelKey: string): Promise<void> {
-        const modelManager = new ModelManager(modelKey);
-        const modal = new ModelDownloadModal(
-            this.app,
-            modelManager
-        );
-
-        // Override close to mark setup as complete
-        const originalClose = modal.close.bind(modal);
-        modal.close = () => {
-            originalClose();
-            // Check if download was successful
-            void modelManager.isModelDownloaded().then(downloaded => {
-                if (downloaded) {
-                    this.settings.setupCompleted = true;
-                    this.settings.modelDownloaded = true;
-                    this.settings.llmProvider = 'llama';
-                    this.settings.modelPath = modelManager.getModelPath();
-                    this.onComplete();
-                    this.close();
-                }
-            });
-        };
-
-        modal.open();
     }
 
     private handleApiKeyOption(): void {
