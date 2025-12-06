@@ -102,12 +102,14 @@ export class ServiceInitializer {
         ideaIdService.scheduleIdleAssignment(3000); // Wait 3 seconds after load
 
         // Run migration after a short delay (after IDs are assigned)
-        setTimeout(async () => {
-            try {
-                await relatedMigrationService.migrateRelatedToIds();
-            } catch (error) {
-                Logger.warn('Related migration failed:', error);
-            }
+        setTimeout(() => {
+            void (async () => {
+                try {
+                    await relatedMigrationService.migrateRelatedToIds();
+                } catch (error) {
+                    Logger.warn('Related migration failed:', error);
+                }
+            })();
         }, 5000);
 
         return { context };
@@ -211,6 +213,8 @@ export class ServiceInitializer {
 
     /**
      * Initialize LLM services (local and cloud)
+     * Note: This method is async because it's called with await,
+     * even though it doesn't contain any await expressions
      */
     private static async initializeLLMServices(
         _app: App,
