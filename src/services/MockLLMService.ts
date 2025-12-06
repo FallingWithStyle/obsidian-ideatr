@@ -29,6 +29,8 @@ export class MockLLMService implements ILLMService {
         'ai': ['ai', 'machine learning', 'artificial intelligence'],
     };
 
+    // Note: This method is async to satisfy the ILLMService interface,
+    // even though it doesn't contain any await expressions
     async classify(text: string): Promise<ClassificationResult> {
         if (!text || text.trim().length === 0) {
             return {

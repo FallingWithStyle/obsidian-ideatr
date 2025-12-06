@@ -18,6 +18,8 @@ export class ClusteringService implements IClusteringService {
      * @param ideas - Ideas to cluster
      * @param embeddings - Optional embeddings for each idea (if not provided, will generate)
      * @returns Array of clusters
+     * Note: This method is async to satisfy the IClusteringService interface,
+     * even though it doesn't contain any await expressions (generateEmbeddings is synchronous)
      */
     async clusterIdeas(ideas: IdeaFile[], embeddings?: Embedding[]): Promise<Cluster[]> {
         if (ideas.length === 0) {

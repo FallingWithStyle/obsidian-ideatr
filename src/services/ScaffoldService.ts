@@ -18,8 +18,9 @@ export class ScaffoldService implements IScaffoldService {
     private customTemplates: ScaffoldTemplate[] = [];
     private allTemplates: ScaffoldTemplate[] = [];
 
-    constructor(vault?: Vault, _app?: App) {
+    constructor(vault?: Vault, app?: App) {
         this.vault = vault;
+        this.app = app;
         this.allTemplates = [...defaultTemplates];
         if (vault) {
             this.loadCustomTemplates().catch(err => {

@@ -125,6 +125,11 @@
   line-height: 1.5;
 }
 
+/* Graph node clickable style */
+.ideatr-graph-node-clickable {
+  cursor: pointer;
+}
+
 .ideatr-tooltip-header {
   margin-bottom: 8px;
   font-size: 14px;

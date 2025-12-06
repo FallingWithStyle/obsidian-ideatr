@@ -215,6 +215,7 @@ export class ProjectElevationService implements IProjectElevationService {
 
     /**
      * Resolve project name collision by adding numeric suffix
+     * Note: This method is async to match the calling context, even though it doesn't contain await expressions
      */
     private async resolveProjectNameCollision(baseName: string): Promise<string> {
         let projectName = baseName;

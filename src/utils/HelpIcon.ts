@@ -172,9 +172,9 @@ export function createHelpIcon(
     });
 
     // Click handler
-    icon.addEventListener('click', async (e) => {
+    icon.addEventListener('click', (e) => {
         e.stopPropagation();
-        await openTutorial(app, topic);
+        void openTutorial(app, topic);
     });
 
     // Tooltip

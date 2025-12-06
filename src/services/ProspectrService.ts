@@ -34,6 +34,8 @@ export class ProspectrService implements IProspectrService {
      * 
      * Stubbed implementation - returns placeholder result
      * When implemented, will use timeout for API calls
+     * Note: This method is async to satisfy the IProspectrService interface,
+     * even though it doesn't contain any await expressions
      */
     async checkDomainAvailability(domain: string): Promise<DomainCheckResult> {
         if (!this.isAvailable()) {

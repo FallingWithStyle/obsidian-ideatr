@@ -195,7 +195,7 @@ export class IdeaRepository implements IIdeaRepository {
 
         // Register watchers for modify/create/delete and track their unregister functions (QA 4.5)
         // vault.on() returns a function that can be called to unsubscribe
-        const vaultOn = this.vault.on.bind(this.vault) as {
+        const vaultOn = this.vault.on.bind(this.vault) as unknown as {
             (event: 'modify', callback: (file: TFile) => void): () => void;
             (event: 'create', callback: (file: TFile) => void): () => void;
             (event: 'delete', callback: (file: TFile) => void): () => void;

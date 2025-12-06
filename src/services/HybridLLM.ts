@@ -30,7 +30,7 @@ export class HybridLLM implements ILLMService {
             try {
                 const result = await this.cloudLLM.classify(text);
                 this.lastProvider = 'cloud';
-                const providerName = (this.cloudLLM as ILLMProvider & { name?: string }).name || 'cloud';
+                const providerName = (this.cloudLLM as ILLMService & { name?: string }).name || 'cloud';
                 Logger.debug('Used cloud provider:', providerName);
                 return result;
             } catch (error) {
