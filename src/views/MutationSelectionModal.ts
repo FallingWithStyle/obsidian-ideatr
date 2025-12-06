@@ -70,7 +70,7 @@ export class MutationSelectionModal extends Modal {
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         
         const saveButton = buttonContainer.createEl('button', {
-            text: 'Save as New Ideas',
+            text: 'Save as new ideas',
             cls: 'mod-cta'
         });
         saveButton.addEventListener('click', () => {
@@ -82,7 +82,7 @@ export class MutationSelectionModal extends Modal {
         });
 
         const appendButton = buttonContainer.createEl('button', {
-            text: 'Append to Current Note'
+            text: 'Append to current note'
         });
         appendButton.addEventListener('click', () => {
             const selected = this.mutations.filter((_, index) => this.selected.has(index));

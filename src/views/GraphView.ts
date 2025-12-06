@@ -39,7 +39,7 @@ export class GraphView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'Ideatr Graph';
+        return 'Ideatr graph';
     }
 
     getIcon(): string {

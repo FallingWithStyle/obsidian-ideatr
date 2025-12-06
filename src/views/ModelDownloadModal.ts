@@ -68,7 +68,7 @@ export class ModelDownloadModal extends Modal {
 
         // Download in background button
         const backgroundButton = buttonContainer.createEl('button', {
-            text: 'Download in Background',
+            text: 'Download in background',
             cls: 'mod-cta'
         });
         (backgroundButton as HTMLElement).setCssProps({
@@ -107,7 +107,7 @@ export class ModelDownloadModal extends Modal {
 
         try {
             await this.modelManager.downloadModel(
-                (progress, downloadedMB, totalMB) => {
+                (progress: number, downloadedMB: number, totalMB: number) => {
                     // Only update UI if modal is still open
                     if (this.isDownloading) {
                         this.updateProgress(progress, downloadedMB, totalMB);

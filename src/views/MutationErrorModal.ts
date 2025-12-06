@@ -116,14 +116,16 @@ export class MutationErrorModal extends Modal {
                 text: 'Retry',
                 cls: 'mod-cta'
             });
-            retryButton.addEventListener('click', async () => {
-                this.close();
-                new Notice('Retrying mutation generation...');
-                try {
-                    await this.onRetry!();
-                } catch (error) {
-                    new Notice(`Retry failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                }
+            retryButton.addEventListener('click', () => {
+                void (async () => {
+                    this.close();
+                    new Notice('Retrying mutation generation...');
+                    try {
+                        await this.onRetry!();
+                    } catch (error) {
+                        new Notice(`Retry failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    }
+                })();
             });
         }
 

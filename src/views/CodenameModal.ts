@@ -64,7 +64,7 @@ export class CodenameModal extends Modal {
                 text: this.currentCodename ? 'Regenerate' : 'Generate',
                 cls: 'mod-primary'
             });
-            this.generateButton.addEventListener('click', () => this.handleGenerate());
+            this.generateButton.addEventListener('click', () => void this.handleGenerate());
         }
 
         // Save button

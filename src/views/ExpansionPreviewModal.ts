@@ -50,7 +50,7 @@ export class ExpansionPreviewModal extends Modal {
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         
         const appendButton = buttonContainer.createEl('button', {
-            text: 'Append to Note',
+            text: 'Append to note',
             cls: 'mod-cta'
         });
         appendButton.addEventListener('click', () => {

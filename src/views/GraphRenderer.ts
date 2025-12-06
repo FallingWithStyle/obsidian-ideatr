@@ -91,7 +91,7 @@ export function renderGraphLayout(
         }
 
         if (options.onNodeClick) {
-            (group as any).style.cursor = 'pointer';
+            group.classList.add('ideatr-graph-node-clickable');
             group.addEventListener('click', () => {
                 options.onNodeClick?.(node.id);
             });

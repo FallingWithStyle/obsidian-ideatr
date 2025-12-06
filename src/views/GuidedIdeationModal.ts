@@ -44,7 +44,7 @@ export class GuidedIdeationModal extends Modal {
         contentEl.addClass('ideatr-guided-ideation-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Ideatr: Transform' });
+        contentEl.createEl('h2', { text: 'Ideatr: transform' });
 
         // Description
         const description = contentEl.createEl('p', {
@@ -273,16 +273,18 @@ export class GuidedIdeationModal extends Modal {
         (acceptButton as HTMLElement).setCssProps({
             'margin-left': '10px'
         });
-        acceptButton.addEventListener('click', async () => {
-            if (this.transformationResult && this.transformationPlan && this.onAccept) {
-                try {
-                    await this.onAccept(this.transformationResult, this.transformationPlan);
-                    this.close();
-                } catch (error) {
-                    new Notice(`Failed to apply changes: ${error instanceof Error ? error.message : String(error)}`);
-                    console.error('Failed to apply transformation:', error);
+        acceptButton.addEventListener('click', () => {
+            void (async () => {
+                if (this.transformationResult && this.transformationPlan && this.onAccept) {
+                    try {
+                        await this.onAccept(this.transformationResult, this.transformationPlan);
+                        this.close();
+                    } catch (error) {
+                        new Notice(`Failed to apply changes: ${error instanceof Error ? error.message : String(error)}`);
+                        console.error('Failed to apply transformation:', error);
+                    }
                 }
-            }
+            })();
         });
     }
 

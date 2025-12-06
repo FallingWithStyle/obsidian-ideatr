@@ -173,10 +173,10 @@ export class FeatureRequestModal extends Modal {
         
         // Copy to clipboard button
         const copyButton = buttonContainer.createEl('button', {
-            text: 'Copy to Clipboard',
+            text: 'Copy to clipboard',
             cls: 'mod-cta'
         });
-        copyButton.addEventListener('click', () => this.handleCopyToClipboard());
+        copyButton.addEventListener('click', () => void this.handleCopyToClipboard());
 
         // Open email button
         const emailButton = buttonContainer.createEl('button', {

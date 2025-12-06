@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf, Notice, App } from 'obsidian';
-import type { IIdeaRepository, IClusteringService, IResurfacingService, IProjectElevationService, GraphNode } from '../types/management';
+import type { IIdeaRepository, IClusteringService, IResurfacingService, IProjectElevationService, GraphNode, Cluster, GraphLayout } from '../types/management';
 import type { IdeaFile } from '../types/idea';
 import type { IdeaFilter } from '../types/management';
 import { ManagementError, getManagementErrorMessage } from '../types/management';
@@ -51,7 +51,7 @@ export class DashboardView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'Ideatr Dashboard';
+        return 'Ideatr dashboard';
     }
 
     getIcon(): string {
@@ -573,10 +573,10 @@ export class DashboardView extends ItemView {
             // so we call the same layout logic through the full GraphView pipeline. For now,
             // generate a local layout using a reasonable canvas size.
             // App.plugins is not in the public API but exists at runtime
-            const appWithPlugins = this.app as App & { plugins?: { getPlugin: (id: string) => IdeatrPlugin & { graphLayoutService?: { layoutGraph: (clusters: unknown[], width: number, height: number) => unknown } } | null } };
-            const previewLayout = appWithPlugins.plugins
+            const appWithPlugins = this.app as App & { plugins?: { getPlugin: (id: string) => IdeatrPlugin & { graphLayoutService?: { layoutGraph: (clusters: Cluster[], width: number, height: number) => GraphLayout } } | null } };
+            const previewLayout: GraphLayout | undefined = appWithPlugins.plugins
                 ? appWithPlugins.plugins.getPlugin('ideatr')?.graphLayoutService?.layoutGraph(clusters, 220, 180)
-                : null;
+                : undefined;
 
             container.empty();
             container.createEl('div', {
@@ -651,18 +651,20 @@ export class DashboardView extends ItemView {
             }
 
             const generateDigestBtn = container.createEl('button', { text: 'Generate digest' });
-            generateDigestBtn.addEventListener('click', async () => {
-                try {
-                    const digest = await this.resurfacingService!.generateDigest();
-                    const digestPath = `Ideas/.ideatr-digest-${Date.now()}.md`;
-                    await this.app.vault.create(digestPath, digest.summary);
-                    const file = this.app.vault.getAbstractFileByPath(digestPath);
-                    if (file) {
-                        await this.app.workspace.openLinkText(digestPath, '', false);
+            generateDigestBtn.addEventListener('click', () => {
+                void (async () => {
+                    try {
+                        const digest = await this.resurfacingService!.generateDigest();
+                        const digestPath = `Ideas/.ideatr-digest-${Date.now()}.md`;
+                        await this.app.vault.create(digestPath, digest.summary);
+                        const file = this.app.vault.getAbstractFileByPath(digestPath);
+                        if (file) {
+                            await this.app.workspace.openLinkText(digestPath, '', false);
+                        }
+                    } catch (error) {
+                        console.error('Failed to generate digest:', error);
                     }
-                } catch (error) {
-                    console.error('Failed to generate digest:', error);
-                }
+                })();
             });
         } catch (error) {
             console.error('Failed to load resurfacing panel:', error);

@@ -78,7 +78,7 @@ export class ClassificationResultsModal extends Modal {
 
         // Add tag button
         const addTagButton = tagsList.createEl('button', {
-            text: '+ Add Tag',
+            text: '+ Add tag',
             cls: 'ideatr-add-tag'
         });
         addTagButton.addEventListener('click', () => {
@@ -115,7 +115,7 @@ export class ClassificationResultsModal extends Modal {
 
         // Edit button (opens note editor)
         const editButton = buttonContainer.createEl('button', {
-            text: 'Edit in Note'
+            text: 'Edit in note'
         });
         editButton.addEventListener('click', () => void this.handleEdit());
 
@@ -164,7 +164,7 @@ export class ClassificationResultsModal extends Modal {
 
         // Add tag button
         const addTagButton = container.createEl('button', {
-            text: '+ Add Tag',
+            text: '+ Add tag',
             cls: 'ideatr-add-tag'
         });
         addTagButton.addEventListener('click', () => {

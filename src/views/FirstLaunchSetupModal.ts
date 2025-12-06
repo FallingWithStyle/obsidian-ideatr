@@ -54,7 +54,7 @@ export class FirstLaunchSetupModal extends Modal {
 
         // Option 2: Skip
         const skipOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
-        skipOption.createEl('h3', { text: 'Skip for Now' });
+        skipOption.createEl('h3', { text: 'Skip for now' });
         skipOption.createEl('p', {
             text: 'Continue without AI. You can set up AI later in settings.'
         });
@@ -89,7 +89,7 @@ export class FirstLaunchSetupModal extends Modal {
 
         // API key input
         const keyContainer = contentEl.createEl('div', { cls: 'ideatr-setting-item' });
-        keyContainer.createEl('label', { text: 'API Key:', attr: { for: 'ideatr-api-key-input' } });
+        keyContainer.createEl('label', { text: 'API key:', attr: { for: 'ideatr-api-key-input' } });
         const apiKeyInput = keyContainer.createEl('input', {
             attr: {
                 id: 'ideatr-api-key-input',

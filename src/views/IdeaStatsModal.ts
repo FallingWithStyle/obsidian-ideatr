@@ -44,7 +44,7 @@ export class IdeaStatsModal extends Modal {
 
         // Stats grid
         const statsGrid = contentEl.createDiv('ideatr-stats-grid');
-        (statsGrid as HTMLElement).setCssProps({
+        statsGrid.setCssProps({
             'display': 'grid',
             'grid-template-columns': '1fr 1fr',
             'gap': '15px',
@@ -71,7 +71,7 @@ export class IdeaStatsModal extends Modal {
 
         // Dates section
         const datesSection = contentEl.createDiv('ideatr-stats-dates');
-        (datesSection as HTMLElement).setCssProps({
+        datesSection.setCssProps({
             'margin-bottom': '20px',
             'padding': '10px',
             'background-color': 'var(--background-secondary)',
@@ -98,13 +98,13 @@ export class IdeaStatsModal extends Modal {
         // Additional info if frontmatter available
         if (this.stats.frontmatter) {
             const additionalSection = contentEl.createDiv('ideatr-stats-additional');
-            (additionalSection as HTMLElement).setCssProps({
+            additionalSection.setCssProps({
                 'margin-bottom': '20px'
             });
 
             if (this.stats.frontmatter.tags && this.stats.frontmatter.tags.length > 0) {
                 const tagsSection = additionalSection.createDiv('ideatr-stats-tags');
-                (tagsSection as HTMLElement).setCssProps({
+                tagsSection.setCssProps({
                     'margin-bottom': '10px'
                 });
 
@@ -114,7 +114,7 @@ export class IdeaStatsModal extends Modal {
                 });
 
                 const tagsContainer = tagsSection.createDiv('ideatr-stats-tags-list');
-                (tagsContainer as HTMLElement).setCssProps({
+                tagsContainer.setCssProps({
                     'display': 'flex',
                     'flex-wrap': 'wrap',
                     'gap': '5px'
@@ -132,7 +132,7 @@ export class IdeaStatsModal extends Modal {
 
             if (this.stats.frontmatter.related && this.stats.frontmatter.related.length > 0) {
                 const relatedSection = additionalSection.createDiv('ideatr-stats-related');
-                (relatedSection as HTMLElement).setCssProps({
+                relatedSection.setCssProps({
                     'margin-bottom': '10px'
                 });
 
@@ -189,7 +189,7 @@ export class IdeaStatsModal extends Modal {
 
         // Close button
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
-        (buttonContainer as HTMLElement).setCssProps({
+        buttonContainer.setCssProps({
             'margin-top': '20px'
         });
 
@@ -204,7 +204,7 @@ export class IdeaStatsModal extends Modal {
 
     private createStatCard(container: HTMLElement, label: string, value: string): HTMLElement {
         const card = container.createDiv('ideatr-stat-card');
-        (card as HTMLElement).setCssProps({
+        card.setCssProps({
             'padding': '10px',
             'background-color': 'var(--background-secondary)',
             'border-radius': '4px',
