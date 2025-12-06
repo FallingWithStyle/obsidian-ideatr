@@ -53,15 +53,17 @@ export class ReorganizeCommand extends IdeaFileCommand {
             this.context.app,
             content.ideaText,
             reorganization,
-            async (action) => {
-                if (action === 'accept') {
-                    const parsed = this.context.frontmatterParser.parse(content.content);
-                    const newContent = this.context.frontmatterParser.build(parsed.frontmatter, reorganization.reorganizedText);
-                    await this.context.app.vault.modify(file, newContent);
-                    new Notice('Idea reorganized successfully.');
-                } else if (action === 'reject') {
-                    new Notice('Reorganization cancelled.');
-                }
+            (action) => {
+                void (async () => {
+                    if (action === 'accept') {
+                        const parsed = this.context.frontmatterParser.parse(content.content);
+                        const newContent = this.context.frontmatterParser.build(parsed.frontmatter, reorganization.reorganizedText);
+                        await this.context.app.vault.modify(file, newContent);
+                        new Notice('Idea reorganized successfully.');
+                    } else if (action === 'reject') {
+                        new Notice('Reorganization cancelled.');
+                    }
+                })();
             }
         ).open();
     }

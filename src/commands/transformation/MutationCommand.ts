@@ -78,14 +78,15 @@ export class MutationCommand extends IdeaFileCommand {
         new MutationSelectionModal(
             this.context.app,
             mutations,
-            async (selected, action) => {
-                if (action === 'save') {
-                    // Save selected mutations as new ideas
-                    // Convert file path to ID
-                    const relatedIds = await this.idConverter.pathsToIds([file.path]);
-                    
-                    for (const mutation of selected) {
-                        const newContent = `---
+            (selected, action) => {
+                void (async () => {
+                    if (action === 'save') {
+                        // Save selected mutations as new ideas
+                        // Convert file path to ID
+                        const relatedIds = await this.idConverter.pathsToIds([file.path]);
+                        
+                        for (const mutation of selected) {
+                            const newContent = `---
 type: idea
 status: captured
 created: ${new Date().toISOString().split('T')[0]}
@@ -104,18 +105,19 @@ ${mutation.description}
 ## Key Differences
 ${mutation.differences.map(d => `- ${d}`).join('\n')}
 `;
-                        const newPath = `Ideas/${generateFilename(mutation.title, new Date())}`;
-                        await this.context.app.vault.create(newPath, newContent);
+                            const newPath = `Ideas/${generateFilename(mutation.title, new Date())}`;
+                            await this.context.app.vault.create(newPath, newContent);
+                        }
+                        new Notice(`Created ${selected.length} new idea${selected.length > 1 ? 's' : ''} from mutations.`);
+                    } else {
+                        // Append to current note
+                        const mutationsText = selected.map(m => 
+                            `## ${m.title}\n\n${m.description}\n\n**Key Differences:**\n${m.differences.map(d => `- ${d}`).join('\n')}`
+                        ).join('\n\n---\n\n');
+                        await this.context.fileManager.appendToFileBody(file, 'Mutations', mutationsText);
+                        new Notice(`Added ${selected.length} mutation${selected.length > 1 ? 's' : ''} to note.`);
                     }
-                    new Notice(`Created ${selected.length} new idea${selected.length > 1 ? 's' : ''} from mutations.`);
-                } else {
-                    // Append to current note
-                    const mutationsText = selected.map(m => 
-                        `## ${m.title}\n\n${m.description}\n\n**Key Differences:**\n${m.differences.map(d => `- ${d}`).join('\n')}`
-                    ).join('\n\n---\n\n');
-                    await this.context.fileManager.appendToFileBody(file, 'Mutations', mutationsText);
-                    new Notice(`Added ${selected.length} mutation${selected.length > 1 ? 's' : ''} to note.`);
-                }
+                })();
             }
         ).open();
     }

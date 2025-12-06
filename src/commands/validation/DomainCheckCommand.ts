@@ -1,7 +1,6 @@
 import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
-import type { DomainService } from '../../services/DomainService';
 
 /**
  * Command: check-domains
@@ -46,8 +45,9 @@ export class DomainCheckCommand extends IdeaFileCommand {
     private checkDomainServiceAvailability(): boolean {
         // DomainService has a private prospectrService property
         // We need to check if the service is available through the public API
-        const domainService = this.context.domainService as DomainService & { prospectrService?: { isAvailable(): boolean } };
-        const prospectrService = domainService.prospectrService;
+        // Use bracket notation to access private property
+        const domainService = this.context.domainService as unknown as Record<string, unknown>;
+        const prospectrService = domainService['prospectrService'] as { isAvailable(): boolean } | undefined;
         if (!prospectrService || !prospectrService.isAvailable()) {
             if (this.context.settings.enableProspectr) {
                 new Notice('Domain checking is not configured. Please set up the domain checking service in settings.');

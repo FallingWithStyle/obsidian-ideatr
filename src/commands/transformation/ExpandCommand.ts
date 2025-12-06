@@ -44,16 +44,18 @@ export class ExpandCommand extends IdeaFileCommand {
         new ExpansionPreviewModal(
             this.context.app,
             expansion,
-            async (action) => {
-                if (action === 'append') {
-                    await this.context.fileManager.appendToFileBody(file, 'Expanded Idea', expansion.expandedText);
-                    new Notice('Expanded content added to note.');
-                } else if (action === 'replace') {
-                    const parsed = this.context.frontmatterParser.parse(content.content);
-                    const newContent = this.context.frontmatterParser.build(parsed.frontmatter, expansion.expandedText);
-                    await this.context.app.vault.modify(file, newContent);
-                    new Notice('Idea content replaced with expanded version.');
-                }
+            (action) => {
+                void (async () => {
+                    if (action === 'append') {
+                        await this.context.fileManager.appendToFileBody(file, 'Expanded Idea', expansion.expandedText);
+                        new Notice('Expanded content added to note.');
+                    } else if (action === 'replace') {
+                        const parsed = this.context.frontmatterParser.parse(content.content);
+                        const newContent = this.context.frontmatterParser.build(parsed.frontmatter, expansion.expandedText);
+                        await this.context.app.vault.modify(file, newContent);
+                        new Notice('Idea content replaced with expanded version.');
+                    }
+                })();
             }
         ).open();
     }

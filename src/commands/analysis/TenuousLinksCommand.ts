@@ -39,8 +39,8 @@ export class TenuousLinksCommand extends IdeaFileCommand {
 
         const links = await this.context.tenuousLinkService.findTenuousLinks(
             content.ideaText,
-            (content.frontmatter.category as string) || '',
-            (Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : []) as string[],
+            String(content.frontmatter.category || ''),
+            Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags as string[] : [],
             relatedPaths
         );
 
@@ -53,26 +53,27 @@ export class TenuousLinksCommand extends IdeaFileCommand {
         new TenuousLinksModal(
             this.context.app,
             links,
-            async (link, action) => {
-                if (action === 'link') {
-                    // Add to related notes - convert path to ID
-                    const currentRelatedIds = Array.isArray(content.frontmatter.related) 
-                        ? content.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
-                        : [];
-                    const linkId = await this.idConverter.pathsToIds([link.idea.path]);
-                    if (linkId.length > 0 && !currentRelatedIds.includes(linkId[0])) {
-                        await this.updateIdeaFrontmatter(file, {
-                            related: [...currentRelatedIds, linkId[0]]
-                        });
-                        new Notice(`Linked to ${link.idea.title}`);
-                    }
-                } else if (action === 'combine') {
-                    // Create combined idea - convert paths to IDs
-                    const currentFileId = await this.idConverter.pathsToIds([file.path]);
-                    const linkId = await this.idConverter.pathsToIds([link.idea.path]);
-                    const relatedIds = [...currentFileId, ...linkId].filter(id => id !== 0);
-                    
-                    const combinedContent = `---
+            (link, action) => {
+                void (async () => {
+                    if (action === 'link') {
+                        // Add to related notes - convert path to ID
+                        const currentRelatedIds = Array.isArray(content.frontmatter.related) 
+                            ? content.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
+                            : [];
+                        const linkId = await this.idConverter.pathsToIds([link.idea.path]);
+                        if (linkId.length > 0 && !currentRelatedIds.includes(linkId[0])) {
+                            await this.updateIdeaFrontmatter(file, {
+                                related: [...currentRelatedIds, linkId[0]]
+                            });
+                            new Notice(`Linked to ${link.idea.title}`);
+                        }
+                    } else if (action === 'combine') {
+                        // Create combined idea - convert paths to IDs
+                        const currentFileId = await this.idConverter.pathsToIds([file.path]);
+                        const linkId = await this.idConverter.pathsToIds([link.idea.path]);
+                        const relatedIds = [...currentFileId, ...linkId].filter(id => id !== 0);
+                        
+                        const combinedContent = `---
 type: idea
 status: captured
 created: ${new Date().toISOString().split('T')[0]}
@@ -95,10 +96,11 @@ ${link.explanation}
 ## Synergy
 ${link.synergy || 'Potential combination of these ideas'}
 `;
-                    const newPath = `Ideas/${new Date().toISOString().split('T')[0]}-combined-idea.md`;
-                    await this.context.app.vault.create(newPath, combinedContent);
-                    new Notice('Created combined idea.');
-                }
+                        const newPath = `Ideas/${new Date().toISOString().split('T')[0]}-combined-idea.md`;
+                        await this.context.app.vault.create(newPath, combinedContent);
+                        new Notice('Created combined idea.');
+                    }
+                })();
             }
         ).open();
     }

@@ -43,12 +43,14 @@ export class RelatedNotesCommand extends IdeaFileCommand {
             this.context.app,
             relatedNotes,
             existingRelatedPaths,
-            async (selected) => {
-                // Convert selected paths to IDs
-                const selectedPaths = selected.map(n => n.path);
-                const relatedIds = await this.idConverter.pathsToIds(selectedPaths);
-                await this.updateIdeaFrontmatter(file, { related: relatedIds });
-                new Notice(`Linked ${selected.length} related note${selected.length > 1 ? 's' : ''} in frontmatter.`);
+            (selected) => {
+                void (async () => {
+                    // Convert selected paths to IDs
+                    const selectedPaths = selected.map(n => n.path);
+                    const relatedIds = await this.idConverter.pathsToIds(selectedPaths);
+                    await this.updateIdeaFrontmatter(file, { related: relatedIds });
+                    new Notice(`Linked ${selected.length} related note${selected.length > 1 ? 's' : ''} in frontmatter.`);
+                })();
             }
         ).open();
     }

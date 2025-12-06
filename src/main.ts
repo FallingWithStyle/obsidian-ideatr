@@ -72,9 +72,11 @@ export default class IdeatrPlugin extends Plugin {
                     this.app,
                     null, // No ModelManager - local models not supported
                     this.settings,
-                    async () => {
-                        // Save settings after setup completion
-                        await this.saveSettings();
+                    () => {
+                        void (async () => {
+                            // Save settings after setup completion
+                            await this.saveSettings();
+                        })();
                     }
                 ).open();
             }, 100);
@@ -137,12 +139,12 @@ export default class IdeatrPlugin extends Plugin {
                     Logger.debug('[Ideatr DEBUG MAIN] Command callback invoked!');
                     Logger.debug('[Ideatr DEBUG MAIN] Stack trace:', new Error().stack);
                     Logger.info('DEBUG MAIN: Command executed successfully');
-                    new Notice('Ideatr Debug (Main) command executed - check console');
+                    new Notice('Ideatr debug (main) command executed - check console');
                 };
                 Logger.debug('Debug main callback type:', typeof debugMainCallback);
                 this.addCommand({
                     id: 'debug-main',
-                    name: 'Debug (Main)',
+                    name: 'Debug (main)',
                     callback: debugMainCallback
                 });
                 Logger.debug('Registered debug command directly in main.ts');
@@ -160,7 +162,7 @@ export default class IdeatrPlugin extends Plugin {
             addIcon(IDEATR_ICON_RED, createPNGIconSVG(`data:image/png;base64,${RED_ICON_BASE64}`));
 
             // Use IDEATR_ICON_ID constant to ensure consistency across ribbon and other icons
-            this.addRibbonIcon(IDEATR_ICON_ID, 'Capture Idea', () => {
+            this.addRibbonIcon(IDEATR_ICON_ID, 'Capture idea', () => {
                 void this.openCaptureModal();
             });
 
@@ -168,11 +170,11 @@ export default class IdeatrPlugin extends Plugin {
             // Add Memory Report command
             this.addCommand({
                 id: 'show-memory-report',
-                name: 'Show Memory Report',
+                name: 'Show memory report',
                 callback: () => {
                     if (this.memoryMonitor) {
                         const report = this.memoryMonitor.getReport();
-                        Logger.debug('Memory Report:', report);
+                        Logger.debug('Memory report:', report);
                         // Also show a simplified notice
                         const usage = this.memoryMonitor.getCurrentUsage();
                         if (usage) {
@@ -181,7 +183,7 @@ export default class IdeatrPlugin extends Plugin {
                             new Notice('Memory report logged to console');
                         }
                     } else {
-                        new Notice('Memory monitoring is not enabled (requires Debug Mode)');
+                        new Notice('Memory monitoring is not enabled (requires debug mode)');
                     }
                 }
             });

@@ -29,7 +29,7 @@ export class RefreshRelatedNotesCommand extends BaseCommand {
             // Create progress modal
             const progressModal = new ProgressModal(
                 this.context.app,
-                'Refreshing Related Notes'
+                'Refreshing related notes'
             );
             progressModal.open();
 

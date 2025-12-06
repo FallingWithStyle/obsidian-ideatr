@@ -3,7 +3,6 @@ import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { IdeaStatsModal, type IdeaStats } from '../../views/IdeaStatsModal';
 import type { IdeaFrontmatter } from '../../types/idea';
-import type { IdeaFrontmatter } from '../../types/idea';
 
 /**
  * Command: show-idea-stats
@@ -18,6 +17,8 @@ export class IdeaStatsCommand extends IdeaFileCommand {
         return 'show idea stats';
     }
 
+    // Note: This method is async to satisfy the base class interface (IdeaFileCommand.executeWithFile),
+    // even though it doesn't contain any await expressions
     protected async executeWithFile(
         file: TFile,
         content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
@@ -42,7 +43,7 @@ export class IdeaStatsCommand extends IdeaFileCommand {
             domainsCount,
             lastModified,
             created,
-            frontmatter: content.frontmatter as IdeaFrontmatter
+            frontmatter: content.frontmatter as unknown as IdeaFrontmatter
         };
 
         new IdeaStatsModal(this.context.app, stats, this.context.ideaRepository).open();

@@ -27,7 +27,7 @@ export class ArchiveCommand extends IdeaFileCommand {
             new Notice('Idea archived successfully.');
         } else {
             // Determine previous status
-            const previousStatus = (content.frontmatter.status === 'archived' ? 'captured' : content.frontmatter.status || 'captured');
+            const previousStatus = (content.frontmatter.status === 'archived' ? 'captured' : (content.frontmatter.status as string) || 'captured') as 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted';
             // Update status from archived
             await this.updateIdeaFrontmatter(file, { status: previousStatus });
             // Move from archive if enabled

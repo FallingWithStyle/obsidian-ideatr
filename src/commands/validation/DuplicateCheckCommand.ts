@@ -36,12 +36,14 @@ export class DuplicateCheckCommand extends IdeaFileCommand {
         new DuplicateResultsModal(
             this.context.app,
             result.duplicates,
-            async (selected) => {
-                // Convert paths to IDs
-                const relatedPaths = selected.map(d => d.path);
-                const relatedIds = await this.idConverter.pathsToIds(relatedPaths);
-                await this.updateIdeaFrontmatter(file, { related: relatedIds });
-                new Notice(`Linked ${selected.length} duplicate${selected.length > 1 ? 's' : ''} in frontmatter.`);
+            (selected) => {
+                void (async () => {
+                    // Convert paths to IDs
+                    const relatedPaths = selected.map(d => d.path);
+                    const relatedIds = await this.idConverter.pathsToIds(relatedPaths);
+                    await this.updateIdeaFrontmatter(file, { related: relatedIds });
+                    new Notice(`Linked ${selected.length} duplicate${selected.length > 1 ? 's' : ''} in frontmatter.`);
+                })();
             }
         ).open();
     }

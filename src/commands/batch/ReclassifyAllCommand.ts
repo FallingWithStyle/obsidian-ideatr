@@ -34,7 +34,7 @@ export class ReclassifyAllCommand extends BaseCommand {
             // Create progress modal
             const progressModal = new ProgressModal(
                 this.context.app,
-                'Reclassifying Ideas'
+                'Reclassifying ideas'
             );
             progressModal.open();
 

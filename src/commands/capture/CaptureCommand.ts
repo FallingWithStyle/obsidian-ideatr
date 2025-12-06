@@ -11,6 +11,8 @@ export class CaptureCommand extends BaseCommand {
         super(context);
     }
 
+    // Note: This method is async to satisfy the base class interface (BaseCommand.execute),
+    // even though it doesn't contain any await expressions
     async execute(): Promise<void> {
         try {
             new CaptureModal(

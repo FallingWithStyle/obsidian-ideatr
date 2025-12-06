@@ -367,7 +367,7 @@ export class CaptureModal extends Modal {
                     this.duplicatePaths = duplicateResult.duplicates.map(d => d.path);
 
                     // Update save button text
-                    this.saveButton.textContent = 'Save Anyway';
+                    this.saveButton.textContent = 'Save anyway';
 
                     return;
                 }
@@ -434,7 +434,7 @@ export class CaptureModal extends Modal {
                     this.isWarningShown = true;
                     this.duplicatePaths = duplicateResult.duplicates.map(d => d.path);
                     if (this.ideateButton) {
-                        this.ideateButton.textContent = 'Ideate Anyway';
+                        this.ideateButton.textContent = 'Ideate anyway';
                     }
                     return;
                 }
@@ -769,7 +769,7 @@ Response:`;
         }
     }
 
-    async showClassificationResults(classification: IdeaClassification, file: TFile | null) {
+    showClassificationResults(classification: IdeaClassification, file: TFile | null) {
         // Convert IdeaClassification to ClassificationResult for the modal
         const classificationResult: ClassificationResult = {
             category: classification.category,
@@ -784,49 +784,55 @@ Response:`;
         const resultsModal = new ClassificationResultsModal(
             this.app,
             classificationResult,
-            async (editedResults: ClassificationResult) => {
-                // Accept: Merge edited results with related notes and duplicates
-                const allRelatedPaths = [...new Set([...relatedNotes, ...duplicatePaths])];
-                const finalClassification: IdeaClassification = {
-                    category: editedResults.category,
-                    tags: editedResults.tags,
-                    related: allRelatedPaths // Keep as paths for IdeaClassification interface, will be converted in acceptClassification
-                };
-                if (file) {
-                    await this.acceptClassification(finalClassification, file);
-                } else {
-                    // No file - just show results (for "Classify Now" button)
-                    new Notice('Classification complete. Save the idea to apply results.');
-                    resultsModal.close();
-                }
+            (editedResults: ClassificationResult) => {
+                void (async () => {
+                    // Accept: Merge edited results with related notes and duplicates
+                    const allRelatedPaths = [...new Set([...relatedNotes, ...duplicatePaths])];
+                    const finalClassification: IdeaClassification = {
+                        category: editedResults.category,
+                        tags: editedResults.tags,
+                        related: allRelatedPaths // Keep as paths for IdeaClassification interface, will be converted in acceptClassification
+                    };
+                    if (file) {
+                        await this.acceptClassification(finalClassification, file);
+                    } else {
+                        // No file - just show results (for "Classify Now" button)
+                        new Notice('Classification complete. Save the idea to apply results.');
+                        resultsModal.close();
+                    }
+                })();
             },
-            async () => {
-                // Edit: Open note editor (for now, just accept)
-                const allRelatedPaths = [...new Set([...relatedNotes, ...duplicatePaths])];
-                const finalClassification: IdeaClassification = {
-                    category: classificationResult.category,
-                    tags: classificationResult.tags,
-                    related: allRelatedPaths // Keep as paths for IdeaClassification interface, will be converted in acceptClassification
-                };
-                if (file) {
-                    await this.acceptClassification(finalClassification, file);
-                } else {
-                    new Notice('Classification complete. Save the idea to apply results.');
-                    resultsModal.close();
-                }
+            () => {
+                void (async () => {
+                    // Edit: Open note editor (for now, just accept)
+                    const allRelatedPaths = [...new Set([...relatedNotes, ...duplicatePaths])];
+                    const finalClassification: IdeaClassification = {
+                        category: classificationResult.category,
+                        tags: classificationResult.tags,
+                        related: allRelatedPaths // Keep as paths for IdeaClassification interface, will be converted in acceptClassification
+                    };
+                    if (file) {
+                        await this.acceptClassification(finalClassification, file);
+                    } else {
+                        new Notice('Classification complete. Save the idea to apply results.');
+                        resultsModal.close();
+                    }
+                })();
             },
-            async () => {
-                // Retry: Re-run classification
-                try {
-                    const ideaText = this.inputEl.value;
-                    const retryClassification = await this.classificationService.classifyIdea(ideaText);
-                    // Close current modal and show new results
-                    resultsModal.close();
-                    void this.showClassificationResults(retryClassification, file);
-                } catch (error) {
-                    console.error('Retry classification failed:', error);
-                    new Notice('Failed to retry classification. Please try again.');
-                }
+            () => {
+                void (async () => {
+                    // Retry: Re-run classification
+                    try {
+                        const ideaText = this.inputEl.value;
+                        const retryClassification = await this.classificationService.classifyIdea(ideaText);
+                        // Close current modal and show new results
+                        resultsModal.close();
+                        void this.showClassificationResults(retryClassification, file);
+                    } catch (error) {
+                        console.error('Retry classification failed:', error);
+                        new Notice('Failed to retry classification. Please try again.');
+                    }
+                })();
             }
         );
 

@@ -103,7 +103,7 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
         const relatedClusters = await Promise.all(
             clusters
                 .filter(c => c !== currentCluster)
-                .map(async (otherCluster) => {
+                .map((otherCluster) => {
                     let totalSimilarity = 0;
                     let comparisons = 0;
 
@@ -234,11 +234,13 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
         new ClusterAnalysisModal(
             this.context.app,
             clusterInfo,
-            async (path: string) => {
-                const targetFile = this.context.app.vault.getAbstractFileByPath(path || '');
-                if (targetFile) {
-                    await this.context.app.workspace.openLinkText(path || '', '', true);
-                }
+            (path: string) => {
+                void (async () => {
+                    const targetFile = this.context.app.vault.getAbstractFileByPath(path || '');
+                    if (targetFile) {
+                        await this.context.app.workspace.openLinkText(path || '', '', true);
+                    }
+                })();
             }
         ).open();
     }

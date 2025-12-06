@@ -27,20 +27,22 @@ export class StatusCommand extends IdeaFileCommand {
         new StatusPickerModal(
             this.context.app,
             currentStatusStr,
-            async (newStatus: IdeaStatus) => {
-                await this.updateIdeaFrontmatter(file, { status: newStatus });
+            (newStatus: IdeaStatus) => {
+                void (async () => {
+                    await this.updateIdeaFrontmatter(file, { status: newStatus });
 
-                // Handle file movement based on status
-                const prevStatus = content.frontmatter.status as IdeaFrontmatter['status'];
-                const wasArchived = prevStatus === 'archived';
-                const isNowArchived = (newStatus as string) === 'archived';
-                if (isNowArchived) {
-                    await this.context.fileOrganizer.moveToArchive(file);
-                } else if (wasArchived && !isNowArchived) {
-                    await this.context.fileOrganizer.moveFromArchive(file);
-                }
+                    // Handle file movement based on status
+                    const prevStatus = content.frontmatter.status as IdeaFrontmatter['status'];
+                    const wasArchived = prevStatus === 'archived';
+                    const isNowArchived = (newStatus as string) === 'archived';
+                    if (isNowArchived) {
+                        await this.context.fileOrganizer.moveToArchive(file);
+                    } else if (wasArchived && !isNowArchived) {
+                        await this.context.fileOrganizer.moveFromArchive(file);
+                    }
 
-                new Notice(`Status changed to ${newStatus}`);
+                    new Notice(`Status changed to ${newStatus}`);
+                })();
             }
         ).open();
     }

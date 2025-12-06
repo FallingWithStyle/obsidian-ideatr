@@ -1,9 +1,6 @@
 import { Notice, TFile } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
-import type { DomainCheckResult } from '../../types/domain';
-import type { SearchResult } from '../../types/search';
-import type { DuplicateCheckResult } from '../../types/classification';
 import type { IdeaCategory } from '../../types/classification';
 import type { IdeaFrontmatter } from '../../types/idea';
 
@@ -30,17 +27,17 @@ export class QuickValidateCommand extends IdeaFileCommand {
         const results = await Promise.allSettled([
             this.context.domainService.checkDomains(content.ideaText).catch(e => {
                 console.error('Domain check failed:', e);
-                return [] as DomainCheckResult[];
+                return [];
             }),
             this.context.webSearchService.isAvailable() 
                 ? this.context.webSearchService.search(content.ideaText, content.frontmatter.category as IdeaCategory | undefined).catch(e => {
                     console.error('Web search failed:', e);
-                    return [] as SearchResult[];
+                    return [];
                 })
-                : Promise.resolve([] as SearchResult[]),
+                : Promise.resolve([]),
             this.context.duplicateDetector.checkDuplicate(content.ideaText).catch(e => {
                 console.error('Duplicate check failed:', e);
-                return { isDuplicate: false, duplicates: [], threshold: 0.75 } as DuplicateCheckResult;
+                return { isDuplicate: false, duplicates: [], threshold: 0.75 };
             }),
         ]);
 
