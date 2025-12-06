@@ -4,7 +4,7 @@ import { BaseSettingsSection } from '../components/SettingsSection';
 export class NameVariantSettingsSection extends BaseSettingsSection {
     display(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Enable Name Variants')
+            .setName('Enable name variants')
             .setDesc('Generate name variants for ideas')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableNameVariants)
@@ -75,7 +75,7 @@ export class NameVariantSettingsSection extends BaseSettingsSection {
             .setName('Clear variant cache')
             .setDesc('Clear all cached name variants')
             .addButton(button => button
-                .setButtonText('Clear Cache')
+                .setButtonText('Clear cache')
                 .setCta()
                 .onClick(async () => {
                     if (this.plugin.nameVariantService) {

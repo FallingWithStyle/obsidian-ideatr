@@ -4,7 +4,7 @@ import { BaseSettingsSection } from '../components/SettingsSection';
 export class ScaffoldSettingsSection extends BaseSettingsSection {
     display(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Enable Scaffolds')
+            .setName('Enable scaffolds')
             .setDesc('Generate scaffold templates for ideas')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableScaffolds)

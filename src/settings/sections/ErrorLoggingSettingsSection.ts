@@ -66,7 +66,7 @@ export class ErrorLoggingSettingsSection extends BaseSettingsSection {
             .setName('Clear error logs')
             .setDesc('Clear all stored error logs')
             .addButton(button => button
-                .setButtonText('Clear Logs')
+                .setButtonText('Clear logs')
                 .onClick(() => {
                     if (this.plugin.errorLogService) {
                         this.plugin.errorLogService.clearLogs();

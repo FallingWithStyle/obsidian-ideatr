@@ -8,16 +8,16 @@ export class FeedbackSettingsSection extends BaseSettingsSection {
             .setName('View existing issues')
             .setDesc('Browse and search existing bug reports and feature requests on GitHub')
             .addButton(button => button
-                .setButtonText('View Issues')
+                .setButtonText('View issues')
                 .onClick(() => {
                     window.open('https://github.com/FallingWithStyle/obsidian-ideatr/issues', '_blank');
                 }));
 
         new Setting(containerEl)
-            .setName('Submit Feedback')
+            .setName('Submit feedback')
             .setDesc('Report bugs, suggest features, or report performance issues. Error logs can be included to help diagnose issues.')
             .addButton(button => button
-                .setButtonText('Submit Feedback')
+                .setButtonText('Submit feedback')
                 .setCta()
                 .onClick(() => {
                     let obsidianVersion = 'Unknown';

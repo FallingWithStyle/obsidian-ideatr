@@ -28,8 +28,8 @@ export class LLMSettingsSection extends BaseSettingsSection {
 
     display(containerEl: HTMLElement): void {
         const titleContainer = containerEl.createDiv({ cls: 'settings-section-title' });
-        titleContainer.createEl('h2', { text: 'AI Configuration' });
-        const helpIcon = createHelpIcon(this.app, 'getting-started', 'Learn about AI Configuration');
+        titleContainer.createEl('h2', { text: 'AI configuration' });
+        const helpIcon = createHelpIcon(this.app, 'getting-started', 'Learn about AI configuration');
         titleContainer.appendChild(helpIcon);
 
         // Local AI Version Warning Banner
@@ -43,17 +43,17 @@ export class LLMSettingsSection extends BaseSettingsSection {
         });
         
         warningBanner.createEl('strong', { 
-            text: '⚠️ Local AI Version - No Updates',
+            text: '⚠️ Local AI version - no updates',
             attr: { style: 'display: block; margin-bottom: 0.5em; color: var(--text-warning);' }
         });
         
         warningBanner.createEl('p', {
-            text: 'This version includes local AI but will not receive updates. Watch for the upcoming Ideatr Desktop App for local AI with ongoing support.',
+            text: 'This version includes local AI but will not receive updates. Watch for the upcoming Ideatr desktop app for local AI with ongoing support.',
             attr: { style: 'margin: 0.5em 0; line-height: 1.5;' }
         });
         
         warningBanner.createEl('a', {
-            text: 'Learn more about Desktop App →',
+            text: 'Learn more about desktop app →',
             href: 'https://ideatr.app/desktop',
             attr: { 
                 style: 'color: var(--text-accent); text-decoration: none;',
@@ -77,8 +77,8 @@ export class LLMSettingsSection extends BaseSettingsSection {
         if (this.plugin.settings.llmProvider === 'llama') {
             // Model selection dropdown - only show downloaded models
             new Setting(containerEl)
-                .setName('Local AI Model')
-                .setDesc('Select which downloaded model to use. Use "Manage AI Models" to download new models or see all available options.')
+                .setName('Local AI model')
+                .setDesc('Select which downloaded model to use. Use "Manage AI models" to download new models or see all available options.')
                 .addDropdown(dropdown => {
                     // Initially show loading state
                     dropdown.addOption('loading', 'Loading...');
@@ -101,7 +101,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             dropdown.addOption('none', 'No models downloaded');
                             dropdown.setValue('none');
                             dropdown.setDisabled(true);
-                            new Notice('No models downloaded. Use "Manage AI Models" to download a model.', 5000);
+                            new Notice('No models downloaded. Use "Manage AI models" to download a model.', 5000);
                         } else {
                             // Add only downloaded models to dropdown
                             for (const modelKey of downloadedModels) {
@@ -169,13 +169,13 @@ export class LLMSettingsSection extends BaseSettingsSection {
             const modelConfig = modelManager.getModelConfig();
 
             new Setting(containerEl)
-                .setName('Model Information')
+                .setName('Model information')
                 .setDesc(`${modelConfig.description}\nSize: ${(modelConfig.sizeMB / 1000).toFixed(1)}GB | RAM: ${modelConfig.ram} | Quality: ${modelConfig.quality}/5 | Speed: ${modelConfig.speed}/5`)
                 .setDisabled(true);
 
             // Model download status with checksum indicator
             const modelStatusSetting = new Setting(containerEl)
-                .setName('Model Status')
+                .setName('Model status')
                 .setDisabled(true);
             
             // Check download status and verify integrity asynchronously
@@ -206,19 +206,21 @@ export class LLMSettingsSection extends BaseSettingsSection {
 
             // Download/Switch Model button
             new Setting(containerEl)
-                .setName('Manage AI Models')
+                .setName('Manage AI models')
                 .setDesc('Download a new model, switch between models, or configure cloud AI providers')
                 .addButton(button => button
-                    .setButtonText('Manage AI Models')
+                    .setButtonText('Manage AI models')
                     .setCta()
-                    .onClick(async () => {
+                    .onClick(() => {
                         const modal = new FirstLaunchSetupModal(
                             this.app,
                             modelManager,
                             this.plugin.settings,
-                            async () => {
-                                await this.saveSettings();
-                                this.refresh();
+                            () => {
+                                void (async () => {
+                                    await this.saveSettings();
+                                    this.refresh();
+                                })();
                             }
                         );
                         modal.open();
@@ -246,10 +248,10 @@ export class LLMSettingsSection extends BaseSettingsSection {
 
             // Manual start button
             new Setting(containerEl)
-                .setName('Ensure LLM Ready')
+                .setName('Ensure LLM ready')
                 .setDesc('Manually ensure the AI model is ready now. Not needed in most cases (model auto-starts when you use AI features), but helpful if: the model stopped unexpectedly, you want to test your configuration, or you prefer to preload before using features.')
                 .addButton(button => button
-                    .setButtonText('Ensure Ready')
+                    .setButtonText('Ensure ready')
                     .setCta()
                     .onClick(async () => {
                         button.setDisabled(true);
@@ -259,12 +261,12 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             new Notice('AI model is ready');
                             setTimeout(() => {
                                 button.setDisabled(false);
-                                button.setButtonText('Ensure Ready');
+                                button.setButtonText('Ensure ready');
                             }, 2000);
                         } catch (error) {
                             new Notice('Failed to prepare model. Check console for details.');
                             button.setDisabled(false);
-                            button.setButtonText('Ensure Ready');
+                            button.setButtonText('Ensure ready');
                         }
                     }));
         }

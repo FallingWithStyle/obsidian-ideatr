@@ -244,7 +244,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
             'border-left': '3px solid var(--text-warning)'
         });
         
-        const betaTitle = betaNotice.createEl('strong', { text: '⚠️ Local AI Version - No Updates' });
+        const betaTitle = betaNotice.createEl('strong', { text: '⚠️ Local AI version - no updates' });
         (betaTitle as HTMLElement).setCssProps({
             'display': 'block',
             'margin-bottom': '0.5em',
@@ -260,7 +260,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const desktopAppText = betaNotice.createEl('p', {
-            text: 'We recommend keeping an eye out for the upcoming Ideatr Desktop App, which will include local AI with ongoing support and updates.'
+            text: 'We recommend keeping an eye out for the upcoming Ideatr desktop app, which will include local AI with ongoing support and updates.'
         });
         (desktopAppText as HTMLElement).setCssProps({
             'margin': '0.5em 0',
@@ -268,7 +268,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const desktopAppLink = betaNotice.createEl('a', {
-            text: 'Learn more about Desktop App →',
+            text: 'Learn more about desktop app →',
             href: 'https://ideatr.app/desktop',
             attr: { target: '_blank', rel: 'noopener' }
         });
@@ -288,7 +288,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const reportButton = betaActions.createEl('a', { 
-            text: '📝 Report Bug or Request Feature',
+            text: '📝 Report bug or request feature',
             href: '#ideatr-feedback-section'
         });
         (reportButton as HTMLElement).setCssProps({
@@ -308,7 +308,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const roadmapLink = betaActions.createEl('a', { 
-            text: '🗺️ View Planned Features',
+            text: '🗺️ View planned features',
             href: 'https://github.com/FallingWithStyle/obsidian-ideatr#roadmap',
             attr: { target: '_blank', rel: 'noopener' }
         });
@@ -318,7 +318,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const githubLink = betaActions.createEl('a', { 
-            text: '🐛 GitHub Issues',
+            text: '🐛 GitHub issues',
             href: 'https://github.com/FallingWithStyle/obsidian-ideatr/issues',
             attr: { target: '_blank', rel: 'noopener' }
         });

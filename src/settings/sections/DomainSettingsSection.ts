@@ -4,7 +4,7 @@ import { BaseSettingsSection } from '../components/SettingsSection';
 export class DomainSettingsSection extends BaseSettingsSection {
     display(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Enable Domain Checking')
+            .setName('Enable domain checking')
             .setDesc('Check domain availability for extracted domains')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableDomainCheck)
@@ -25,7 +25,7 @@ export class DomainSettingsSection extends BaseSettingsSection {
 
         if (this.plugin.settings.enableProspectr) {
             new Setting(containerEl)
-                .setName('Domain Checking Service URL')
+                .setName('Domain checking service URL')
                 .setDesc('URL of the domain checking service (planned expansion)')
                 .addText(text => text
                     .setPlaceholder('http://localhost:3000')

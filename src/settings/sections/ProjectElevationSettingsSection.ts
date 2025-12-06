@@ -4,7 +4,7 @@ import { BaseSettingsSection } from '../components/SettingsSection';
 export class ProjectElevationSettingsSection extends BaseSettingsSection {
     display(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Enable Project Elevation')
+            .setName('Enable project elevation')
             .setDesc('Allow elevating ideas to full projects')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableElevation)
@@ -14,7 +14,7 @@ export class ProjectElevationSettingsSection extends BaseSettingsSection {
                 }));
 
         new Setting(containerEl)
-            .setName('Projects Directory')
+            .setName('Projects directory')
             .setDesc('Directory where elevated projects will be created (relative to vault root)')
             .addText(text => text
                 .setPlaceholder('Projects')
@@ -26,7 +26,7 @@ export class ProjectElevationSettingsSection extends BaseSettingsSection {
                 }));
 
         new Setting(containerEl)
-            .setName('Default Folders')
+            .setName('Default folders')
             .setDesc('Comma-separated list of folders to create in each elevated project (e.g., docs,notes,assets)')
             .addText(text => text
                 .setPlaceholder('docs,notes,assets')
@@ -42,7 +42,7 @@ export class ProjectElevationSettingsSection extends BaseSettingsSection {
                 }));
 
         new Setting(containerEl)
-            .setName('Create Project Metadata')
+            .setName('Create project metadata')
             .setDesc('Create project metadata file for future project management integrations (planned expansion)')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.elevationCreateDevraMetadata)

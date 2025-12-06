@@ -8,45 +8,51 @@ export class CaptureModalSettingsSection extends BaseSettingsSection {
 
         // Capture Idea Hotkey
         new Setting(containerEl)
-            .setName('Capture Idea Hotkey')
-            .setDesc('Keyboard shortcut for opening the Capture Idea modal. Click the field and press your desired key combination. Note: This setting stores your preference. To actually bind the hotkey, you must also set it in Obsidian\'s Hotkeys settings (Settings → Hotkeys → search for "Capture Idea").')
+            .setName('Capture idea hotkey')
+            .setDesc('Keyboard shortcut for opening the Capture idea modal. Click the field and press your desired key combination. Note: This setting stores your preference. To actually bind the hotkey, you must also set it in Obsidian\'s Hotkeys settings (Settings → Hotkeys → search for "Capture idea").')
             .addText(text => {
                 createHotkeyPicker(
                     text.inputEl,
                     this.plugin.settings.captureIdeaHotkey,
-                    async (shortcut) => {
-                        this.plugin.settings.captureIdeaHotkey = shortcut;
-                        await this.saveSettings();
+                    (shortcut) => {
+                        void (async () => {
+                            this.plugin.settings.captureIdeaHotkey = shortcut;
+                            await this.saveSettings();
+                        })();
                     }
                 );
             });
 
         // Save Shortcut
         new Setting(containerEl)
-            .setName('Save Shortcut')
-            .setDesc('Keyboard shortcut for the Save button in the Capture Idea modal. Click the field and press your desired key combination.')
+            .setName('Save shortcut')
+            .setDesc('Keyboard shortcut for the Save button in the Capture idea modal. Click the field and press your desired key combination.')
             .addText(text => {
                 createHotkeyPicker(
                     text.inputEl,
                     this.plugin.settings.captureSaveShortcut,
-                    async (shortcut) => {
-                        this.plugin.settings.captureSaveShortcut = shortcut;
-                        await this.saveSettings();
+                    (shortcut) => {
+                        void (async () => {
+                            this.plugin.settings.captureSaveShortcut = shortcut;
+                            await this.saveSettings();
+                        })();
                     }
                 );
             });
 
         // Ideate Shortcut
         new Setting(containerEl)
-            .setName('Ideate Shortcut')
-            .setDesc('Keyboard shortcut for the Ideate button in the Capture Idea modal. Click the field and press your desired key combination.')
+            .setName('Ideate shortcut')
+            .setDesc('Keyboard shortcut for the Ideate button in the Capture idea modal. Click the field and press your desired key combination.')
             .addText(text => {
                 createHotkeyPicker(
                     text.inputEl,
                     this.plugin.settings.captureIdeateShortcut,
-                    async (shortcut) => {
-                        this.plugin.settings.captureIdeateShortcut = shortcut;
-                        await this.saveSettings();
+                    (shortcut) => {
+                        void (async () => {
+                            this.plugin.settings.captureIdeateShortcut = shortcut;
+                            await this.saveSettings();
+                        })();
                     }
                 );
             });

@@ -26,10 +26,10 @@ export class TutorialSettingsSection extends BaseSettingsSection {
         containerEl.createEl('h2', { text: 'Tutorials' });
 
         new Setting(containerEl)
-            .setName('Open Tutorials')
+            .setName('Open tutorials')
             .setDesc('Open the tutorial index to browse all available guides')
             .addButton(button => button
-                .setButtonText('Open Tutorials')
+                .setButtonText('Open tutorials')
                 .setCta()
                 .onClick(async () => {
                     const { TutorialService } = await import('../../services/TutorialService');
@@ -38,10 +38,10 @@ export class TutorialSettingsSection extends BaseSettingsSection {
                 }));
 
         new Setting(containerEl)
-            .setName('Reset Tutorials')
+            .setName('Reset tutorials')
             .setDesc('Restore tutorial files from the plugin. Use this if tutorials were deleted, modified, or corrupted.')
             .addButton(button => button
-                .setButtonText('Reset Tutorials')
+                .setButtonText('Reset tutorials')
                 .setWarning()
                 .onClick(async () => {
                     button.setDisabled(true);
@@ -54,22 +54,22 @@ export class TutorialSettingsSection extends BaseSettingsSection {
                         }
                     } finally {
                         button.setDisabled(false);
-                        button.setButtonText('Reset Tutorials');
+                        button.setButtonText('Reset tutorials');
                     }
                 }));
 
         new Setting(containerEl)
-            .setName('Delete Tutorials')
-            .setDesc('Remove all tutorial files from your vault. You can restore them later using "Reset Tutorials".')
+            .setName('Delete tutorials')
+            .setDesc('Remove all tutorial files from your vault. You can restore them later using "Reset tutorials".')
             .addButton(button => button
-                .setButtonText('Delete Tutorials')
+                .setButtonText('Delete tutorials')
                 .setWarning()
                 .onClick(async () => {
                     // Confirm deletion
                     const confirmed = await showConfirmation(
                         this.app,
                         'Are you sure you want to delete all tutorial files? ' +
-                        'You can restore them later using "Reset Tutorials".'
+                        'You can restore them later using "Reset tutorials".'
                     );
                     
                     if (!confirmed) {
@@ -86,7 +86,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
                         }
                     } finally {
                         button.setDisabled(false);
-                        button.setButtonText('Delete Tutorials');
+                        button.setButtonText('Delete tutorials');
                     }
                 }));
 
@@ -104,13 +104,13 @@ export class TutorialSettingsSection extends BaseSettingsSection {
         let statusDesc = '';
         
         if (tutorialsExist) {
-            statusText = 'Tutorials: Installed';
+            statusText = 'Tutorials: installed';
             statusDesc = 'Tutorial files are available in your vault.';
         } else if (bundledAvailable) {
-            statusText = 'Tutorials: Not Installed';
+            statusText = 'Tutorials: not installed';
             statusDesc = 'Tutorial files are not in your vault, but can be restored from the plugin.';
         } else {
-            statusText = 'Tutorials: Unavailable';
+            statusText = 'Tutorials: unavailable';
             statusDesc = 'Tutorial files are not available. They may need to be manually added.';
         }
 

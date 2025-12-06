@@ -4,7 +4,7 @@ import { BaseSettingsSection } from '../components/SettingsSection';
 export class WebSearchSettingsSection extends BaseSettingsSection {
     display(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName('Enable Web Search')
+            .setName('Enable web search')
             .setDesc('Search for similar ideas/products/services on the web')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableWebSearch)
@@ -24,7 +24,7 @@ export class WebSearchSettingsSection extends BaseSettingsSection {
                 }));
 
         new Setting(containerEl)
-            .setName('Web Search Provider')
+            .setName('Web search provider')
             .setDesc('Select the web search provider to use')
             .addDropdown(dropdown => dropdown
                 .addOption('google', 'Google')
@@ -39,8 +39,8 @@ export class WebSearchSettingsSection extends BaseSettingsSection {
 
         if (this.plugin.settings.webSearchProvider === 'google') {
             new Setting(containerEl)
-                .setName('Google API Key')
-                .setDesc('Google Custom Search API key')
+                .setName('Google API key')
+                .setDesc('Google custom search API key')
                 .addText(text => text
                     .setPlaceholder('Enter your Google API key')
                     .setValue(this.plugin.settings.googleSearchApiKey)
@@ -50,8 +50,8 @@ export class WebSearchSettingsSection extends BaseSettingsSection {
                     }));
 
             new Setting(containerEl)
-                .setName('Google Search Engine ID')
-                .setDesc('Google Custom Search Engine ID (CSE ID)')
+                .setName('Google search engine ID')
+                .setDesc('Google custom search engine ID (CSE ID)')
                 .addText(text => text
                     .setPlaceholder('Enter your Google CSE ID')
                     .setValue(this.plugin.settings.googleSearchEngineId)

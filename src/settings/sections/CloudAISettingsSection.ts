@@ -15,7 +15,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
         // Add comparison toggle button
         const comparisonContainer = containerEl.createDiv({ cls: 'cloud-model-comparison-container' });
         const comparisonButton = comparisonContainer.createEl('button', {
-            text: this.showComparison ? '▼ Hide Model Comparison' : '▶ Show Model Comparison',
+            text: this.showComparison ? '▼ Hide model comparison' : '▶ Show model comparison',
             cls: 'mod-link'
         });
         (comparisonButton as HTMLElement).setCssProps({
@@ -23,7 +23,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
         });
         comparisonButton.addEventListener('click', () => {
             this.showComparison = !this.showComparison;
-            comparisonButton.textContent = this.showComparison ? '▼ Hide Model Comparison' : '▶ Show Model Comparison';
+            comparisonButton.textContent = this.showComparison ? '▼ Hide model comparison' : '▶ Show model comparison';
             const comparisonSection = containerEl.querySelector('.cloud-model-comparison-section') as HTMLElement;
             if (comparisonSection) {
                 (comparisonSection as HTMLElement).setCssProps({
@@ -40,7 +40,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
         this.renderModelComparison(comparisonSection);
 
         new Setting(containerEl)
-            .setName('Enable Cloud AI')
+            .setName('Enable cloud AI')
             .setDesc('Use cloud AI providers for better quality and faster responses (requires API key)')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.cloudProvider !== 'none')
@@ -66,7 +66,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
             (this.plugin.settings.cloudApiKey && this.plugin.settings.cloudApiKey.length > 0);
         if (this.plugin.settings.cloudProvider !== 'none' || hasAnyApiKey) {
             new Setting(containerEl)
-                .setName('Cloud Provider')
+                .setName('Cloud provider')
                 .setDesc('Select the cloud AI provider')
                 .addDropdown(dropdown => {
                     dropdown
@@ -119,7 +119,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     }
 
                     new Setting(containerEl)
-                        .setName('API Key')
+                        .setName('API key')
                         .setDesc(`Enter your ${providerNames[this.plugin.settings.cloudProvider] || 'provider'} API key`)
                         .addText(text => {
                             text.setPlaceholder('sk-...')
@@ -172,10 +172,10 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     costText.textContent = `Cost estimate: ${costEstimate}`;
 
                     new Setting(containerEl)
-                        .setName('Test Connection')
+                        .setName('Test connection')
                         .setDesc('Verify your API key is valid')
                         .addButton(button => button
-                            .setButtonText('Test Connection')
+                            .setButtonText('Test connection')
                             .onClick(async () => {
                                 // Get the API key for the current provider
                                 const currentProvider = this.plugin.settings.cloudProvider;
@@ -220,7 +220,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                                     new Notice(`Connection failed: ${errorMessage}`);
                                 } finally {
-                                    button.setButtonText('Test Connection');
+                                    button.setButtonText('Test connection');
                                     button.setDisabled(false);
                                 }
                             }));
@@ -261,10 +261,10 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     customCostText.textContent = 'Cost estimate: Free (self-hosted)';
 
                     new Setting(containerEl)
-                        .setName('Test Connection')
+                        .setName('Test connection')
                         .setDesc('Verify your custom endpoint is accessible')
                         .addButton(button => button
-                            .setButtonText('Test Connection')
+                            .setButtonText('Test connection')
                             .onClick(async () => {
                                 const endpointUrl = this.plugin.settings.customEndpointUrl.trim();
                                 if (!endpointUrl) {
@@ -302,14 +302,14 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                                     new Notice(`Connection failed: ${errorMessage}`);
                                 } finally {
-                                    button.setButtonText('Test Connection');
+                                    button.setButtonText('Test connection');
                                     button.setDisabled(false);
                                 }
                             }));
                 }
 
                 new Setting(containerEl)
-                    .setName('Prefer Cloud AI')
+                    .setName('Prefer cloud AI')
                     .setDesc('Use cloud AI when available, fallback to local AI on failure')
                     .addToggle(toggle => toggle
                         .setValue(this.plugin.settings.preferCloud)
@@ -324,11 +324,15 @@ export class CloudAISettingsSection extends BaseSettingsSection {
     private renderModelComparison(containerEl: HTMLElement): void {
         containerEl.empty();
         containerEl.createEl('h4', { text: 'Cloud AI model comparison' });
-        containerEl.createEl('p', {
+        const introEl = containerEl.createEl('p', {
             text: 'Compare default cloud AI models to find the best fit for your needs. All models are validated for Ideatr\'s classification and tagging tasks.',
             cls: 'cloud-model-comparison-intro'
         });
-        containerEl.querySelector('.cloud-model-comparison-intro')?.setAttribute('style', 'margin-bottom: 1em; color: var(--text-muted); font-size: 0.9em;');
+        introEl.setCssProps({
+            'margin-bottom': '1em',
+            'color': 'var(--text-muted)',
+            'font-size': '0.9em'
+        });
 
         // Group models by provider
         const modelsByProvider: Record<string, CloudModelConfig[]> = {
