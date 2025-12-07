@@ -70,10 +70,10 @@ function getCloudProviderStatus(settings: IdeatrSettings): ModelStatus {
         : settings.cloudProvider === 'custom-model'
         ? (settings.customModelProvider && settings.cloudApiKeys && 
             settings.customModelProvider in settings.cloudApiKeys &&
-            (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] || '').trim().length > 0)
+            (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] ?? '').trim().length > 0)
         : (settings.cloudApiKeys && 
             settings.cloudProvider in settings.cloudApiKeys &&
-            (settings.cloudApiKeys[settings.cloudProvider as keyof typeof settings.cloudApiKeys] || '').trim().length > 0);
+            (settings.cloudApiKeys[settings.cloudProvider] ?? '').trim().length > 0);
     
     if (!hasApiKey) {
         return {

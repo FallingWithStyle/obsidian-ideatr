@@ -86,7 +86,7 @@ export class RelatedIdConverter {
      */
     async idToTitle(id: number): Promise<string | null> {
         await this.buildCache();
-        return this.idToTitleCache?.get(id) || null;
+        return this.idToTitleCache?.get(id) ?? null;
     }
 
     /**

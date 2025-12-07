@@ -12,13 +12,7 @@ export function getPlatform(): string {
     if (Platform.isMacOS) return 'darwin';
     if (Platform.isWin) return 'win32';
     if (Platform.isLinux) return 'linux';
-    // Fallback - try to detect from navigator (for web/unknown platforms)
-    if (typeof navigator !== 'undefined') {
-        const platform = navigator.platform.toLowerCase();
-        if (platform.includes('mac') || platform.includes('darwin')) return 'darwin';
-        if (platform.includes('win')) return 'win32';
-        if (platform.includes('linux')) return 'linux';
-    }
+    // No fallback - Obsidian Platform API should always be available
     return 'unknown';
 }
 

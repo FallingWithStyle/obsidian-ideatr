@@ -28,21 +28,21 @@ export class CommandErrorHandler {
             const cause = error.cause;
             if (cause && (cause.message.includes('CONNECTION_REFUSED') || 
                          cause.message.includes('Failed to fetch'))) {
-                new Notice('LLM service is not running. Please start your local LLM server or configure a cloud provider.');
+                new Notice('Language model service is not running. Please start your local language model server or configure a cloud provider.');
             } else if (error instanceof APITimeoutError) {
-                new Notice('LLM request timed out. Please try again.');
+                new Notice('Language model request timed out. Please try again.');
             } else if (error instanceof NetworkError) {
-                new Notice('Network error connecting to LLM service. Please check your connection and try again.');
+                new Notice('Network error connecting to language model service. Please check your connection and try again.');
             } else {
-                new Notice(`Failed to ${context}. Please check that your LLM service is running.`);
+                new Notice(`Failed to ${context}. Please check that your language model service is running.`);
             }
         } else if (error instanceof Error) {
             if (error.message.includes('CONNECTION_REFUSED') || 
                 error.message.includes('Failed to fetch') ||
                 error.name === 'TypeError') {
-                new Notice('LLM service is not running. Please start your local LLM server or configure a cloud provider.');
+                new Notice('Language model service is not running. Please start your local language model server or configure a cloud provider.');
             } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
-                new Notice('LLM request timed out. Please try again.');
+                new Notice('Language model request timed out. Please try again.');
             } else {
                 new Notice(`Failed to ${context}: ${error.message}`);
             }

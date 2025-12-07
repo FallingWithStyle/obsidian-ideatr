@@ -231,7 +231,7 @@ export function extractAndRepairJSON(content: string, isArray: boolean = false):
     // Match ```json ... ``` or ``` ... ``` blocks
     const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)```/;
     const codeBlockMatch = jsonStr.match(codeBlockRegex);
-    if (codeBlockMatch && codeBlockMatch[1]) {
+    if (codeBlockMatch?.[1]) {
         jsonStr = codeBlockMatch[1].trim();
     }
     

@@ -65,9 +65,9 @@ export class Logger {
 
             // Read the file
             const content = await Logger.app.vault.adapter.read(timestampPath);
-            const timestampData = JSON.parse(content);
+            const timestampData = JSON.parse(content) as { deployedAtReadable?: string; deployedAt?: string };
             
-            const deployedAt = timestampData.deployedAtReadable || timestampData.deployedAt;
+            const deployedAt = timestampData.deployedAtReadable ?? timestampData.deployedAt;
             console.debug(`[Ideatr] Last deployed: ${deployedAt}`);
             Logger.info(`Last deployed: ${deployedAt}`);
         } catch (error) {

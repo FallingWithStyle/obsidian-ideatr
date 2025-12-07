@@ -55,14 +55,14 @@ export function checkModelCompatibility(
     modelKey: string,
     capabilities?: SystemCapabilities
 ): { isCompatible: boolean; warning?: string; recommendation?: string } {
-    const modelConfig = MODELS[modelKey];
+    const modelConfig = (MODELS as Record<string, { ram?: string }>)[modelKey];
     if (!modelConfig) {
         Logger.warn(`Unknown model key: ${modelKey}`);
         return { isCompatible: true }; // Don't block unknown models
     }
 
-    const systemInfo = capabilities || getSystemCapabilities();
-    const requiredRAM = parseRAMRequirement(modelConfig.ram);
+    const systemInfo = capabilities ?? getSystemCapabilities();
+    const requiredRAM = parseRAMRequirement(modelConfig.ram ?? '0GB');
     const totalRAM = systemInfo.totalRAMGB;
 
     // If RAM info is not available (0), skip RAM checks
@@ -79,7 +79,8 @@ export function checkModelCompatibility(
 
     // If model requires more RAM than system has, warn
     if (requiredRAM > totalRAM) {
-        const warning = `This model requires ${modelConfig.ram} RAM, but your system has ${totalRAM.toFixed(1)}GB total RAM. The model may fail to load.`;
+        const ramStr = modelConfig.ram ?? 'unknown';
+        const warning = `This model requires ${ramStr} RAM, but your system has ${totalRAM.toFixed(1)}GB total RAM. The model may fail to load.`;
         const recommendation = `Consider using a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) instead.`;
         return {
             isCompatible: false,
@@ -90,7 +91,8 @@ export function checkModelCompatibility(
 
     // If model requires close to total RAM (within 20%), warn
     if (requiredRAM > totalRAM * 0.8) {
-        const warning = `This model requires ${modelConfig.ram} RAM. Your system has ${totalRAM.toFixed(1)}GB total RAM. The model may struggle or fail to load if other applications are using memory.`;
+        const ramStr = modelConfig.ram ?? 'unknown';
+        const warning = `This model requires ${ramStr} RAM. Your system has ${totalRAM.toFixed(1)}GB total RAM. The model may struggle or fail to load if other applications are using memory.`;
         const recommendation = `Ensure you have at least ${requiredRAM}GB free RAM before loading this model.`;
         return {
             isCompatible: true, // Still compatible, but risky

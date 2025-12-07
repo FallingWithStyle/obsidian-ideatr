@@ -3,7 +3,20 @@
  * Used by both local and cloud model comparison views
  */
 
-import type { ModelConfig } from '../services/ModelManager';
+// Type definition for ModelConfig (fallback if ModelManager is missing)
+type ModelConfig = {
+    name: string;
+    badge: string;
+    description: string;
+    quality: number;
+    speed: number;
+    pros: string[];
+    cons: string[];
+    bestFor: string;
+    sizeMB?: number;
+    ram?: string;
+};
+
 import type { CloudModelConfig } from './ModelValidator';
 
 /**
@@ -88,7 +101,7 @@ export function renderCompactModelCard(
     });
     
     const nameEl = header.createEl('strong', { text: model.name });
-    (nameEl as HTMLElement).setCssProps({
+    (nameEl).setCssProps({
         'font-size': '0.95em'
     });
     
