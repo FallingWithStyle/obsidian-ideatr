@@ -45,7 +45,7 @@ export class CodenameModal extends Modal {
         this.inputEl = contentEl.createEl('input', {
             type: 'text',
             placeholder: 'Enter codename...',
-            value: this.currentCodename || ''
+            value: this.currentCodename ?? ''
         });
         this.inputEl.addClass('ideatr-codename-input');
         this.inputEl.setCssProps({
@@ -107,7 +107,7 @@ export class CodenameModal extends Modal {
 
         // Auto-generate codename if none exists and LLM is available
         if (!this.currentCodename && this.llmService?.isAvailable() && this.ideaBody) {
-            this.handleGenerate();
+            void this.handleGenerate();
         }
     }
 

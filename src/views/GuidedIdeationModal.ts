@@ -48,6 +48,7 @@ export class GuidedIdeationModal extends Modal {
 
         // Description
         const description = contentEl.createEl('p', {
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
             text: 'Describe the transformation you want to apply to this idea. Examples: "Organize this list alphabetically", "Add three alternatives", "Rename to Project Goodspring"'
         });
         description.addClass('ideatr-modal-description');
@@ -216,7 +217,7 @@ export class GuidedIdeationModal extends Modal {
         // Show body preview
         if (result.body) {
             const bodyLabel = this.previewContainer.createEl('strong', { text: 'Body preview:' });
-            (bodyLabel as HTMLElement).setCssProps({
+            (bodyLabel).setCssProps({
                 'display': 'block',
                 'margin-top': '10px',
                 'margin-bottom': '5px'
@@ -240,7 +241,7 @@ export class GuidedIdeationModal extends Modal {
         // Show frontmatter changes if applicable
         if (result.frontmatter) {
             const fmLabel = this.previewContainer.createEl('strong', { text: 'Frontmatter changes:' });
-            (fmLabel as HTMLElement).setCssProps({
+            (fmLabel).setCssProps({
                 'display': 'block',
                 'margin-top': '10px',
                 'margin-bottom': '5px'

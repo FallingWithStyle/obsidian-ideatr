@@ -59,7 +59,7 @@ export class ImportFilePickerModal extends SuggestModal<TFile> {
         });
         
         // Show file size if available
-        if (file.stat && file.stat.size) {
+        if (file.stat?.size) {
             const sizeKB = (file.stat.size / 1024).toFixed(1);
             el.createEl('div', {
                 text: `${sizeKB} KB`,

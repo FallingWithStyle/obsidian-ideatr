@@ -1,6 +1,5 @@
-import { Modal, App, Notice, Setting } from 'obsidian';
+import { Modal, App, Notice } from 'obsidian';
 import type { IdeatrSettings } from '../settings';
-import { showConfirmation } from '../utils/confirmation';
 
 /**
  * FirstLaunchSetupModal - Modal for first-launch AI setup
@@ -37,15 +36,16 @@ export class FirstLaunchSetupModal extends Modal {
         const apiKeyOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
         apiKeyOption.createEl('h3', { text: 'Use my API key' });
         apiKeyOption.createEl('p', {
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
             text: 'Use a cloud AI provider (Anthropic, OpenAI, etc.) for better quality and faster responses.'
         });
         const apiFeaturesList = apiKeyOption.createEl('ul', {
             cls: 'ideatr-setup-features'
         });
-        apiFeaturesList.createEl('li', { text: '✅ Better quality results' });
-        apiFeaturesList.createEl('li', { text: '✅ Faster responses' });
-        apiFeaturesList.createEl('li', { text: '✅ No local storage needed' });
-        apiFeaturesList.createEl('li', { text: '⚠️ Requires API key (paid)' });
+        apiFeaturesList.createEl('li', { text: '✅ better quality results' });
+        apiFeaturesList.createEl('li', { text: '✅ faster responses' });
+        apiFeaturesList.createEl('li', { text: '✅ no local storage needed' });
+        apiFeaturesList.createEl('li', { text: '⚠️ requires API key (paid)' });
         const apiKeyButton = apiKeyOption.createEl('button', {
             text: 'Enter API key',
             cls: 'mod-cta'
@@ -83,7 +83,9 @@ export class FirstLaunchSetupModal extends Modal {
         const providerSelect = providerContainer.createEl('select', {
             attr: { id: 'ideatr-provider-select' }
         });
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
         providerSelect.createEl('option', { text: 'Anthropic (Claude)', attr: { value: 'anthropic' } });
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
         providerSelect.createEl('option', { text: 'OpenAI (GPT)', attr: { value: 'openai' } });
         providerSelect.createEl('option', { text: 'Skip for now', attr: { value: 'none' } });
 

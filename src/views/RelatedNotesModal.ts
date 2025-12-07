@@ -74,7 +74,7 @@ export class RelatedNotesModal extends Modal {
             
             if (this.existingRelated.includes(note.path)) {
                 label.createEl('div', {
-                    text: '(Already linked)',
+                    text: '(already linked)',
                     cls: 'ideatr-related-existing'
                 });
             }

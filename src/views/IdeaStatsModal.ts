@@ -55,10 +55,10 @@ export class IdeaStatsModal extends Modal {
         this.createStatCard(statsGrid, 'Age', `${this.stats.age} day${this.stats.age !== 1 ? 's' : ''}`);
         
         // Status
-        this.createStatCard(statsGrid, 'Status', this.stats.status || 'unknown');
+        this.createStatCard(statsGrid, 'Status', this.stats.status ?? 'unknown');
         
         // Category
-        this.createStatCard(statsGrid, 'Category', this.stats.category || 'none');
+        this.createStatCard(statsGrid, 'Category', this.stats.category ?? 'none');
         
         // Related notes
         this.createStatCard(statsGrid, 'Related Notes', this.stats.relatedCount.toString());
@@ -161,7 +161,7 @@ export class IdeaStatsModal extends Modal {
                                 text: id.toString(),
                                 attr: {
                                     style: 'text-decoration: underline; text-decoration-style: dotted;',
-                                    title: titles.get(id) || `ID: ${id}`
+                                    title: titles.get(id) ?? `ID: ${id}`
                                 }
                             });
                         });

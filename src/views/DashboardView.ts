@@ -96,7 +96,7 @@ export class DashboardView extends ItemView {
             clustersTitle.createEl('h3', { text: 'Clusters' });
             const clustersHelpIcon = createHelpIcon(this.app, 'clusters', 'Learn about Clusters');
             clustersTitle.appendChild(clustersHelpIcon);
-            this.renderClustersMiniGraph(clustersPanel);
+            void this.renderClustersMiniGraph(clustersPanel);
         }
 
         // Resurfacing panel
@@ -106,7 +106,7 @@ export class DashboardView extends ItemView {
             resurfacingTitle.createEl('h3', { text: 'Old ideas' });
             const resurfacingHelpIcon = createHelpIcon(this.app, 'resurfacing', 'Learn about Resurfacing');
             resurfacingTitle.appendChild(resurfacingHelpIcon);
-            this.renderResurfacingPanel(resurfacingPanel);
+            void this.renderResurfacingPanel(resurfacingPanel);
         }
 
         // Triage inbox
@@ -144,7 +144,7 @@ export class DashboardView extends ItemView {
         searchInput.addEventListener('input', (e) => {
             const value = (e.target as HTMLInputElement).value;
             this.filters.searchText = value || undefined;
-            this.applyFilters();
+            void this.applyFilters();
         });
 
         // Category filter (now multi-value via comma-separated categories)
@@ -161,7 +161,7 @@ export class DashboardView extends ItemView {
                 .map(v => v.trim())
                 .filter(v => v.length > 0);
             this.filters.categories = parts.length > 0 ? parts : undefined;
-            this.applyFilters();
+            void this.applyFilters();
         });
 
         // Tags filter (multi-select via comma-separated tags, QA 4.1)
@@ -175,7 +175,7 @@ export class DashboardView extends ItemView {
             const value = (e.target as HTMLInputElement).value;
             const tags = parseTagsInput(value);
             this.filters.tags = tags.length > 0 ? tags : undefined;
-            this.applyFilters();
+            void this.applyFilters();
         });
 
         // Status filter (single-value)
@@ -188,7 +188,7 @@ export class DashboardView extends ItemView {
         statusInput.addEventListener('input', (e) => {
             const value = (e.target as HTMLInputElement).value.trim();
             this.filters.status = value || undefined;
-            this.applyFilters();
+            void this.applyFilters();
         });
 
         // Date range filters
@@ -202,7 +202,7 @@ export class DashboardView extends ItemView {
         });
         const onDateChange = () => {
             this.filters.dateRange = parseDateRange(startInput.value || undefined, endInput.value || undefined);
-            this.applyFilters();
+            void this.applyFilters();
         };
         startInput.addEventListener('change', onDateChange);
         endInput.addEventListener('change', onDateChange);
@@ -217,7 +217,7 @@ export class DashboardView extends ItemView {
         uncategorizedCheckbox.addEventListener('change', (e) => {
             const checked = (e.target as HTMLInputElement).checked;
             this.filters.uncategorized = checked || undefined;
-            this.applyFilters();
+            void this.applyFilters();
         });
 
         // Clear filters button
@@ -231,7 +231,7 @@ export class DashboardView extends ItemView {
             startInput.value = '';
             endInput.value = '';
             uncategorizedCheckbox.checked = false;
-            this.applyFilters();
+            void this.applyFilters();
         });
 
         // Restore saved filter values if persistence is enabled (QA 4.1)
@@ -316,7 +316,7 @@ export class DashboardView extends ItemView {
 
             // Category column
             const categoryCell = row.createEl('td');
-            categoryCell.textContent = idea.frontmatter.category || 'Uncategorized';
+            categoryCell.textContent = idea.frontmatter.category ?? 'Uncategorized';
 
             // Tags column
             const tagsCell = row.createEl('td');
@@ -408,16 +408,16 @@ export class DashboardView extends ItemView {
                     bVal = new Date(b.frontmatter.created).getTime();
                     break;
                 case 'category':
-                    aVal = a.frontmatter.category || '';
-                    bVal = b.frontmatter.category || '';
+                    aVal = a.frontmatter.category ?? '';
+                    bVal = b.frontmatter.category ?? '';
                     break;
                 case 'status':
                     aVal = a.frontmatter.status;
                     bVal = b.frontmatter.status;
                     break;
                 case 'title':
-                    aVal = a.body || a.filename;
-                    bVal = b.body || b.filename;
+                    aVal = a.body ?? a.filename;
+                    bVal = b.body ?? b.filename;
                     break;
                 default:
                     return 0;
@@ -440,20 +440,20 @@ export class DashboardView extends ItemView {
 
         try {
             this.ideas = await this.ideaRepository.getAllIdeas();
-            this.applyFilters();
+            void this.applyFilters();
 
             // Refresh panels
             if (this.clusteringService) {
                 const clustersPanel = this.contentEl.querySelector('.clusters-panel') as HTMLElement;
                 if (clustersPanel) {
-                    this.renderClustersMiniGraph(clustersPanel);
+                    void this.renderClustersMiniGraph(clustersPanel);
                 }
             }
 
             if (this.resurfacingService) {
                 const resurfacingPanel = this.contentEl.querySelector('.resurfacing-panel') as HTMLElement;
                 if (resurfacingPanel) {
-                    this.renderResurfacingPanel(resurfacingPanel);
+                    void this.renderResurfacingPanel(resurfacingPanel);
                 }
             }
 
@@ -508,7 +508,7 @@ export class DashboardView extends ItemView {
     private loadFilterState(): void {
         try {
             const viewState = this.leaf.getViewState();
-            if (viewState.state && viewState.state.filters) {
+            if (viewState.state?.filters) {
                 this.filters = viewState.state.filters as IdeaFilter;
             }
         } catch (error) {
@@ -549,7 +549,7 @@ export class DashboardView extends ItemView {
         // Use Obsidian API to open file
         const file = this.app.vault.getAbstractFileByPath(`Ideas/${idea.filename}`);
         if (file) {
-            this.app.workspace.openLinkText(`Ideas/${idea.filename}`, '', false);
+            void this.app.workspace.openLinkText(`Ideas/${idea.filename}`, '', false);
         }
     }
 
@@ -603,7 +603,7 @@ export class DashboardView extends ItemView {
 
             const openGraphBtn = container.createEl('button', { text: 'Open full graph' });
             openGraphBtn.addEventListener('click', () => {
-                this.app.workspace.getLeaf(false).setViewState({
+                void this.app.workspace.getLeaf(false).setViewState({
                     type: 'ideatr-graph',
                     active: true
                 });
@@ -767,7 +767,7 @@ export class DashboardView extends ItemView {
                     Logger.warn('Elevation warnings:', result.warnings);
                 }
             } else {
-                new Notice(`Failed to elevate idea: ${result.error || 'Unknown error'}`);
+                new Notice(`Failed to elevate idea: ${result.error ?? 'Unknown error'}`);
                 if (result.warnings && result.warnings.length > 0) {
                     Logger.warn('Elevation warnings:', result.warnings);
                 }

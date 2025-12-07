@@ -44,6 +44,7 @@ export class FeatureRequestModal extends Modal {
         // Title
         contentEl.createEl('h2', { text: 'Submit feedback' });
         contentEl.createEl('p', {
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
             text: 'Help improve Ideatr by submitting a feature request or bug report.',
             cls: 'ideatr-feedback-description'
         });
@@ -102,6 +103,7 @@ export class FeatureRequestModal extends Modal {
             }
         });
         systemInfoContainer.createEl('label', {
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
             text: 'Include system information (Obsidian version, plugin version, OS)',
             attr: { for: 'ideatr-include-system-info' }
         });

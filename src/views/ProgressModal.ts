@@ -62,7 +62,7 @@ export class ProgressModal extends Modal {
 
         // Status text
         this.statusContainer = contentEl.createDiv('ideatr-progress-status');
-        (this.statusContainer as HTMLElement).setCssProps({
+        (this.statusContainer).setCssProps({
             'margin-top': '10px',
             'font-size': '14px',
             'color': 'var(--text-muted)'
@@ -70,7 +70,7 @@ export class ProgressModal extends Modal {
 
         // Error container
         this.errorContainer = contentEl.createDiv('ideatr-progress-errors');
-        (this.errorContainer as HTMLElement).setCssProps({
+        (this.errorContainer).setCssProps({
             'margin-top': '10px',
             'max-height': '200px',
             'overflow-y': 'auto',
@@ -105,7 +105,7 @@ export class ProgressModal extends Modal {
         if (!progressFill) return;
 
         const percentage = update.total > 0 ? (update.current / update.total) * 100 : 0;
-        (progressFill as HTMLElement).setCssProps({
+        (progressFill).setCssProps({
             'width': `${percentage}%`
         });
 
@@ -124,7 +124,7 @@ export class ProgressModal extends Modal {
 
         // Show errors if any
         if (update.errors && update.errors.length > 0) {
-            (this.errorContainer as HTMLElement).setCssProps({
+            (this.errorContainer).setCssProps({
                 'display': 'block'
             });
             this.errorContainer.empty();
@@ -144,6 +144,7 @@ export class ProgressModal extends Modal {
         // Update status
         if (update.status === 'completed') {
             this.statusContainer.createEl('div', {
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
                 text: '✓ Completed',
                 cls: 'ideatr-progress-completed'
             });
@@ -152,7 +153,7 @@ export class ProgressModal extends Modal {
             }
         } else if (update.status === 'cancelled') {
             this.statusContainer.createEl('div', {
-                text: '✗ Cancelled',
+                text: '✗ cancelled',
                 cls: 'ideatr-progress-cancelled'
             });
         }

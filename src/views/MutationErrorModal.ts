@@ -50,7 +50,7 @@ export class MutationErrorModal extends Modal {
                 const previewLabel = details.createEl('strong', {
                     text: 'Response preview:'
                 });
-                (previewLabel as HTMLElement).setCssProps({
+                (previewLabel).setCssProps({
                     'display': 'block',
                     'margin-top': '10px',
                     'margin-bottom': '5px'

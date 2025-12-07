@@ -161,7 +161,7 @@ export class GraphView extends ItemView {
     private openIdea(idea: IdeaFile): void {
         const file = this.app.vault.getAbstractFileByPath(`Ideas/${idea.filename}`);
         if (file) {
-            this.app.workspace.openLinkText(`Ideas/${idea.filename}`, '', false);
+            void this.app.workspace.openLinkText(`Ideas/${idea.filename}`, '', false);
         }
     }
 
@@ -199,13 +199,13 @@ export class GraphView extends ItemView {
         });
 
         // Add "Elevate to Project" option (if service available and idea can be elevated)
-        if (this.projectElevationService && this.projectElevationService.canElevate(node.idea)) {
+        if (this.projectElevationService?.canElevate(node.idea)) {
             const elevateBtn = menu.createEl('button', {
                 text: 'Elevate to project',
                 cls: 'context-menu-item'
             });
             elevateBtn.addEventListener('click', () => {
-                this.elevateIdea(node.idea);
+                void this.elevateIdea(node.idea);
                 menu.remove();
             });
         }
@@ -271,7 +271,7 @@ export class GraphView extends ItemView {
                     Logger.warn('Elevation warnings:', result.warnings);
                 }
             } else {
-                new Notice(`Failed to elevate idea: ${result.error || 'Unknown error'}`);
+                new Notice(`Failed to elevate idea: ${result.error ?? 'Unknown error'}`);
                 if (result.warnings && result.warnings.length > 0) {
                     Logger.warn('Elevation warnings:', result.warnings);
                 }
