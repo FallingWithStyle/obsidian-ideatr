@@ -135,11 +135,12 @@ export default class IdeatrPlugin extends Plugin {
 
             // DEBUG: Add a test command directly in main.ts (only in debug mode)
             if (Logger.isDebugEnabled()) {
-                const debugMainCallback = async () => {
+                const debugMainCallback = () => {
                     Logger.debug('[Ideatr DEBUG MAIN] Command callback invoked!');
                     Logger.debug('[Ideatr DEBUG MAIN] Stack trace:', new Error().stack);
                     Logger.info('DEBUG MAIN: Command executed successfully');
                     new Notice('Ideatr debug (main) command executed - check console');
+                    return Promise.resolve();
                 };
                 Logger.debug('Debug main callback type:', typeof debugMainCallback);
                 this.addCommand({
@@ -192,7 +193,7 @@ export default class IdeatrPlugin extends Plugin {
         } catch (error) {
             console.error('[Ideatr] Error registering commands:', error);
             console.error('[Ideatr] Error details:', error instanceof Error ? error.stack : error);
-            new Notice('Failed to register Ideatr commands. Check console for details.');
+            new Notice('Failed to register ideatr commands. Check console for details');
         }
 
         // Start memory monitoring if debug mode is enabled
@@ -280,15 +281,15 @@ export default class IdeatrPlugin extends Plugin {
     }
 
     async loadSettings() {
-        const loadedData = await this.loadData();
+        const loadedData = (await this.loadData()) as Partial<IdeatrSettings> & { cloudApiKey?: string; cloudProvider?: string } | null;
         this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
 
         // Migrate legacy cloudApiKey to cloudApiKeys map if needed
         if (loadedData && 'cloudApiKey' in loadedData && loadedData.cloudApiKey &&
             (!this.settings.cloudApiKeys || Object.values(this.settings.cloudApiKeys).every(key => !key))) {
             // If we have a legacy API key and no keys in the new structure, migrate it
-            const legacyKey = loadedData.cloudApiKey as string;
-            const provider = (loadedData.cloudProvider || 'none') as string;
+            const legacyKey = typeof loadedData.cloudApiKey === 'string' ? loadedData.cloudApiKey : '';
+            const provider = (typeof loadedData.cloudProvider === 'string' ? loadedData.cloudProvider : 'none');
 
             if (legacyKey && provider !== 'none' && provider !== 'custom') {
                 if (!this.settings.cloudApiKeys) {
@@ -303,7 +304,7 @@ export default class IdeatrPlugin extends Plugin {
                 // Migrate the key to the appropriate provider
                 if (provider === 'anthropic' || provider === 'openai' || provider === 'gemini' ||
                     provider === 'groq' || provider === 'openrouter') {
-                    this.settings.cloudApiKeys[provider as keyof typeof this.settings.cloudApiKeys] = legacyKey;
+                    this.settings.cloudApiKeys[provider] = legacyKey;
                 }
                 // Save the migrated settings
                 await this.saveSettings();
@@ -369,7 +370,7 @@ export default class IdeatrPlugin extends Plugin {
             // Get plugin directory
             // Vault adapter may have basePath property for file system access
             const vaultAdapter = this.app.vault.adapter as { basePath?: string };
-            const vaultBasePath = vaultAdapter.basePath || this.app.vault.configDir;
+            const vaultBasePath = vaultAdapter.basePath ?? this.app.vault.configDir;
             const configDir = isAbsolutePath(this.app.vault.configDir)
                 ? this.app.vault.configDir
                 : joinPath(vaultBasePath, this.app.vault.configDir);

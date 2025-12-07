@@ -64,7 +64,7 @@ export class FileManager {
         let suffix = 2;
 
         while (this.vault.getAbstractFileByPath(currentPath)) {
-            const filename = filepath.split('/').pop() || '';
+            const filename = filepath.split('/').pop() ?? '';
             const suffixedFilename = addCollisionSuffix(filename, suffix);
             currentPath = `${IDEAS_DIRECTORY}/${suffixedFilename}`;
             suffix++;
@@ -172,7 +172,7 @@ export class FileManager {
         const headerPattern = new RegExp(`^##\\s+${escaped}\\s*$`, 'im');
         const match = content.match(headerPattern);
         
-        if (!match || match.index === undefined) {
+        if (match?.index === undefined) {
             return null;
         }
         
@@ -184,7 +184,7 @@ export class FileManager {
         
         // First, check for next ## header
         const nextHeaderMatch = afterHeader.match(/^##\s+/m);
-        if (nextHeaderMatch && nextHeaderMatch.index !== undefined) {
+        if (nextHeaderMatch?.index !== undefined) {
             return { start, end: headerEnd + nextHeaderMatch.index };
         }
         
@@ -192,7 +192,7 @@ export class FileManager {
         // This handles cases like "More content" after a section
         const blankLinePattern = /\n\n(?![\s]*[-*|])/;
         const blankLineMatch = afterHeader.match(blankLinePattern);
-        if (blankLineMatch && blankLineMatch.index !== undefined) {
+        if (blankLineMatch?.index !== undefined) {
             // Check if content after blank line is not a list item
             const afterBlankLine = afterHeader.substring(blankLineMatch.index + 2);
             if (afterBlankLine.trim() && !afterBlankLine.match(/^\s*[-*|]/)) {

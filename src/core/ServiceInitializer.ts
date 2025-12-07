@@ -153,13 +153,13 @@ export class ServiceInitializer {
             llmService,
             settings,
             async () => {
-                const data = await plugin.loadData();
-                return data?.variantCache || {};
+                const data = await plugin.loadData() as { variantCache?: Record<string, unknown> } | null;
+                return (data?.variantCache && typeof data.variantCache === 'object') ? data.variantCache : {};
             },
             async (cacheData: Record<string, unknown>) => {
-                const data = await plugin.loadData();
+                const data = (await plugin.loadData()) as Record<string, unknown> | null;
                 await plugin.saveData({
-                    ...data,
+                    ...(data ?? {}),
                     variantCache: cacheData
                 });
             }
@@ -174,7 +174,7 @@ export class ServiceInitializer {
         const embeddingService = new EmbeddingService();
         const clusteringService = new ClusteringService(
             embeddingService,
-            settings.clusteringSimilarityThreshold || 0.3
+            settings.clusteringSimilarityThreshold ?? 0.3
         );
         const graphLayoutService = new GraphLayoutService();
         const resurfacingService = new ResurfacingService(
@@ -216,7 +216,7 @@ export class ServiceInitializer {
      * Note: This method is async because it's called with await,
      * even though it doesn't contain any await expressions
      */
-    private static async initializeLLMServices(
+    private static initializeLLMServices(
         _app: App,
         _plugin: IdeatrPlugin,
         settings: IdeatrSettings
@@ -227,7 +227,7 @@ export class ServiceInitializer {
             // Get the API key for the current provider
             const apiKey = (settings.cloudApiKeys &&
                 settings.cloudProvider in settings.cloudApiKeys)
-                ? (settings.cloudApiKeys[settings.cloudProvider as keyof typeof settings.cloudApiKeys] || '').trim()
+                ? (settings.cloudApiKeys[settings.cloudProvider] ?? '').trim()
                 : '';
 
             if (apiKey.length > 0) {
@@ -252,7 +252,7 @@ export class ServiceInitializer {
             if (settings.customModelProvider && settings.customModel) {
                 const apiKey = (settings.cloudApiKeys &&
                     settings.customModelProvider in settings.cloudApiKeys)
-                    ? (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] || '').trim()
+                    ? (settings.cloudApiKeys[settings.customModelProvider as keyof typeof settings.cloudApiKeys] ?? '').trim()
                     : '';
 
                 if (apiKey.length > 0) {
@@ -295,7 +295,7 @@ export class ServiceInitializer {
 
         // If no cloud LLM configured, throw error
         if (!cloudLLM) {
-            throw new Error('No LLM service configured. Please configure a cloud AI provider in settings.');
+            return Promise.reject(new Error('No LLM service configured. Please configure a cloud AI provider in settings.'));
         }
 
         // Preload model on startup if enabled
@@ -307,7 +307,7 @@ export class ServiceInitializer {
             });
         }
 
-        return cloudLLM;
+        return Promise.resolve(cloudLLM);
     }
 }
 
