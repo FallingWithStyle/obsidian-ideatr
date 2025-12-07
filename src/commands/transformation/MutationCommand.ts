@@ -91,8 +91,8 @@ type: idea
 status: captured
 created: ${new Date().toISOString().split('T')[0]}
 id: 0
-category: ${typeof content.frontmatter.category === 'string' ? content.frontmatter.category : String(content.frontmatter.category || '')}
-tags: ${JSON.stringify(content.frontmatter.tags || [])}
+category: ${typeof content.frontmatter.category === 'string' ? content.frontmatter.category : ''}
+tags: ${JSON.stringify(content.frontmatter.tags ?? [])}
 related: ${JSON.stringify(relatedIds)}
 domains: []
 existence-check: []

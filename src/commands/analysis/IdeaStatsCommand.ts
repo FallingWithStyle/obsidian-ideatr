@@ -17,8 +17,6 @@ export class IdeaStatsCommand extends IdeaFileCommand {
         return 'show idea stats';
     }
 
-    // Note: This method is async to satisfy the base class interface (IdeaFileCommand.executeWithFile),
-    // even though it doesn't contain any await expressions
     protected async executeWithFile(
         file: TFile,
         content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
@@ -47,6 +45,7 @@ export class IdeaStatsCommand extends IdeaFileCommand {
         };
 
         new IdeaStatsModal(this.context.app, stats, this.context.ideaRepository).open();
+        return Promise.resolve();
     }
 }
 

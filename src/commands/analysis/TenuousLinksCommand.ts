@@ -39,7 +39,7 @@ export class TenuousLinksCommand extends IdeaFileCommand {
 
         const links = await this.context.tenuousLinkService.findTenuousLinks(
             content.ideaText,
-            String(content.frontmatter.category || ''),
+            typeof content.frontmatter.category === 'string' ? content.frontmatter.category : '',
             Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags as string[] : [],
             relatedPaths
         );
@@ -78,8 +78,8 @@ type: idea
 status: captured
 created: ${new Date().toISOString().split('T')[0]}
 id: 0
-category: ${typeof content.frontmatter.category === 'string' ? content.frontmatter.category : String(content.frontmatter.category || '')}
-tags: ${JSON.stringify([...(Array.isArray(content.frontmatter.tags) ? content.frontmatter.tags : []), 'combined'])}
+category: ${typeof content.frontmatter.category === 'string' ? content.frontmatter.category : ''}
+tags: ${JSON.stringify([...(Array.isArray(content.frontmatter.tags) ? (content.frontmatter.tags as string[]) : []), 'combined'])}
 related: ${JSON.stringify(relatedIds)}
 domains: []
 existence-check: []
@@ -94,7 +94,7 @@ ${content.ideaText}
 ${link.explanation}
 
 ## Synergy
-${link.synergy || 'Potential combination of these ideas'}
+${link.synergy ?? 'Potential combination of these ideas'}
 `;
                         const newPath = `Ideas/${new Date().toISOString().split('T')[0]}-combined-idea.md`;
                         await this.context.app.vault.create(newPath, combinedContent);

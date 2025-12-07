@@ -24,7 +24,7 @@ export class ExistenceSearchCommand extends IdeaFileCommand {
             return;
         }
 
-        const category = content.frontmatter.category || '';
+        const category = content.frontmatter.category ?? '';
         new Notice('Searching for similar ideas...');
         const results = await this.context.webSearchService.search(content.ideaText, category as IdeaCategory | undefined);
 

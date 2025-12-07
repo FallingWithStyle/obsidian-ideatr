@@ -22,7 +22,7 @@ export class RefreshRelatedNotesCommand extends BaseCommand {
             );
 
             if (ideaFiles.length === 0) {
-                new Notice('No idea files found in Ideas/ directory.');
+                new Notice('No idea files found in ideas/ directory.');
                 return;
             }
 

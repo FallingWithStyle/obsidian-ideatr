@@ -24,7 +24,7 @@ export class ElevateToProjectCommand extends BaseCommand {
             
             // Check if file is in Ideas/ directory
             if (!activeFile.path.startsWith('Ideas/')) {
-                new Notice('This command works with idea files in the Ideas/ directory.');
+                new Notice('This command works with idea files in the ideas/ directory.');
                 return;
             }
             
@@ -73,7 +73,7 @@ export class ElevateToProjectCommand extends BaseCommand {
                     await this.context.app.workspace.openLinkText(`${result.projectPath}/README.md`, '', false);
                 }
             } else {
-                new Notice(`Failed to elevate idea: ${result.error || 'Unknown error'}`);
+                new Notice(`Failed to elevate idea: ${result.error ?? 'Unknown error'}`);
                 if (result.warnings && result.warnings.length > 0) {
                     Logger.warn('Elevation warnings:', result.warnings);
                 }

@@ -290,7 +290,7 @@ export class CaptureModal extends Modal {
         // Validate input
         const validation = validateIdeaText(text);
         if (!validation.valid) {
-            this.showError(validation.error || 'Invalid input');
+            this.showError(validation.error ?? 'Invalid input');
             return;
         }
 
@@ -300,7 +300,7 @@ export class CaptureModal extends Modal {
         this.isFirstClassification = false;
 
         try {
-            const classification = await this.classificationService.classifyIdea(validation.sanitizedText || text);
+            const classification = await this.classificationService.classifyIdea(validation.sanitizedText ?? text);
             if (this.classificationAbortController?.signal.aborted) {
                 return; // Classification was cancelled
             }
@@ -350,7 +350,7 @@ export class CaptureModal extends Modal {
         // Validate input
         const validation = validateIdeaText(text);
         if (!validation.valid) {
-            this.showError(validation.error || 'Invalid input');
+            this.showError(validation.error ?? 'Invalid input');
             return;
         }
 
@@ -380,7 +380,7 @@ export class CaptureModal extends Modal {
         try {
             // Create idea file
             const idea = {
-                text: validation.sanitizedText || text,
+                text: validation.sanitizedText ?? text,
                 timestamp: new Date()
             };
 
@@ -413,7 +413,7 @@ export class CaptureModal extends Modal {
         // Validate input
         const validation = validateIdeaText(text);
         if (!validation.valid) {
-            this.showError(validation.error || 'Invalid input');
+            this.showError(validation.error ?? 'Invalid input');
             return;
         }
 
@@ -452,7 +452,7 @@ export class CaptureModal extends Modal {
 
             // Step 1: Create idea file with raw text
             const idea = {
-                text: validation.sanitizedText || text,
+                text: validation.sanitizedText ?? text,
                 timestamp: new Date()
             };
 

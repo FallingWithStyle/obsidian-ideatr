@@ -60,7 +60,7 @@ export abstract class IdeaFileCommand extends BaseCommand {
             return null;
         }
         if (!file.path.startsWith('Ideas/')) {
-            new Notice('This command works best with idea files in the Ideas/ directory.');
+            new Notice('This command works best with idea files in the ideas/ directory.');
             // Continue anyway (user might have moved file)
         }
         return file;

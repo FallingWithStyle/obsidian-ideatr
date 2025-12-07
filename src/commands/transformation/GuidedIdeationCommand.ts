@@ -42,6 +42,7 @@ export class GuidedIdeationCommand extends IdeaFileCommand {
                 await this.applyTransformation(file, result, plan, content);
             }
         ).open();
+        return Promise.resolve();
     }
 
     /**
@@ -68,7 +69,7 @@ export class GuidedIdeationCommand extends IdeaFileCommand {
             // Handle file rename if needed
             if (result.newFilename) {
                 // Extract just the filename (remove any path components)
-                let newFilename = result.newFilename.split('/').pop() || result.newFilename;
+                let newFilename = result.newFilename.split('/').pop() ?? result.newFilename;
                 // Remove .md extension if present for comparison
                 const newBasename = newFilename.replace(/\.md$/, '');
                 

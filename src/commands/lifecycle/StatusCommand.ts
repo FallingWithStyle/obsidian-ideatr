@@ -45,6 +45,7 @@ export class StatusCommand extends IdeaFileCommand {
                 })();
             }
         ).open();
+        return Promise.resolve();
     }
 }
 

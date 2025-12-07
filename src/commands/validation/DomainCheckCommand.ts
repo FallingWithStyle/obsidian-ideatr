@@ -48,7 +48,7 @@ export class DomainCheckCommand extends IdeaFileCommand {
         // Use bracket notation to access private property
         const domainService = this.context.domainService as unknown as Record<string, unknown>;
         const prospectrService = domainService['prospectrService'] as { isAvailable(): boolean } | undefined;
-        if (!prospectrService || !prospectrService.isAvailable()) {
+        if (!prospectrService?.isAvailable()) {
             if (this.context.settings.enableProspectr) {
                 new Notice('Domain checking is not configured. Please set up the domain checking service in settings.');
             } else {

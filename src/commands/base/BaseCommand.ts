@@ -19,7 +19,7 @@ export abstract class BaseCommand {
      * Handle errors consistently across all commands
      */
     protected handleError(error: unknown, context?: string, userAction?: string): void {
-        Logger.error(`Failed to ${context || 'execute command'}:`, error);
+        Logger.error(`Failed to ${context ?? 'execute command'}:`, error);
 
         if (this.context.errorLogService) {
             const errorObj = error instanceof Error ? error : new Error(String(error));

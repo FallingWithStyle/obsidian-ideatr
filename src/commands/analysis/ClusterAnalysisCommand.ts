@@ -73,9 +73,9 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
         // Calculate common tags
         const allTags = new Map<string, number>();
         currentCluster.ideas.forEach(idea => {
-            const tags = idea.frontmatter?.tags || [];
+            const tags = idea.frontmatter?.tags ?? [];
             tags.forEach(tag => {
-                allTags.set(tag, (allTags.get(tag) || 0) + 1);
+                allTags.set(tag, (allTags.get(tag) ?? 0) + 1);
             });
         });
         const commonTags = Array.from(allTags.entries())
@@ -95,40 +95,38 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
         const statusDistribution: Record<string, number> = {};
         currentCluster.ideas.forEach(idea => {
-            const status = idea.frontmatter?.status || 'unknown';
-            statusDistribution[status] = (statusDistribution[status] || 0) + 1;
+            const status = idea.frontmatter?.status ?? 'unknown';
+            statusDistribution[status] = (statusDistribution[status] ?? 0) + 1;
         });
 
         // Calculate actual similarity between clusters using embeddings
-        const relatedClusters = await Promise.all(
-            clusters
-                .filter(c => c !== currentCluster)
-                .map((otherCluster) => {
-                    let totalSimilarity = 0;
-                    let comparisons = 0;
+        const relatedClusters = clusters
+            .filter(c => c !== currentCluster)
+            .map((otherCluster) => {
+                let totalSimilarity = 0;
+                let comparisons = 0;
 
-                    for (const idea1 of currentCluster.ideas) {
-                        for (const idea2 of otherCluster.ideas) {
-                            const body1 = idea1.body || idea1.filename || '';
-                            const body2 = idea2.body || idea2.filename || '';
+                for (const idea1 of currentCluster.ideas) {
+                    for (const idea2 of otherCluster.ideas) {
+                        const body1 = idea1.body ?? idea1.filename ?? '';
+                        const body2 = idea2.body ?? idea2.filename ?? '';
 
-                            if (body1 && body2) {
-                                const similarity = this.context.searchService.calculateSimilarity(body1, body2);
-                                totalSimilarity += similarity;
-                                comparisons++;
-                            }
+                        if (body1 && body2) {
+                            const similarity = this.context.searchService.calculateSimilarity(body1, body2);
+                            totalSimilarity += similarity;
+                            comparisons++;
                         }
                     }
+                }
 
-                    const avgSimilarity = comparisons > 0 ? totalSimilarity / comparisons : 0;
+                const avgSimilarity = comparisons > 0 ? totalSimilarity / comparisons : 0;
 
-                    return {
-                        label: otherCluster.label,
-                        similarity: avgSimilarity,
-                        cluster: otherCluster
-                    };
-                })
-        );
+                return {
+                    label: otherCluster.label,
+                    similarity: avgSimilarity,
+                    cluster: otherCluster
+                };
+            });
 
         // Filter and sort by similarity
         const filteredRelated = relatedClusters
@@ -142,15 +140,15 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
         // Use LLM to analyze cluster themes and relationships if available
         let commonThemes: string[] = [];
-        let relationshipExplanations: Map<string, string> = new Map();
+        const relationshipExplanations: Map<string, string> = new Map();
 
         if (this.context.llmService.isAvailable() && this.context.llmService.complete) {
             try {
                 const clusterIdeasForAnalysis = currentCluster.ideas.map(idea => ({
                     title: idea.filename.replace('.md', ''),
-                    text: idea.body || '',
-                    category: idea.frontmatter?.category || '',
-                    tags: idea.frontmatter?.tags || []
+                    text: idea.body ?? '',
+                    category: idea.frontmatter?.category ?? '',
+                    tags: idea.frontmatter?.tags ?? []
                 }));
 
                 const analysisPrompt = PROMPTS.clusterAnalysis({
@@ -165,8 +163,8 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
                 try {
                     const repaired = extractAndRepairJSON(analysisResponse, false);
-                    const analysis = JSON.parse(repaired);
-                    commonThemes = analysis.commonThemes || [];
+                    const analysis = JSON.parse(repaired) as { commonThemes?: string[] };
+                    commonThemes = Array.isArray(analysis.commonThemes) ? analysis.commonThemes ?? [] : [];
                 } catch (error) {
                     Logger.warn('Failed to parse cluster analysis JSON:', error);
                 }
@@ -177,9 +175,9 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
                     if (otherCluster) {
                         const otherClusterIdeas = otherCluster.ideas.map(idea => ({
                             title: idea.filename.replace('.md', ''),
-                            text: idea.body || '',
-                            category: idea.frontmatter?.category || '',
-                            tags: idea.frontmatter?.tags || []
+                            text: idea.body ?? '',
+                            category: idea.frontmatter?.category ?? '',
+                            tags: idea.frontmatter?.tags ?? []
                         }));
 
                         const relationshipPrompt = PROMPTS.clusterAnalysis({
@@ -196,11 +194,13 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
                         try {
                             const repaired = extractAndRepairJSON(relationshipResponse, false);
-                            const relationshipAnalysis = JSON.parse(repaired);
+                            const relationshipAnalysis = JSON.parse(repaired) as { relationshipToOtherCluster?: string };
                             if (relatedCluster.label) {
                                 relationshipExplanations.set(
                                     relatedCluster.label,
-                                    relationshipAnalysis.relationshipToOtherCluster || ''
+                                    typeof relationshipAnalysis.relationshipToOtherCluster === 'string' 
+                                        ? relationshipAnalysis.relationshipToOtherCluster 
+                                        : (relationshipAnalysis.relationshipToOtherCluster ?? '')
                                 );
                             }
                         } catch (error) {
@@ -215,7 +215,7 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
 
         // Show modal with cluster analysis
         const clusterInfo: ClusterInfo = {
-            label: currentCluster.label || 'Unnamed Cluster',
+            label: currentCluster.label ?? 'Unnamed Cluster',
             ideas: currentCluster.ideas,
             commonTags,
             commonThemes: commonThemes.length > 0 ? commonThemes : undefined,
@@ -225,9 +225,9 @@ export class ClusterAnalysisCommand extends IdeaFileCommand {
                 statusDistribution
             },
             relatedClusters: filteredRelated.map(c => ({
-                label: c.label || 'Unnamed Cluster',
+                label: c.label ?? 'Unnamed Cluster',
                 similarity: c.similarity,
-                explanation: relationshipExplanations.get(c.label || '')
+                explanation: relationshipExplanations.get(c.label ?? '')
             })).filter(c => c.label !== 'Unnamed Cluster' || c.similarity > 0)
         };
 

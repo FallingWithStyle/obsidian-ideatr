@@ -342,15 +342,16 @@ export class CommandRegistry {
         if (Logger.isDebugEnabled()) {
             // Note: This callback is async to satisfy createCommandCallback's signature (() => Promise<void>),
             // even though it doesn't contain any await expressions
-            const debugCallback = CommandRegistry.createCommandCallback('Ideatr Debug (Registry)', async () => {
+            const debugCallback = CommandRegistry.createCommandCallback('Ideatr Debug (Registry)', () => {
                 Logger.debug('[Ideatr DEBUG REGISTRY] Command operation executed!');
                 Logger.info('DEBUG REGISTRY: Command executed successfully');
-                new Notice('Ideatr debug (Registry) command executed - check console');
+                new Notice('Ideatr debug (registry) command executed - check console');
+                return Promise.resolve();
             });
             Logger.debug('Debug registry callback type:', typeof debugCallback);
             plugin.addCommand({
                 id: 'debug-registry',
-                name: 'Debug (Registry)',
+                name: 'Debug (registry)',
                 callback: debugCallback
             });
             Logger.debug('Registered debug command via CommandRegistry');

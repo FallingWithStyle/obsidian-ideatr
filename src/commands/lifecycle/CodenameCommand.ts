@@ -23,7 +23,7 @@ export class CodenameCommand extends IdeaFileCommand {
     ): Promise<void> {
         // Check if LLM is available
         if (!this.context.llmService?.isAvailable() || !this.context.llmService.complete) {
-            new Notice('LLM service is not available. Cannot generate codename.');
+            new Notice('Unable to generate codename because the language model service is not available');
             return;
         }
 

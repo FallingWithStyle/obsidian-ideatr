@@ -13,12 +13,12 @@ export class ImportCommand extends BaseCommand {
         super(context);
     }
 
-    async execute(): Promise<void> {
+    execute(): Promise<void> {
         try {
             // Check service availability
             if (!this.context.importService) {
                 new Notice('Import service is not available.');
-                return;
+                return Promise.resolve();
             }
 
             // Show file picker modal
@@ -84,8 +84,10 @@ export class ImportCommand extends BaseCommand {
                     })();
                 }
             ).open();
+            return Promise.resolve();
         } catch (error) {
             this.handleError(error, 'show import file picker');
+            return Promise.resolve();
         }
     }
 }
