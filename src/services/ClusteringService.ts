@@ -21,17 +21,17 @@ export class ClusteringService implements IClusteringService {
      * Note: This method is async to satisfy the IClusteringService interface,
      * even though it doesn't contain any await expressions (generateEmbeddings is synchronous)
      */
-    async clusterIdeas(ideas: IdeaFile[], embeddings?: Embedding[]): Promise<Cluster[]> {
+    clusterIdeas(ideas: IdeaFile[], embeddings?: Embedding[]): Promise<Cluster[]> {
         if (ideas.length === 0) {
-            return [];
+            return Promise.resolve([]);
         }
 
         if (ideas.length === 1) {
-            return [{
+            return Promise.resolve([{
                 id: 'cluster-0',
                 ideas: [ideas[0]],
                 label: 'Single Idea'
-            }];
+            }]);
         }
 
         // Generate similarity matrix
@@ -54,7 +54,7 @@ export class ClusteringService implements IClusteringService {
         // Perform hierarchical clustering
         const clusters = this.hierarchicalClustering(ideas, similarityMatrix);
 
-        return clusters;
+        return Promise.resolve(clusters);
     }
 
     /**

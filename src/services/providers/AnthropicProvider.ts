@@ -15,7 +15,7 @@ export class AnthropicProvider implements ILLMProvider {
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
-        this.model = model || 'claude-3-5-haiku-20241022';
+        this.model = model ?? 'claude-3-5-haiku-20241022';
     }
 
     private getClient(): Anthropic {
@@ -119,12 +119,16 @@ Response:`;
         try {
             // Extract and repair JSON from response
             const repaired = extractAndRepairJSON(content, false);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
             Logger.warn('Failed to parse Anthropic response:', content, error);

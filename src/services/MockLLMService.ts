@@ -31,13 +31,13 @@ export class MockLLMService implements ILLMService {
 
     // Note: This method is async to satisfy the ILLMService interface,
     // even though it doesn't contain any await expressions
-    async classify(text: string): Promise<ClassificationResult> {
+    async     classify(text: string): Promise<ClassificationResult> {
         if (!text || text.trim().length === 0) {
-            return {
+            return Promise.resolve({
                 category: '',
                 tags: [],
                 confidence: 0
-            };
+            });
         }
 
         const lowerText = text.toLowerCase();
@@ -51,11 +51,11 @@ export class MockLLMService implements ILLMService {
         // Calculate confidence (mock: based on keyword matches)
         const confidence = this.calculateConfidence(lowerText, category, tags);
 
-        return {
+        return Promise.resolve({
             category,
             tags,
             confidence
-        };
+        });
     }
 
     isAvailable(): boolean {

@@ -257,11 +257,15 @@ Response:`;
 
             // Parse JSON response
             const repaired = extractAndRepairJSON(response, false);
-            const analysis = JSON.parse(repaired);
+            const analysis = JSON.parse(repaired) as {
+                explanation?: string;
+                synergy?: string;
+                relevance?: number;
+            };
             return {
-                explanation: analysis.explanation || '',
-                synergy: analysis.synergy,
-                relevance: analysis.relevance || 0.5
+                explanation: typeof analysis.explanation === 'string' ? analysis.explanation : '',
+                synergy: typeof analysis.synergy === 'string' ? analysis.synergy : undefined,
+                relevance: typeof analysis.relevance === 'number' ? analysis.relevance : 0.5
             };
         } catch (error) {
             Logger.warn('Failed to parse LLM analysis:', error);

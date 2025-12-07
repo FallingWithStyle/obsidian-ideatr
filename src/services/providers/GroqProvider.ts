@@ -15,7 +15,7 @@ export class GroqProvider implements ILLMProvider {
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
-        this.model = model || 'llama-3.3-70b-versatile';
+        this.model = model ?? 'llama-3.3-70b-versatile';
     }
 
     private getClient(): Groq {
@@ -78,7 +78,7 @@ export class GroqProvider implements ILLMProvider {
                 throw new Error('Invalid API key. Please check your Groq API key.');
             }
             if (error instanceof Error) {
-                const message = error.message || 'Unknown error';
+                const message = error.message ?? 'Unknown error';
                 throw new Error(`Groq API error: ${message}`);
             }
             throw new Error('Groq API error: Request failed');
@@ -110,12 +110,16 @@ Response:`;
         try {
             // Extract and repair JSON from response
             const repaired = extractAndRepairJSON(content, false);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
             Logger.warn('Failed to parse Groq response:', content, error);

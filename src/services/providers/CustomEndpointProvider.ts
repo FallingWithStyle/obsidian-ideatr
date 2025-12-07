@@ -78,18 +78,23 @@ export class CustomEndpointProvider implements ILLMProvider {
             });
 
             if (response.status < 200 || response.status >= 300) {
-                const errorData = (typeof response.json === 'function' ? await response.json() : response.json) || {};
-                throw new Error(`Custom endpoint error: ${errorData.error || 'Request failed'}`);
+                const errorJson: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+                const errorData = (errorJson as { error?: string } | null) ?? {};
+                throw new Error(`Custom endpoint error: ${typeof errorData.error === 'string' ? errorData.error : 'Request failed'}`);
             }
 
-            const data = typeof response.json === 'function' ? await response.json() : response.json;
+            const jsonData: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+            const data = jsonData as {
+                message?: { content?: string };
+                choices?: Array<{ message?: { content?: string } }>;
+            };
             
             // Extract content based on format (responsePath was determined earlier)
             let content: string;
             if (responsePath === 'message.content') {
-                content = data.message?.content || '';
+                content = (typeof data.message?.content === 'string' ? data.message.content : '');
             } else {
-                content = data.choices?.[0]?.message?.content || '';
+                content = (typeof data.choices?.[0]?.message?.content === 'string' ? data.choices[0].message.content : '');
             }
 
             if (!content) {
@@ -130,12 +135,16 @@ Response:`;
         try {
             // Extract and repair JSON from response
             const repaired = extractAndRepairJSON(content, false);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
             Logger.warn('Failed to parse custom endpoint response:', content, error);

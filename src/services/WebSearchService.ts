@@ -61,7 +61,7 @@ export class WebSearchService implements IWebSearchService {
             return [];
         }
 
-        const limit = maxResults || this.settings.maxSearchResults || 5;
+        const limit = maxResults ?? this.settings.maxSearchResults ?? 5;
 
         try {
             const results = await this.performSearch(query, limit);
@@ -106,8 +106,9 @@ export class WebSearchService implements IWebSearchService {
                 throw new Error(`HTTP ${response.status}: Request failed`);
             }
 
-            const data = (typeof response.json === 'function' ? await response.json() : response.json) as GoogleSearchResponse;
-            return data.items || [];
+            const jsonData: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+            const data = jsonData as GoogleSearchResponse;
+            return data.items ?? [];
         } catch (error) {
             if (error instanceof Error && error.message.includes('Timeout')) {
                 throw error;
@@ -128,9 +129,9 @@ export class WebSearchService implements IWebSearchService {
         const queryWords = queryLower.split(/\s+/);
 
         const results: SearchResult[] = items.map((item: GoogleSearchItem) => {
-            const title = item.title || '';
-            const snippet = item.snippet || '';
-            const url = item.link || '';
+            const title = item.title ?? '';
+            const snippet = item.snippet ?? '';
+            const url = item.link ?? '';
             
             // Extract date if available
             let date: string | undefined;
@@ -156,10 +157,10 @@ export class WebSearchService implements IWebSearchService {
         });
 
         // Sort by relevance (descending)
-        results.sort((a, b) => (b.relevance || 0) - (a.relevance || 0));
+        results.sort((a, b) => (b.relevance ?? 0) - (a.relevance ?? 0));
 
         // Filter low-relevance results (score < 0.3)
-        return results.filter(r => (r.relevance || 0) >= 0.3);
+        return results.filter(r => (r.relevance ?? 0) >= 0.3);
     }
 
     /**

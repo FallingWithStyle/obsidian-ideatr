@@ -158,6 +158,7 @@ export class ScaffoldService implements IScaffoldService {
             if (this.app) {
                 await this.app.fileManager.trashFile(file);
             } else if (this.vault) {
+                // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file
                 await this.vault.delete(file);
             }
             await this.loadCustomTemplates();
@@ -178,7 +179,7 @@ export class ScaffoldService implements IScaffoldService {
         ideaName?: string
     ): string {
         // Extract idea name if not provided (use sync version for scaffolds - fast enough)
-        const name = ideaName || extractIdeaNameSync(ideaText);
+        const name = ideaName ?? extractIdeaNameSync(ideaText);
         
         // Select template based on category (use custom templates if available)
         const template = this.selectTemplate(category);
@@ -215,8 +216,8 @@ export class ScaffoldService implements IScaffoldService {
     private selectTemplate(category: IdeaCategory): ScaffoldTemplate {
         // Use default selection logic but with custom templates
         const templateId = selectDefaultTemplate(category).id;
-        return this.allTemplates.find(t => t.id === templateId) || 
-               this.allTemplates.find(t => t.id === 'generic-idea') || 
+        return this.allTemplates.find(t => t.id === templateId) ?? 
+               this.allTemplates.find(t => t.id === 'generic-idea') ?? 
                this.allTemplates[0];
     }
 

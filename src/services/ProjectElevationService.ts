@@ -28,14 +28,14 @@ export class ProjectElevationService implements IProjectElevationService {
      * Get projects directory from settings
      */
     private getProjectsDirectory(): string {
-        return this.settings.elevationProjectsDirectory || 'Projects';
+        return this.settings.elevationProjectsDirectory ?? 'Projects';
     }
 
     /**
      * Get default folders from settings
      */
     private getDefaultFolders(): string[] {
-        const foldersStr = this.settings.elevationDefaultFolders || 'docs,notes,assets';
+        const foldersStr = this.settings.elevationDefaultFolders ?? 'docs,notes,assets';
         return foldersStr
             .split(',')
             .map(f => f.trim())
@@ -47,7 +47,7 @@ export class ProjectElevationService implements IProjectElevationService {
      */
     canElevate(ideaFile: IdeaFile): boolean {
         // Check if idea has required frontmatter
-        if (!ideaFile.frontmatter || !ideaFile.frontmatter.type || !ideaFile.frontmatter.status) {
+        if (!ideaFile.frontmatter?.type || !ideaFile.frontmatter.status) {
             return false;
         }
 
@@ -154,7 +154,7 @@ export class ProjectElevationService implements IProjectElevationService {
         }
 
         // Generate or use provided project name
-        const baseProjectName = projectName || this.generateProjectName(ideaFile);
+        const baseProjectName = projectName ?? this.generateProjectName(ideaFile);
         const finalProjectName = await this.resolveProjectNameCollision(baseProjectName);
         const projectPath = `${this.getProjectsDirectory()}/${finalProjectName}`;
 
@@ -190,6 +190,7 @@ export class ProjectElevationService implements IProjectElevationService {
                 if (this.app) {
                     await this.app.fileManager.trashFile(originalFile);
                 } else {
+                    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file
                     await this.vault.delete(originalFile);
                 }
             } catch (error) {
@@ -217,7 +218,7 @@ export class ProjectElevationService implements IProjectElevationService {
      * Resolve project name collision by adding numeric suffix
      * Note: This method is async to match the calling context, even though it doesn't contain await expressions
      */
-    private async resolveProjectNameCollision(baseName: string): Promise<string> {
+    private resolveProjectNameCollision(baseName: string): Promise<string> {
         let projectName = baseName;
         let suffix = 2;
 
@@ -226,7 +227,7 @@ export class ProjectElevationService implements IProjectElevationService {
             suffix++;
         }
 
-        return projectName;
+        return Promise.resolve(projectName);
     }
 
     /**
@@ -302,8 +303,8 @@ export class ProjectElevationService implements IProjectElevationService {
             source: 'ideatr',
             elevated: new Date().toISOString().split('T')[0],
             ideaPath: ideaFile.filename,
-            ideaCategory: ideaFile.frontmatter.category || '',
-            ideaTags: ideaFile.frontmatter.tags || [],
+            ideaCategory: ideaFile.frontmatter.category ?? '',
+            ideaTags: ideaFile.frontmatter.tags ?? [],
             devraReady: false,
             devraProjectPath: null
         };
@@ -327,6 +328,7 @@ export class ProjectElevationService implements IProjectElevationService {
                         if (this.app) {
                             await this.app.fileManager.trashFile(file);
                         } else {
+                            // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file
                             await this.vault.delete(file);
                         }
                     } else {

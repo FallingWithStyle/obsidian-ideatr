@@ -21,7 +21,7 @@ export class IdeaRepository implements IIdeaRepository {
         private vault: Vault,
         parser?: IFrontmatterParser
     ) {
-        this.parser = parser || new FrontmatterParser();
+        this.parser = parser ?? new FrontmatterParser();
     }
 
     /**
@@ -46,12 +46,12 @@ export class IdeaRepository implements IIdeaRepository {
                 this.cache.set(file.path, idea);
                 // If cache exceeds limit, remove oldest entries (LRU-like, but simple FIFO)
                 if (this.cache.size > this.MAX_CACHE_SIZE) {
-                    const firstKey = this.cache.keys().next().value;
-                    if (firstKey) {
+                    const firstKey = this.cache.keys().next().value as string | undefined;
+                    if (firstKey && typeof firstKey === 'string') {
                         this.cache.delete(firstKey);
                     }
                 }
-            } catch (error) {
+            } catch {
                 // Wrap underlying error in a typed ManagementError for better diagnostics (QA 4.6)
                 const managementError = new ManagementError(
                     `Failed to read idea file: ${file.path}`,
@@ -149,8 +149,8 @@ export class IdeaRepository implements IIdeaRepository {
             this.cache.set(path, idea);
             // If cache exceeds limit, remove oldest entries
             if (this.cache.size > this.MAX_CACHE_SIZE) {
-                const firstKey = this.cache.keys().next().value;
-                if (firstKey) {
+                const firstKey = this.cache.keys().next().value as string | undefined;
+                if (firstKey && typeof firstKey === 'string') {
                     this.cache.delete(firstKey);
                 }
             }
@@ -167,21 +167,23 @@ export class IdeaRepository implements IIdeaRepository {
      * @returns Unsubscribe function
      */
     watchIdeas(callback: (ideas: IdeaFile[]) => void): () => void {
-        const onFileChange = async (file: TFile) => {
+        const onFileChange = (file: TFile) => {
             if (file.path.startsWith('Ideas/')) {
-                // Refresh cache for this file
-                try {
-                    const content = await this.vault.read(file);
-                    const idea = this.parser.parseIdeaFile(file, content);
-                    this.cache.set(file.path, idea);
-                } catch (error) {
-                    // File might have been deleted
-                    this.cache.delete(file.path);
-                }
+                void (async () => {
+                    // Refresh cache for this file
+                    try {
+                        const content = await this.vault.read(file);
+                        const idea = this.parser.parseIdeaFile(file, content);
+                        this.cache.set(file.path, idea);
+                    } catch {
+                        // File might have been deleted
+                        this.cache.delete(file.path);
+                    }
 
-                // Notify callback with all ideas
-                const allIdeas = Array.from(this.cache.values());
-                callback(allIdeas);
+                    // Notify callback with all ideas
+                    const allIdeas = Array.from(this.cache.values());
+                    callback(allIdeas);
+                })();
             }
         };
 

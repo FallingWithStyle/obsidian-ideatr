@@ -245,6 +245,7 @@ export class TutorialManager {
             try {
                 if (tutorialDir instanceof TFolder && (!tutorialDir.children || tutorialDir.children.length === 0)) {
                     // For folders, we still use vault.delete as trashFile is for files
+                    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file
                     await this.app.vault.delete(tutorialDir, true);
                 }
             } catch {

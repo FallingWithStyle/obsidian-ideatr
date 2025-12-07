@@ -105,9 +105,9 @@ export class ErrorLogService {
      */
     sanitizeLogs(logs: ErrorLogEntry[]): string {
         const sanitized = logs.map(log => {
-            let sanitizedError = this.sanitizeString(log.error);
-            let sanitizedStack = log.stack ? this.sanitizeString(log.stack) : undefined;
-            let sanitizedMetadata = log.metadata ? this.sanitizeMetadata(log.metadata) : undefined;
+            const sanitizedError = this.sanitizeString(log.error);
+            const sanitizedStack = log.stack ? this.sanitizeString(log.stack) : undefined;
+            const sanitizedMetadata = log.metadata ? this.sanitizeMetadata(log.metadata) : undefined;
 
             return {
                 ...log,
@@ -129,8 +129,8 @@ export class ErrorLogService {
         }
 
         const entries = logs.map(log => {
-            let sanitizedError = this.sanitizeString(log.error);
-            let sanitizedStack = log.stack ? this.sanitizeString(log.stack) : undefined;
+            const sanitizedError = this.sanitizeString(log.error);
+            const sanitizedStack = log.stack ? this.sanitizeString(log.stack) : undefined;
 
             let entry = `**${log.timestamp.toISOString()}**`;
             if (log.context) {

@@ -37,15 +37,15 @@ export class ProspectrService implements IProspectrService {
      * Note: This method is async to satisfy the IProspectrService interface,
      * even though it doesn't contain any await expressions
      */
-    async checkDomainAvailability(domain: string): Promise<DomainCheckResult> {
+    checkDomainAvailability(domain: string): Promise<DomainCheckResult> {
         if (!this.isAvailable()) {
             // Return stubbed result indicating service is not available
-            return {
+            return Promise.resolve({
                 domain,
                 available: false,
                 error: 'Prospectr service is not available',
                 checkedAt: new Date().toISOString()
-            };
+            });
         }
 
         // TODO: Implement actual domain checking API call when service is available
@@ -87,12 +87,12 @@ export class ProspectrService implements IProspectrService {
         // }
 
         // Stubbed return for now
-        return {
+        return Promise.resolve({
             domain,
             available: false,
             error: 'Domain checking service is not yet implemented',
             checkedAt: new Date().toISOString()
-        };
+        });
     }
 
     /**

@@ -39,8 +39,8 @@ export const PROMPTS = {
      * Generate mutation prompt for idea variations
      */
     mutations: (params: MutationPromptParams): string => {
-        const count = params.count || PROMPTS_CONSTANTS.DEFAULT_MUTATION_COUNT;
-        const category = params.category || 'general';
+        const count = params.count ?? PROMPTS_CONSTANTS.DEFAULT_MUTATION_COUNT;
+        const category = params.category ?? 'general';
         const tags = params.tags && params.tags.length > 0 ? params.tags.join(', ') : 'none';
         const focus = params.focus ? `\n\nFocus: ${params.focus}` : '';
 
@@ -76,9 +76,9 @@ Format: JSON array ONLY. No markdown.
      * Generate expansion prompt for idea development
      */
     expansion: (params: ExpansionPromptParams): string => {
-        const category = params.category || 'general';
+        const category = params.category ?? 'general';
         const tags = params.tags && params.tags.length > 0 ? params.tags.join(', ') : 'none';
-        const detailLevel = params.detailLevel || PROMPTS_CONSTANTS.DEFAULT_EXPANSION_DETAIL;
+        const detailLevel = params.detailLevel ?? PROMPTS_CONSTANTS.DEFAULT_EXPANSION_DETAIL;
 
         return `Expand this idea into a comprehensive description.
 
@@ -115,7 +115,7 @@ Actionable initial steps.`;
      * Generate reorganization prompt for idea structuring
      */
     reorganization: (params: ReorganizationPromptParams): string => {
-        const category = params.category || 'general';
+        const category = params.category ?? 'general';
         const tags = params.tags && params.tags.length > 0 ? params.tags.join(', ') : 'none';
         const targetStructure = params.targetStructure && params.targetStructure.length > 0
             ? params.targetStructure.join('\n- ')
@@ -149,12 +149,12 @@ Preserve exactly:
      */
     clusterAnalysis: (params: ClusterAnalysisPromptParams): string => {
         const ideaSummaries = params.clusterIdeas.map((idea, i) =>
-            `${i + 1}. ${idea.title}\n   Category: ${idea.category || 'none'}\n   Tags: ${idea.tags?.join(', ') || 'none'}\n   Text: ${idea.text.substring(0, 200)}...`
+            `${i + 1}. ${idea.title}\n   Category: ${idea.category ?? 'none'}\n   Tags: ${idea.tags?.join(', ') ?? 'none'}\n   Text: ${idea.text.substring(0, 200)}...`
         ).join('\n\n');
 
         const otherClusterInfo = params.otherClusterIdeas
             ? `\n\nOther Cluster:\n${params.otherClusterIdeas.map((idea, i) =>
-                `${i + 1}. ${idea.title} (${idea.category || 'none'})`
+                `${i + 1}. ${idea.title} (${idea.category ?? 'none'})`
             ).join('\n')}`
             : '';
 

@@ -15,7 +15,7 @@ export class OpenAIProvider implements ILLMProvider {
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
-        this.model = model || 'gpt-4o-mini';
+        this.model = model ?? 'gpt-4o-mini';
     }
 
     private getClient(): OpenAI {
@@ -80,7 +80,7 @@ export class OpenAIProvider implements ILLMProvider {
             // Check error type without accessing .message
             if (error instanceof Error) {
                 // Only access message if it's a standard Error
-                const message = error.message || 'Unknown error';
+                const message = error.message ?? 'Unknown error';
                 throw new Error(`OpenAI API error: ${message}`);
             }
             // For non-Error objects, use a generic message
@@ -113,12 +113,16 @@ Response:`;
         try {
             // Extract and repair JSON from response
             const repaired = extractAndRepairJSON(content, false);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
             Logger.warn('Failed to parse OpenAI response:', content, error);

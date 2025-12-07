@@ -15,7 +15,7 @@ export class OpenRouterProvider implements ILLMProvider {
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
-        this.model = model || 'openai/gpt-4o-mini';
+        this.model = model ?? 'openai/gpt-4o-mini';
     }
 
     authenticate(apiKey: string): Promise<boolean> {
@@ -62,11 +62,13 @@ export class OpenRouterProvider implements ILLMProvider {
                 if (response.status === 401) {
                     throw new Error('Invalid API key. Please check your OpenRouter API key.');
                 }
-                const errorData = (typeof response.json === 'function' ? await response.json() : response.json) || {};
-                throw new Error(`OpenRouter API error: ${errorData.error || 'Request failed'}`);
+                const errorJson: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+                const errorData = (errorJson as { error?: string } | null) ?? {};
+                throw new Error(`OpenRouter API error: ${typeof errorData.error === 'string' ? errorData.error : 'Request failed'}`);
             }
 
-            const data = typeof response.json === 'function' ? await response.json() : response.json;
+            const jsonData: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+            const data = jsonData as { choices?: Array<{ message?: { content?: string } }> };
             const content = data.choices?.[0]?.message?.content;
             if (!content) {
                 throw new Error('No content in OpenRouter response');
@@ -112,12 +114,16 @@ Response:`;
         try {
             // Extract and repair JSON from response
             const repaired = extractAndRepairJSON(content, false);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
             Logger.warn('Failed to parse OpenRouter response:', content, error);

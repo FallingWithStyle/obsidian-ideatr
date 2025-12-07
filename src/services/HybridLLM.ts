@@ -30,7 +30,7 @@ export class HybridLLM implements ILLMService {
             try {
                 const result = await this.cloudLLM.classify(text);
                 this.lastProvider = 'cloud';
-                const providerName = (this.cloudLLM as ILLMService & { name?: string }).name || 'cloud';
+                const providerName = (this.cloudLLM as ILLMService & { name?: string }).name ?? 'cloud';
                 Logger.debug('Used cloud provider:', providerName);
                 return result;
             } catch (error) {
@@ -204,8 +204,8 @@ export class HybridLLM implements ILLMService {
                     typeof m === 'object' && m !== null && (('text' in m) || ('title' in m) || ('description' in m))
                 )
                 .map((m) => ({
-                    title: m.title || (m as { text?: unknown }).text || '',
-                    description: m.description || '',
+                    title: m.title ?? (m as { text?: unknown }).text ?? '',
+                    description: m.description ?? '',
                     differences: Array.isArray(m.differences) ? m.differences : [],
                 } as Mutation));
 

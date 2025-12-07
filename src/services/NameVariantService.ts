@@ -57,7 +57,7 @@ export class NameVariantService implements INameVariantService {
         this.settings = settings;
         this.cache = new NameVariantCache(
             24 * 60 * 60 * 1000, // 24 hour TTL
-            settings.variantCacheMaxSize || 0
+            settings.variantCacheMaxSize ?? 0
         );
         this.loadCacheData = loadCacheData;
         this.saveCacheData = saveCacheData;
@@ -121,7 +121,7 @@ export class NameVariantService implements INameVariantService {
 
     async generateVariants(ideaText: string, ideaName?: string): Promise<NameVariant[]> {
         // Extract name if not provided, using LLM if available
-        const name = ideaName || await extractIdeaName(
+        const name = ideaName ?? await extractIdeaName(
             ideaText,
             this.llmService,
             this.settings.useLLMForNameExtraction || false
@@ -210,7 +210,7 @@ export class NameVariantService implements INameVariantService {
         try {
             // Extract and repair JSON from response
             const repaired = extractAndRepairJSON(content, false);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as { variants?: unknown[] };
 
             if (!parsed.variants || !Array.isArray(parsed.variants)) {
                 return [];
@@ -221,8 +221,36 @@ export class NameVariantService implements INameVariantService {
                     typeof v === 'object' && v !== null && 'text' in v && 'type' in v
                 )
                 .map((v: { text: unknown; type: unknown }) => {
-                    const textValue = typeof v.text === 'string' ? v.text : (v.text != null && typeof v.text !== 'object' ? String(v.text) : '');
-                    const typeValue = typeof v.type === 'string' ? v.type : (v.type != null && typeof v.type !== 'object' ? String(v.type) : '');
+                    let textValue: string;
+                    if (typeof v.text === 'string') {
+                        textValue = v.text;
+                    } else if (v.text != null && typeof v.text !== 'object' && typeof v.text !== 'function') {
+                        if (typeof v.text === 'number') {
+                            textValue = v.text.toString();
+                        } else if (typeof v.text === 'boolean') {
+                            textValue = v.text.toString();
+                        } else {
+                            textValue = '';
+                        }
+                    } else {
+                        textValue = '';
+                    }
+                    
+                    let typeValue: string;
+                    if (typeof v.type === 'string') {
+                        typeValue = v.type;
+                    } else if (v.type != null && typeof v.type !== 'object' && typeof v.type !== 'function') {
+                        if (typeof v.type === 'number') {
+                            typeValue = v.type.toString();
+                        } else if (typeof v.type === 'boolean') {
+                            typeValue = v.type.toString();
+                        } else {
+                            typeValue = '';
+                        }
+                    } else {
+                        typeValue = '';
+                    }
+                    
                     return {
                         text: textValue.trim(),
                         type: this.validateVariantType(typeValue),

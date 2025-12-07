@@ -155,8 +155,8 @@ Response: {`;
 
         // Extract operation details from the first operation if available
         const firstOp = transformationPlan.operations[0];
-        const action = firstOp?.action || transformationPlan.description;
-        const target = firstOp?.target || 'body';
+        const action = firstOp?.action ?? transformationPlan.description;
+        const target = firstOp?.target ?? 'body';
         const expectedOutcome = transformationPlan.description;
 
         return `Transform this idea note according to the user's request.
@@ -234,7 +234,7 @@ Response: {`;
 - Apply changes as requested`
         };
 
-        return instructions[intent] || instructions.custom;
+        return instructions[intent] ?? instructions.custom;
     }
 
     /**
@@ -243,19 +243,27 @@ Response: {`;
     private parseIntentResponse(response: string): TransformationPlan {
         try {
             const repaired = extractAndRepairJSON(response, true);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as {
+                intent?: string;
+                action?: string;
+                target?: string;
+                description?: string;
+                requiresFileRename?: boolean;
+                requiresFrontmatterUpdate?: boolean;
+                requiresBodyModification?: boolean;
+            };
 
-            const intent = this.validateIntent(parsed.intent || 'custom');
+            const intent = this.validateIntent(typeof parsed.intent === 'string' ? parsed.intent : 'custom');
             
             return {
                 intent,
                 operations: [{
-                    type: parsed.action || 'transform',
-                    target: parsed.target || 'body',
-                    action: parsed.action || 'custom transformation',
+                    type: (typeof parsed.action === 'string' ? parsed.action : 'transform') as 'transform' | 'expand' | 'refine' | 'combine',
+                    target: typeof parsed.target === 'string' ? parsed.target : 'body',
+                    action: typeof parsed.action === 'string' ? parsed.action : 'custom transformation',
                     parameters: {}
                 }],
-                description: parsed.description || `Apply ${intent} transformation`,
+                description: typeof parsed.description === 'string' ? parsed.description : `Apply ${intent} transformation`,
                 requiresFileRename: parsed.requiresFileRename === true,
                 requiresFrontmatterUpdate: parsed.requiresFrontmatterUpdate === true,
                 requiresBodyModification: parsed.requiresBodyModification !== false
@@ -284,13 +292,18 @@ Response: {`;
     ): TransformationResult {
         try {
             const repaired = extractAndRepairJSON(response, true);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as {
+                newFilename?: string | null;
+                frontmatter?: Record<string, unknown>;
+                body?: string;
+                summary?: string;
+            };
 
             return {
-                newFilename: parsed.newFilename || null,
-                frontmatter: parsed.frontmatter || undefined,
-                body: parsed.body || undefined,
-                summary: parsed.summary || 'Transformation applied'
+                newFilename: (typeof parsed.newFilename === 'string' ? parsed.newFilename : null),
+                frontmatter: (parsed.frontmatter && typeof parsed.frontmatter === 'object' ? parsed.frontmatter : undefined),
+                body: (typeof parsed.body === 'string' ? parsed.body : undefined),
+                summary: (typeof parsed.summary === 'string' ? parsed.summary : 'Transformation applied')
             };
         } catch (error) {
             Logger.warn('Failed to parse execution response:', error);

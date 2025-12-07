@@ -113,14 +113,14 @@ export class ImportService {
             ...frontmatter,
             ...item,
             type: 'idea',
-            status: item.status || 'captured',
-            created: item.created || new Date().toISOString().split('T')[0],
+            status: item.status ?? 'captured',
+            created: item.created ?? new Date().toISOString().split('T')[0],
             id: typeof item.id === 'number' ? item.id : 0,
-            category: item.category || '',
-            tags: item.tags || [],
+            category: item.category ?? '',
+            tags: item.tags ?? [],
             related: relatedIds,
-            domains: item.domains || [],
-            'existence-check': item['existence-check'] || []
+            domains: item.domains ?? [],
+            'existence-check': item['existence-check'] ?? []
         };
 
         // Generate filename using the standard format
@@ -137,9 +137,9 @@ export class ImportService {
     }
 
     private parseJSON(content: string): Array<Partial<Omit<IdeaFrontmatter, 'related'>> & { title: string; body: string; related?: (string | number)[] }> {
-        const data = JSON.parse(content);
+        const data = JSON.parse(content) as { ideas?: unknown[] };
         if (data.ideas && Array.isArray(data.ideas)) {
-            return data.ideas;
+            return data.ideas as Array<Partial<Omit<IdeaFrontmatter, 'related'>> & { title: string; body: string; related?: (string | number)[] }>;
         }
         throw new Error('Invalid JSON format: missing ideas array');
     }

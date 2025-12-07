@@ -25,7 +25,7 @@ export class ResurfacingService implements IResurfacingService {
      * @returns Array of old ideas
      */
     async identifyOldIdeas(thresholdDays?: number): Promise<IdeaFile[]> {
-        const threshold = thresholdDays || this.settings.resurfacingThresholdDays || 7;
+        const threshold = thresholdDays ?? this.settings.resurfacingThresholdDays ?? 7;
         const allIdeas = await this.ideaRepository.getAllIdeas();
         const now = new Date();
         const thresholdDate = new Date(now.getTime() - threshold * 24 * 60 * 60 * 1000);
@@ -63,7 +63,7 @@ export class ResurfacingService implements IResurfacingService {
      * @returns Generated digest
      */
     async generateDigest(ideas?: IdeaFile[]): Promise<Digest> {
-        const oldIdeas = ideas || await this.identifyOldIdeas();
+        const oldIdeas = ideas ?? await this.identifyOldIdeas();
         
         // Sort by age (oldest first)
         oldIdeas.sort((a, b) => {
@@ -144,7 +144,7 @@ export class ResurfacingService implements IResurfacingService {
         // Check frontmatter for dismissed or actedUpon flags
         // These are optional properties not in the base IdeaFrontmatter type
         const frontmatter = idea.frontmatter as IdeaFrontmatter & { dismissed?: boolean; actedUpon?: boolean };
-        return !!(frontmatter.dismissed || frontmatter.actedUpon);
+        return !!(frontmatter.dismissed ?? false || frontmatter.actedUpon ?? false);
     }
 
     /**
@@ -171,7 +171,7 @@ export class ResurfacingService implements IResurfacingService {
 
             lines.push(`### ${idea.filename.replace('.md', '')}`);
             lines.push('');
-            lines.push(`**Category**: ${idea.frontmatter.category || 'Uncategorized'}`);
+            lines.push(`**Category**: ${idea.frontmatter.category ?? 'Uncategorized'}`);
             lines.push(`**Created**: ${idea.frontmatter.created}`);
             lines.push(`**Age**: ${age} days`);
             if (idea.frontmatter.tags.length > 0) {
@@ -193,8 +193,8 @@ export class ResurfacingService implements IResurfacingService {
         // Category breakdown
         const categoryCounts: Record<string, number> = {};
         for (const idea of ideas) {
-            const category = idea.frontmatter.category || 'Uncategorized';
-            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+            const category = idea.frontmatter.category ?? 'Uncategorized';
+            categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;
         }
         
         const categoryBreakdown = Object.entries(categoryCounts)

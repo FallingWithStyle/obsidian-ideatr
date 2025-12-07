@@ -42,7 +42,7 @@ export function formatSearchResultsForFrontmatter(
         return [];
     }
 
-    const limit = maxResults || results.length;
+    const limit = maxResults ?? results.length;
     const limitedResults = results.slice(0, limit);
     
     // Determine type string from category

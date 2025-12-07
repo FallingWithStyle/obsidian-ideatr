@@ -17,7 +17,7 @@ export class FrontmatterParser implements IFrontmatterParser {
         const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
         const match = content.match(frontmatterRegex);
 
-        if (!match || !match[1]) {
+        if (!match?.[1]) {
             return null;
         }
 

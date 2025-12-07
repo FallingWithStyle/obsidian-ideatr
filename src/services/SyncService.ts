@@ -57,7 +57,7 @@ export class SyncService {
 
         // Use provided salt or derive one from encryptionKey (for v1 simplicity)
         // In production, salt should be stored securely per user
-        const salt = this.config.salt || await this.getDefaultSalt();
+        const salt = this.config.salt ?? await this.getDefaultSalt();
 
         // Convert password and salt to ArrayBuffer
         const passwordBuffer = new TextEncoder().encode(this.config.encryptionKey);
@@ -174,8 +174,8 @@ export class SyncService {
                 });
 
                 if (response.status === 200) {
-                    const data = response.json;
-                    return data.changes || [];
+                    const data = response.json as { changes?: unknown[] } | null;
+                    return (data && Array.isArray(data.changes)) ? data.changes : [];
                 }
 
                 // Don't retry on 4xx errors
@@ -222,8 +222,8 @@ export class SyncService {
         }
 
         // Conflict if server timestamp is newer
-        const localTimestamp = localChange.timestamp || 0;
-        const serverTimestamp = serverChange.timestamp || 0;
+        const localTimestamp = localChange.timestamp ?? 0;
+        const serverTimestamp = serverChange.timestamp ?? 0;
 
         return serverTimestamp > localTimestamp;
     }
@@ -276,7 +276,7 @@ export class SyncService {
                         path: change.path,
                         originalContent: originalContent,
                         originalHash: originalHash,
-                        action: change.action || 'update'
+                        action: change.action ?? 'update'
                     };
                 }
 
@@ -284,8 +284,8 @@ export class SyncService {
                     path: change.path,
                     content: decryptedContent,
                     hash: change.hash,
-                    action: change.action || 'update',
-                    timestamp: change.timestamp || Date.now(),
+                    action: change.action ?? 'update',
+                    timestamp: change.timestamp ?? Date.now(),
                     rollbackState
                 };
             })
@@ -318,9 +318,9 @@ export class SyncService {
      * {original-filename} (conflict-{timestamp}).md
      */
     generateConflictFileName(originalPath: string, timestamp?: number): string {
-        const conflictTimestamp = timestamp || Date.now();
+        const conflictTimestamp = timestamp ?? Date.now();
         const pathParts = originalPath.split('/');
-        const filename = pathParts.pop() || 'unknown.md';
+        const filename = pathParts.pop() ?? 'unknown.md';
         const directory = pathParts.join('/');
         
         // Extract base filename without extension

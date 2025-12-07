@@ -15,7 +15,7 @@ export class GeminiProvider implements ILLMProvider {
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
-        this.model = model || 'gemini-1.5-flash';
+        this.model = model ?? 'gemini-1.5-flash';
     }
 
     private getClient(): GoogleGenerativeAI {
@@ -65,7 +65,7 @@ export class GeminiProvider implements ILLMProvider {
                 throw new Error('Invalid API key. Please check your Gemini API key.');
             }
             if (error instanceof Error) {
-                const message = error.message || 'Unknown error';
+                const message = error.message ?? 'Unknown error';
                 throw new Error(`Gemini API error: ${message}`);
             }
             throw new Error('Gemini API error: Request failed');
@@ -97,12 +97,16 @@ Response:`;
         try {
             // Extract and repair JSON from response
             const repaired = extractAndRepairJSON(content, false);
-            const parsed = JSON.parse(repaired);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category) as import('../../types/classification').IdeaCategory,
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
             Logger.warn('Failed to parse Gemini response:', content, error);
