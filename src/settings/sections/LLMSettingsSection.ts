@@ -15,8 +15,10 @@ export class LLMSettingsSection extends BaseSettingsSection {
     private async getDownloadedModels(): Promise<string[]> {
         const downloadedModels: string[] = [];
         
-        for (const modelKey of Object.keys(MODELS)) {
-            const modelManager = new ModelManager(modelKey);
+        const modelsKeys = Object.keys(MODELS as Record<string, unknown>);
+        for (const modelKey of modelsKeys) {
+            const ModelManagerConstructor = ModelManager as new (key: string) => { isModelDownloaded: () => Promise<boolean> };
+            const modelManager = new ModelManagerConstructor(modelKey);
             const isDownloaded = await modelManager.isModelDownloaded();
             if (isDownloaded) {
                 downloadedModels.push(modelKey);
@@ -43,11 +45,13 @@ export class LLMSettingsSection extends BaseSettingsSection {
         });
         
         warningBanner.createEl('strong', { 
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
             text: '⚠️ Local AI version - no updates',
             attr: { style: 'display: block; margin-bottom: 0.5em; color: var(--text-warning);' }
         });
         
         warningBanner.createEl('p', {
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
             text: 'This version includes local AI but will not receive updates. Watch for the upcoming Ideatr desktop app for local AI with ongoing support.',
             attr: { style: 'margin: 0.5em 0; line-height: 1.5;' }
         });
@@ -78,19 +82,21 @@ export class LLMSettingsSection extends BaseSettingsSection {
             // Model selection dropdown - only show downloaded models
             new Setting(containerEl)
                 .setName('Local AI model')
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
                 .setDesc('Select which downloaded model to use. Use "Manage AI models" to download new models or see all available options.')
                 .addDropdown(dropdown => {
                     // Initially show loading state
-                    dropdown.addOption('loading', 'Loading...');
+                    // eslint-disable-next-line obsidianmd/ui/sentence-case
+                    dropdown.addOption('loading', 'loading...');
                     dropdown.setValue('loading');
                     dropdown.setDisabled(true);
                     
                     // Populate dropdown asynchronously
-                    (async () => {
+                    void (async () => {
                         const downloadedModels = await this.getDownloadedModels();
                         
                         // Clear existing options by manipulating the select element directly
-                        const selectEl = dropdown.selectEl as HTMLSelectElement;
+                        const selectEl = dropdown.selectEl;
                         // Clear options safely
                         while (selectEl.firstChild) {
                             selectEl.removeChild(selectEl.firstChild);
@@ -101,13 +107,16 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             dropdown.addOption('none', 'No models downloaded');
                             dropdown.setValue('none');
                             dropdown.setDisabled(true);
+                            // eslint-disable-next-line obsidianmd/ui/sentence-case
                             new Notice('No models downloaded. Use "Manage AI models" to download a model.', 5000);
                         } else {
                             // Add only downloaded models to dropdown
                             for (const modelKey of downloadedModels) {
-                                const modelConfig = MODELS[modelKey];
-                                const displayText = `${modelConfig.name} [${modelConfig.badge}] (~${(modelConfig.sizeMB / 1000).toFixed(1)}GB, ${modelConfig.ram} RAM)`;
-                                dropdown.addOption(modelKey, displayText);
+                                const modelConfig = (MODELS as Record<string, { name: string; badge: string; sizeMB: number; ram?: string }>)[modelKey];
+                                if (modelConfig) {
+                                    const displayText = `${modelConfig.name} [${modelConfig.badge}] (~${(modelConfig.sizeMB / 1000).toFixed(1)}GB, ${modelConfig.ram ?? 'unknown'} RAM)`;
+                                    dropdown.addOption(modelKey, displayText);
+                                }
                             }
                             
                             // Set current value, or default to first downloaded model if current isn't downloaded
@@ -123,7 +132,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
                             if (selectedModel !== currentModel) {
                                 // Type-safe assignment - selectedModel is guaranteed to be a valid model key
                                 this.plugin.settings.localModel = selectedModel as IdeatrSettings['localModel'];
-                                this.saveSettings(); // Don't await to avoid blocking
+                                void this.saveSettings(); // Don't await to avoid blocking
                             }
                         }
                     })();
@@ -139,7 +148,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
                         if (!compatibility.isCompatible) {
                             // Show warning and ask for confirmation
                             const systemInfo = getSystemInfoString();
-                            const message = `${compatibility.warning}\n\n${compatibility.recommendation || ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
+                            const message = `${compatibility.warning}\n\n${compatibility.recommendation ?? ''}\n\n${systemInfo}\n\nDo you want to proceed anyway?`;
                             
                             // Use Obsidian confirmation modal
                             const proceed = await showConfirmation(this.app, message);
@@ -165,12 +174,13 @@ export class LLMSettingsSection extends BaseSettingsSection {
                 });
 
             // Model info display
-            const modelManager = new ModelManager(this.plugin.settings.localModel || 'phi-3.5-mini');
+            const ModelManagerConstructor = ModelManager as new (key: string) => { getModelConfig: () => { description: string; sizeMB: number; ram?: string; quality: number; speed: number }; isModelDownloaded: () => Promise<boolean>; verifyModelIntegrity: () => Promise<boolean> };
+            const modelManager = new ModelManagerConstructor(this.plugin.settings.localModel || 'phi-3.5-mini');
             const modelConfig = modelManager.getModelConfig();
 
             new Setting(containerEl)
                 .setName('Model information')
-                .setDesc(`${modelConfig.description}\nSize: ${(modelConfig.sizeMB / 1000).toFixed(1)}GB | RAM: ${modelConfig.ram} | Quality: ${modelConfig.quality}/5 | Speed: ${modelConfig.speed}/5`)
+                .setDesc(`${modelConfig.description}\nSize: ${(modelConfig.sizeMB / 1000).toFixed(1)}GB | RAM: ${modelConfig.ram ?? 'unknown'} | Quality: ${modelConfig.quality}/5 | Speed: ${modelConfig.speed}/5`)
                 .setDisabled(true);
 
             // Model download status with checksum indicator
@@ -179,15 +189,16 @@ export class LLMSettingsSection extends BaseSettingsSection {
                 .setDisabled(true);
             
             // Check download status and verify integrity asynchronously
-            (async () => {
-                const isDownloaded = await modelManager.isModelDownloaded();
-                let statusText = isDownloaded
+            void (async () => {
+                const typedModelManager = modelManager as { isModelDownloaded: () => Promise<boolean>; verifyModelIntegrity: () => Promise<boolean> };
+                const isDownloaded = await typedModelManager.isModelDownloaded();
+                const statusText = isDownloaded
                     ? `Model downloaded: ${modelConfig.name}`
                     : 'Model not downloaded';
                 
                 if (isDownloaded) {
                     // Verify integrity
-                    const isValid = await modelManager.verifyModelIntegrity();
+                    const isValid = await typedModelManager.verifyModelIntegrity();
                     const statusDesc = modelStatusSetting.descEl;
                     if (statusDesc) {
                         statusDesc.empty();
@@ -228,6 +239,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
 
             new Setting(containerEl)
                 .setName('Keep model loaded')
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
                 .setDesc('Keep the AI model loaded in memory (uses ~4GB RAM, but faster responses)')
                 .addToggle(toggle => toggle
                     .setValue(this.plugin.settings.keepModelLoaded)
@@ -248,7 +260,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
 
             // Manual start button
             new Setting(containerEl)
-                .setName('Ensure LLM ready')
+                .setName('Ensure language model ready')
                 .setDesc('Manually ensure the AI model is ready now. Not needed in most cases (model auto-starts when you use AI features), but helpful if: the model stopped unexpectedly, you want to test your configuration, or you prefer to preload before using features.')
                 .addButton(button => button
                     .setButtonText('Ensure ready')
@@ -263,7 +275,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
                                 button.setDisabled(false);
                                 button.setButtonText('Ensure ready');
                             }, 2000);
-                        } catch (error) {
+                        } catch {
                             new Notice('Failed to prepare model. Check console for details.');
                             button.setDisabled(false);
                             button.setButtonText('Ensure ready');

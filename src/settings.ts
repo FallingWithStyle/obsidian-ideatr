@@ -232,7 +232,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        new Setting(containerEl).setName('Ideatr settings').setHeading();
+        ;
 
         // Beta notice with Local AI version warning
         const betaNotice = containerEl.createDiv({ cls: 'ideatr-beta-notice' });
@@ -244,8 +244,8 @@ export class IdeatrSettingTab extends PluginSettingTab {
             'border-left': '3px solid var(--text-warning)'
         });
         
-        const betaTitle = betaNotice.createEl('strong', { text: '⚠️ Local AI version - no updates' });
-        (betaTitle as HTMLElement).setCssProps({
+        const betaTitle = betaNotice.createEl('strong', { text: '⚠️ local AI version - no updates' });
+        (betaTitle).setCssProps({
             'display': 'block',
             'margin-bottom': '0.5em',
             'color': 'var(--text-warning)'
@@ -260,7 +260,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const desktopAppText = betaNotice.createEl('p', {
-            text: 'We recommend keeping an eye out for the upcoming Ideatr desktop app, which will include local AI with ongoing support and updates.'
+            text: 'We recommend keeping an eye out for the upcoming ideatr desktop app, which will include local AI with ongoing support and updates.'
         });
         (desktopAppText as HTMLElement).setCssProps({
             'margin': '0.5em 0',
@@ -288,7 +288,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const reportButton = betaActions.createEl('a', { 
-            text: '📝 Report bug or request feature',
+            text: '📝 report bug or request a feature',
             href: '#ideatr-feedback-section'
         });
         (reportButton as HTMLElement).setCssProps({
@@ -308,7 +308,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const roadmapLink = betaActions.createEl('a', { 
-            text: '🗺️ View planned features',
+            text: '🗺️ view planned features',
             href: 'https://github.com/FallingWithStyle/obsidian-ideatr#roadmap',
             attr: { target: '_blank', rel: 'noopener' }
         });

@@ -38,7 +38,7 @@ export class NameVariantSettingsSection extends BaseSettingsSection {
                 }));
 
         new Setting(containerEl)
-            .setName('Use LLM for name extraction')
+            .setName('Use language model for name extraction')
             .setDesc('Use AI to intelligently extract idea names (more accurate but slower)')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.useLLMForNameExtraction)
@@ -77,11 +77,12 @@ export class NameVariantSettingsSection extends BaseSettingsSection {
             .addButton(button => button
                 .setButtonText('Clear cache')
                 .setCta()
-                .onClick(async () => {
+                .onClick(() => {
                     if (this.plugin.nameVariantService) {
                         this.plugin.nameVariantService.clearCache();
                         new Notice('Variant cache cleared');
                     }
+                    return Promise.resolve();
                 }));
     }
 }

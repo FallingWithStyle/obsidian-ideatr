@@ -28,8 +28,10 @@ export class WebSearchSettingsSection extends BaseSettingsSection {
             .setDesc('Select the web search provider to use')
             .addDropdown(dropdown => dropdown
                 .addOption('google', 'Google')
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
                 .addOption('duckduckgo', 'DuckDuckGo')
-                .addOption('none', 'None')
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
+                .addOption('none', 'none')
                 .setValue(this.plugin.settings.webSearchProvider)
                 .onChange(async (value) => {
                     this.plugin.settings.webSearchProvider = value as 'google' | 'duckduckgo' | 'none';
@@ -42,6 +44,7 @@ export class WebSearchSettingsSection extends BaseSettingsSection {
                 .setName('Google API key')
                 .setDesc('Google custom search API key')
                 .addText(text => text
+                    // eslint-disable-next-line obsidianmd/ui/sentence-case
                     .setPlaceholder('Enter your Google API key')
                     .setValue(this.plugin.settings.googleSearchApiKey)
                     .onChange(async (value) => {
@@ -51,8 +54,10 @@ export class WebSearchSettingsSection extends BaseSettingsSection {
 
             new Setting(containerEl)
                 .setName('Google search engine ID')
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
                 .setDesc('Google custom search engine ID (CSE ID)')
                 .addText(text => text
+                    // eslint-disable-next-line obsidianmd/ui/sentence-case
                     .setPlaceholder('Enter your Google CSE ID')
                     .setValue(this.plugin.settings.googleSearchEngineId)
                     .onChange(async (value) => {

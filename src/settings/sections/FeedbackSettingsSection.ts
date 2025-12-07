@@ -22,8 +22,10 @@ export class FeedbackSettingsSection extends BaseSettingsSection {
                 .onClick(() => {
                     let obsidianVersion = 'Unknown';
                     try {
-                        // @ts-ignore - Obsidian internal API
-                        obsidianVersion = this.app.appVersion || this.app.version || 'Unknown';
+                    // @ts-expect-error - Obsidian internal API
+                    const appVersion = (this.app as { appVersion?: string; version?: string }).appVersion;
+                    const version = (this.app as { appVersion?: string; version?: string }).version;
+                    obsidianVersion = appVersion ?? version ?? 'Unknown';
                     } catch {
                         obsidianVersion = 'Unknown';
                     }

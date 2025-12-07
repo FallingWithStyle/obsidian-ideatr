@@ -28,6 +28,7 @@ export class DomainSettingsSection extends BaseSettingsSection {
                 .setName('Domain checking service URL')
                 .setDesc('URL of the domain checking service (planned expansion)')
                 .addText(text => text
+                    // eslint-disable-next-line obsidianmd/ui/sentence-case
                     .setPlaceholder('http://localhost:3000')
                     .setValue(this.plugin.settings.prospectrUrl)
                     .onChange(async (value) => {

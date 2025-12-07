@@ -30,7 +30,7 @@ export abstract class BaseSettingsSection implements SettingsSection {
     }
 
     protected refresh(): void {
-        if (this.settingsTab && this.settingsTab.display) {
+        if (this.settingsTab?.display) {
             this.settingsTab.display();
         }
     }

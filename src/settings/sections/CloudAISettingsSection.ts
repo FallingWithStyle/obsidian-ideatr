@@ -10,7 +10,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
     private showComparison: boolean = false;
 
     display(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: 'Cloud AI' }); // "AI" is an acronym, keep uppercase
+        containerEl.createEl('h3', { text: 'Cloud AI' });
 
         // Add comparison toggle button
         const comparisonContainer = containerEl.createDiv({ cls: 'cloud-model-comparison-container' });
@@ -26,7 +26,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
             comparisonButton.textContent = this.showComparison ? '▼ Hide model comparison' : '▶ Show model comparison';
             const comparisonSection = containerEl.querySelector('.cloud-model-comparison-section') as HTMLElement;
             if (comparisonSection) {
-                (comparisonSection as HTMLElement).setCssProps({
+                (comparisonSection).setCssProps({
                     'display': this.showComparison ? 'block' : 'none'
                 });
             }
@@ -70,13 +70,20 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                 .setDesc('Select the cloud AI provider')
                 .addDropdown(dropdown => {
                     dropdown
-                        .addOption('anthropic', 'Anthropic (Claude 3.5 Haiku)')
-                        .addOption('openai', 'OpenAI (GPT-4o Mini)')
-                        .addOption('gemini', 'Google Gemini (Gemini 1.5 Flash)')
-                        .addOption('groq', 'Groq (Llama 3.3 70B)')
-                        .addOption('openrouter', 'OpenRouter (Multiple Models)')
-                        .addOption('custom', 'Custom Endpoint (Ollama/LM Studio)')
-                        .addOption('none', 'None')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        .addOption('anthropic', 'anthropic (Claude 3.5 Haiku)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        .addOption('openai', 'openai (GPT-4o Mini)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        .addOption('gemini', 'google Gemini (Gemini 1.5 Flash)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        .addOption('groq', 'groq (Llama 3.3 70B)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        .addOption('openrouter', 'openRouter (multiple models)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        .addOption('custom', 'Custom endpoint (Ollama/LM Studio)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        .addOption('none', 'none')
                         .setValue(this.plugin.settings.cloudProvider === 'none' ? 'none' : this.plugin.settings.cloudProvider)
                         .onChange(async (value) => {
                             // Type-safe assignment - value is guaranteed to be one of the valid options
@@ -122,6 +129,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .setName('API key')
                         .setDesc(`Enter your ${providerNames[this.plugin.settings.cloudProvider] || 'provider'} API key`)
                         .addText(text => {
+                            // eslint-disable-next-line obsidianmd/ui/sentence-case
                             text.setPlaceholder('sk-...')
                                 .setValue(currentApiKey);
                             text.inputEl.setAttribute('type', 'password');
@@ -152,7 +160,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     const apiKeyUrl = apiKeyUrls[this.plugin.settings.cloudProvider] || '#';
                     helpText.createEl('a', {
                         href: apiKeyUrl,
-                        text: `Get your ${providerName} API key`,
+                        text: `get your ${providerName} API key`,
                         attr: { target: '_blank' }
                     });
 
@@ -169,7 +177,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         'margin-top': '5px',
                         'color': 'var(--text-muted)'
                     });
-                    costText.textContent = `Cost estimate: ${costEstimate}`;
+                    costText.textContent = `cost estimate: ${costEstimate}`;
 
                     new Setting(containerEl)
                         .setName('Test connection')
@@ -204,11 +212,11 @@ export class CloudAISettingsSection extends BaseSettingsSection {
 
                                     const authResult = await provider.authenticate(apiKey);
                                     if (!authResult) {
-                                        new Notice('Authentication failed: Invalid API key format');
+                                        new Notice('Authentication failed: invalid API key format');
                                         return;
                                     }
 
-                                    const testResult = await provider.classify('Test idea for connection verification');
+                                    const testResult = await provider.classify('test idea for connection verification');
                                     
                                     if (testResult && (testResult.category || testResult.tags.length > 0)) {
                                         new Notice(`✓ Connection successful! Provider: ${provider.name}`);
@@ -230,8 +238,10 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                 if (this.plugin.settings.cloudProvider === 'openrouter') {
                     new Setting(containerEl)
                         .setName('Model')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
                         .setDesc('Select the model to use via OpenRouter')
                         .addText(text => text
+                            // eslint-disable-next-line obsidianmd/ui/sentence-case
                             .setPlaceholder('openai/gpt-4o-mini')
                             .setValue(this.plugin.settings.openRouterModel || 'openai/gpt-4o-mini')
                             .onChange(async (value) => {
@@ -246,6 +256,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .setName('Endpoint URL')
                         .setDesc('Enter your custom endpoint URL (e.g., http://localhost:11434/api/chat for Ollama)')
                         .addText(text => text
+                            // eslint-disable-next-line obsidianmd/ui/sentence-case
                             .setPlaceholder('http://localhost:11434/api/chat')
                             .setValue(this.plugin.settings.customEndpointUrl || '')
                             .onChange(async (value) => {
@@ -258,7 +269,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         'margin-top': '5px',
                         'color': 'var(--text-muted)'
                     });
-                    customCostText.textContent = 'Cost estimate: Free (self-hosted)';
+                    customCostText.textContent = 'Cost estimate: free (self-hosted)';
 
                     new Setting(containerEl)
                         .setName('Test connection')
@@ -286,11 +297,11 @@ export class CloudAISettingsSection extends BaseSettingsSection {
 
                                     const authResult = await provider.authenticate(endpointUrl);
                                     if (!authResult) {
-                                        new Notice('Authentication failed: Invalid endpoint URL');
+                                        new Notice('Authentication failed: invalid endpoint URL');
                                         return;
                                     }
 
-                                    const testResult = await provider.classify('Test idea for connection verification');
+                                    const testResult = await provider.classify('test idea for connection verification');
                                     
                                     if (testResult && (testResult.category || testResult.tags.length > 0)) {
                                         new Notice(`✓ Connection successful! Provider: ${provider.name}`);
@@ -325,7 +336,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
         containerEl.empty();
         containerEl.createEl('h4', { text: 'Cloud AI model comparison' });
         const introEl = containerEl.createEl('p', {
-            text: 'Compare default cloud AI models to find the best fit for your needs. All models are validated for Ideatr\'s classification and tagging tasks.',
+            text: 'Compare default cloud AI models to find the best fit for your needs. All models are validated for ideatr\'s classification and tagging tasks.',
             cls: 'cloud-model-comparison-intro'
         });
         introEl.setCssProps({

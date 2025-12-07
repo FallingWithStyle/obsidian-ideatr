@@ -29,6 +29,7 @@ export class ProjectElevationSettingsSection extends BaseSettingsSection {
             .setName('Default folders')
             .setDesc('Comma-separated list of folders to create in each elevated project (e.g., docs,notes,assets)')
             .addText(text => text
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
                 .setPlaceholder('docs,notes,assets')
                 .setValue(this.plugin.settings.elevationDefaultFolders)
                 .onChange(async (value) => {

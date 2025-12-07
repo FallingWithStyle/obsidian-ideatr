@@ -13,7 +13,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
         
         // Get plugin directory for tutorial manager (same approach as ServiceInitializer)
         // Vault adapter may have basePath property but it's not in the public API
-        const vaultBasePath = (app.vault.adapter as { basePath?: string }).basePath || app.vault.configDir;
+        const vaultBasePath = (app.vault.adapter as { basePath?: string }).basePath ?? app.vault.configDir;
         const configDir = isAbsolutePath(app.vault.configDir) 
             ? app.vault.configDir
             : joinPath(vaultBasePath, app.vault.configDir);
@@ -60,6 +60,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
 
         new Setting(containerEl)
             .setName('Delete tutorials')
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
             .setDesc('Remove all tutorial files from your vault. You can restore them later using "Reset tutorials".')
             .addButton(button => button
                 .setButtonText('Delete tutorials')
@@ -91,7 +92,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
                 }));
 
         // Status display
-        this.displayStatus(containerEl);
+        void this.displayStatus(containerEl);
     }
 
     private async displayStatus(containerEl: HTMLElement): Promise<void> {
