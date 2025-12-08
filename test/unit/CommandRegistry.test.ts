@@ -229,9 +229,9 @@ describe('CommandRegistry', () => {
         it('should register all expected commands', () => {
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
-            // MVP MODE: Only capture command is registered (plus debug command if debug mode is enabled)
-            // In MVP mode, Logger.isDebugEnabled() returns false, so only 1 command should be registered
-            expect(registeredCommands.length).toBe(1);
+            // MVP MODE: Capture and Ideate commands are registered (plus debug command if debug mode is enabled)
+            // In MVP mode, Logger.isDebugEnabled() returns false, so 2 commands should be registered
+            expect(registeredCommands.length).toBe(2);
         });
 
         it('should create command instances when callbacks are invoked', () => {

@@ -27,8 +27,10 @@ export class ClassificationService implements IClassificationService {
 
     /**
      * Classify an idea using available services
+     * @param text - The idea text to classify
+     * @param excludePath - Optional path to exclude from related notes (e.g., current file path)
      */
-    async classifyIdea(text: string): Promise<IdeaClassification> {
+    async classifyIdea(text: string, excludePath?: string): Promise<IdeaClassification> {
         // Initialize default result
         const result: IdeaClassification = {
             category: '',
@@ -59,7 +61,7 @@ export class ClassificationService implements IClassificationService {
         // Note: ClassificationService returns paths, but they will be converted to IDs
         // when saved to frontmatter by the calling code
         tasks.push(
-            this.searchService.findRelatedNotes(text, 3) // Limit to top 3 related notes
+            this.searchService.findRelatedNotes(text, 3, excludePath) // Limit to top 3 related notes, exclude current file
                 .then(relatedNotes => {
                     result.related = relatedNotes.map(note => note.path);
                 })

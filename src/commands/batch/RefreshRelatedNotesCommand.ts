@@ -62,14 +62,18 @@ export class RefreshRelatedNotesCommand extends BaseCommand {
                         continue;
                     }
 
-                    // Find related notes
-                    const related = await this.context.searchService.findRelatedNotes(ideaText, 5);
+                    // Find related notes (exclude current file)
+                    const related = await this.context.searchService.findRelatedNotes(ideaText, 5, file.path);
 
-                    // Convert paths to IDs and update frontmatter
+                    // Convert paths to IDs and filter out the current file's ID
                     const idConverter = new RelatedIdConverter(this.context.ideaRepository);
                     const relatedPaths = related.map(r => r.path);
                     const relatedIds = await idConverter.pathsToIds(relatedPaths);
-                    const updated = { ...parsed.frontmatter, related: relatedIds };
+                    const currentFileId = typeof parsed.frontmatter.id === 'number' ? parsed.frontmatter.id : null;
+                    const filteredRelatedIds = currentFileId 
+                        ? relatedIds.filter(id => id !== currentFileId && id !== 0)
+                        : relatedIds.filter(id => id !== 0);
+                    const updated = { ...parsed.frontmatter, related: filteredRelatedIds };
                     const newContent = this.context.frontmatterParser.build(updated, parsed.body);
                     await this.context.app.vault.modify(file, newContent);
 

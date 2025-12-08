@@ -25,7 +25,7 @@ export class RelatedNotesCommand extends IdeaFileCommand {
         content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
     ): Promise<void> {
         new Notice('Finding related notes...');
-        const relatedNotes = await this.context.searchService.findRelatedNotes(content.ideaText, 10);
+        const relatedNotes = await this.context.searchService.findRelatedNotes(content.ideaText, 10, file.path);
 
         if (relatedNotes.length === 0) {
             new Notice('No related notes found.');
@@ -45,10 +45,14 @@ export class RelatedNotesCommand extends IdeaFileCommand {
             existingRelatedPaths,
             (selected) => {
                 void (async () => {
-                    // Convert selected paths to IDs
+                    // Convert selected paths to IDs and filter out the current file's ID
                     const selectedPaths = selected.map(n => n.path);
                     const relatedIds = await this.idConverter.pathsToIds(selectedPaths);
-                    await this.updateIdeaFrontmatter(file, { related: relatedIds });
+                    const currentFileId = typeof content.frontmatter.id === 'number' ? content.frontmatter.id : null;
+                    const filteredRelatedIds = currentFileId 
+                        ? relatedIds.filter(id => id !== currentFileId && id !== 0)
+                        : relatedIds.filter(id => id !== 0);
+                    await this.updateIdeaFrontmatter(file, { related: filteredRelatedIds });
                     new Notice(`Linked ${selected.length} related note${selected.length > 1 ? 's' : ''} in frontmatter.`);
                 })();
             }

@@ -39,10 +39,14 @@ export class RefreshIdeaCommand extends IdeaFileCommand {
 
         // Refresh related notes
         try {
-            const related = await this.context.searchService.findRelatedNotes(content.ideaText, 5);
+            const related = await this.context.searchService.findRelatedNotes(content.ideaText, 5, file.path);
             const idConverter = new RelatedIdConverter(this.context.ideaRepository);
             const relatedPaths = related.map(r => r.path);
-            updates.related = await idConverter.pathsToIds(relatedPaths);
+            const relatedIds = await idConverter.pathsToIds(relatedPaths);
+            const currentFileId = typeof content.frontmatter.id === 'number' ? content.frontmatter.id : null;
+            updates.related = currentFileId 
+                ? relatedIds.filter(id => id !== currentFileId && id !== 0)
+                : relatedIds.filter(id => id !== 0);
         } catch (error) {
             Logger.warn('Failed to refresh related notes:', error);
         }

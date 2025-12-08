@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import { Notice } from 'obsidian';
 import { CommandContext } from './base/CommandContext';
 import { CaptureCommand } from './capture/CaptureCommand';
+import { IdeateCommand } from './management/IdeateCommand';
 // ===== MVP VERSION - EXTRA IMPORTS COMMENTED OUT =====
 // All extra command imports are commented out since they're not used in MVP
 // To re-enable, uncomment the imports and the corresponding command registrations below
@@ -26,6 +27,7 @@ import { GraphViewCommand } from './views/GraphViewCommand';
 import { OpenTutorialsCommand } from './views/OpenTutorialsCommand';
 import { ClassifyCurrentNoteCommand } from './management/ClassifyCurrentNoteCommand';
 import { RefreshIdeaCommand } from './management/RefreshIdeaCommand';
+import { EditRelatedNotesCommand } from './management/EditRelatedNotesCommand';
 import { ExportCommand } from './management/ExportCommand';
 import { ImportCommand } from './management/ImportCommand';
 import { DigestCommand } from './management/DigestCommand';
@@ -150,6 +152,15 @@ export class CommandRegistry {
             callback: captureCallback
         });
         Logger.debug('Registered: Capture idea');
+
+        // Ideate command - Apply AI ideation to currently open note
+        const ideateCallback = CommandRegistry.createCommandCallback('Ideate', async () => await new IdeateCommand(context).execute());
+        plugin.addCommand({
+            id: 'ideate',
+            name: 'Ideate',
+            callback: ideateCallback
+        });
+        Logger.debug('Registered: Ideate');
 
         // ===== EXTRA FEATURES DISABLED FOR MVP =====
         // The following features are disabled to focus on core MVP:
@@ -283,6 +294,12 @@ export class CommandRegistry {
             id: 'refresh-idea',
             name: 'Refresh idea',
             callback: CommandRegistry.createCommandCallback('Refresh idea', async () => await new RefreshIdeaCommand(context).execute())
+        });
+
+        plugin.addCommand({
+            id: 'edit-related-notes',
+            name: 'Edit related notes',
+            callback: CommandRegistry.createCommandCallback('Edit related notes', async () => await new EditRelatedNotesCommand(context).execute())
         });
 
         plugin.addCommand({

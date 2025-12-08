@@ -25,6 +25,7 @@ import { createModelStatusIndicator } from '../utils/ModelStatusIndicator';
 import { createLightbulbIcon } from '../utils/iconUtils';
 import type { IIdeaRepository } from '../types/management';
 import { RelatedIdConverter } from '../utils/RelatedIdConverter';
+import { FrontmatterParser } from '../services/FrontmatterParser';
 
 /**
  * Format keyboard shortcut for display (e.g., "cmd+enter" -> "⌘ Enter")
@@ -112,6 +113,7 @@ export class CaptureModal extends Modal {
     private settings: IdeatrSettings;
     private ideaRepository: IIdeaRepository;
     private idConverter: RelatedIdConverter;
+    private frontmatterParser: FrontmatterParser;
     private onSuccess?: () => void;
     private isWarningShown: boolean = false;
     private duplicatePaths: string[] = [];
@@ -144,6 +146,7 @@ export class CaptureModal extends Modal {
         this.settings = settings;
         this.ideaRepository = ideaRepository!;
         this.idConverter = new RelatedIdConverter(this.ideaRepository);
+        this.frontmatterParser = new FrontmatterParser();
         this.onSuccess = onSuccess;
     }
 
@@ -458,8 +461,8 @@ export class CaptureModal extends Modal {
 
             file = await this.fileManager.createIdeaFile(idea);
 
-            // Step 2: Classify the idea
-            const classification = await this.classificationService.classifyIdea(idea.text);
+            // Step 2: Classify the idea (exclude current file from related notes)
+            const classification = await this.classificationService.classifyIdea(idea.text, file.path);
             if (this.classificationAbortController?.signal.aborted) {
                 return;
             }
@@ -551,13 +554,22 @@ Response:`;
 
             // Step 5: Update file with title, classification, and expansion
             // First, update frontmatter with classification
-            // Convert paths to IDs
+            // Convert paths to IDs and filter out the current file's ID
             const allRelatedPaths = [...new Set([...classification.related, ...this.duplicatePaths])];
             const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
+            
+            // Get current file's ID from frontmatter and filter it out
+            const fileContent = await this.app.vault.read(file);
+            const parsed: { frontmatter: IdeaFrontmatter; body: string } = this.frontmatterParser.parse(fileContent);
+            const currentFileId = typeof parsed.frontmatter.id === 'number' ? parsed.frontmatter.id : null;
+            const filteredRelatedIds = currentFileId 
+                ? allRelatedIds.filter(id => id !== currentFileId && id !== 0)
+                : allRelatedIds.filter(id => id !== 0);
+            
             await this.fileManager.updateIdeaFrontmatter(file, {
                 category: classification.category,
                 tags: classification.tags,
-                related: allRelatedIds
+                related: filteredRelatedIds
             });
 
             // Then, update the body: add title as heading, keep original text, add expansion
@@ -881,17 +893,26 @@ Response:`;
         // Step 1: Classify if autoClassify is enabled
         if (this.settings.autoClassify && this.classificationService.isAvailable()) {
             try {
-                const classification = await this.classificationService.classifyIdea(ideaText);
+                const classification = await this.classificationService.classifyIdea(ideaText, file.path);
                 ideaCategory = classification.category;
 
                 // Update file with classification results (merge with duplicates)
-                // Convert paths to IDs
+                // Convert paths to IDs and filter out the current file's ID
                 const allRelatedPaths = [...new Set([...classification.related, ...this.duplicatePaths])];
                 const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
+                
+                // Get current file's ID from frontmatter and filter it out
+                const fileContent = await this.app.vault.read(file);
+                const parsed: { frontmatter: IdeaFrontmatter; body: string } = this.frontmatterParser.parse(fileContent);
+                const currentFileId = typeof parsed.frontmatter.id === 'number' ? parsed.frontmatter.id : null;
+                const filteredRelatedIds = currentFileId 
+                    ? allRelatedIds.filter(id => id !== currentFileId && id !== 0)
+                    : allRelatedIds.filter(id => id !== 0);
+                
                 await this.fileManager.updateIdeaFrontmatter(file, {
                     category: classification.category,
                     tags: classification.tags,
-                    related: allRelatedIds
+                    related: filteredRelatedIds
                 });
             } catch (error) {
                 Logger.warn('Background classification failed:', error);

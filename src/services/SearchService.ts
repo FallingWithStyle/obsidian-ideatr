@@ -16,12 +16,18 @@ export class SearchService implements ISearchService {
 
     /**
      * Find related notes based on idea text
+     * @param text - The idea text to search for related notes
+     * @param limit - Maximum number of results to return
+     * @param excludePath - Optional path to exclude from results (e.g., current file path)
      */
-    async findRelatedNotes(text: string, limit: number = 5): Promise<RelatedNote[]> {
+    async findRelatedNotes(text: string, limit: number = 5, excludePath?: string): Promise<RelatedNote[]> {
         const allFiles = this.vault.getMarkdownFiles();
 
-        // Filter to only Ideas directory
-        const ideaFiles = allFiles.filter(file => file.path.startsWith(this.IDEAS_DIR));
+        // Filter to only Ideas directory and exclude the current file if specified
+        const ideaFiles = allFiles.filter(file => 
+            file.path.startsWith(this.IDEAS_DIR) && 
+            (!excludePath || file.path !== excludePath)
+        );
 
         if (ideaFiles.length === 0) {
             return [];

@@ -25,18 +25,22 @@ export class ClassifyCurrentNoteCommand extends IdeaFileCommand {
         }
 
         new Notice('Classifying idea...');
-        const classification = await this.context.classificationService.classifyIdea(content.ideaText);
+        const classification = await this.context.classificationService.classifyIdea(content.ideaText, file.path);
 
         // Update frontmatter
         const parsed = this.context.frontmatterParser.parse(content.content);
         parsed.frontmatter.category = classification.category;
         parsed.frontmatter.tags = classification.tags;
         
-        // Convert related paths to IDs
+        // Convert related paths to IDs and filter out the current file's ID
         if (classification.related.length > 0) {
             const idConverter = new RelatedIdConverter(this.context.ideaRepository);
             const relatedIds = await idConverter.pathsToIds(classification.related);
-            parsed.frontmatter.related = relatedIds;
+            const currentFileId = typeof parsed.frontmatter.id === 'number' ? parsed.frontmatter.id : null;
+            const filteredRelatedIds = currentFileId 
+                ? relatedIds.filter(id => id !== currentFileId && id !== 0)
+                : relatedIds.filter(id => id !== 0);
+            parsed.frontmatter.related = filteredRelatedIds;
         }
 
         const updatedContent = this.context.frontmatterParser.build(parsed.frontmatter, parsed.body);

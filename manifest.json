@@ -1,7 +1,7 @@
 {
     "id": "ideatr",
     "name": "Ideatr",
-    "version": "0.9.0-mvp",
+    "version": "0.9.1",
     "minAppVersion": "0.15.0",
     "description": "Fast idea capture with optional AI enhancement. Simple, focused, and effective.",
     "author": "Patrick A Regan <ideatr@paraphlabs.com>",

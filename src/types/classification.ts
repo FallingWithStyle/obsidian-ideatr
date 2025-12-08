@@ -142,8 +142,11 @@ export interface ILLMService {
 export interface ISearchService {
     /**
      * Find related notes based on idea text
+     * @param text - The idea text to search for related notes
+     * @param limit - Maximum number of results to return
+     * @param excludePath - Optional path to exclude from results (e.g., current file path)
      */
-    findRelatedNotes(text: string, limit?: number): Promise<RelatedNote[]>;
+    findRelatedNotes(text: string, limit?: number, excludePath?: string): Promise<RelatedNote[]>;
 
     /**
      * Calculate similarity between two texts
@@ -167,8 +170,10 @@ export interface IDuplicateDetector {
 export interface IClassificationService {
     /**
      * Classify an idea (category, tags, related notes)
+     * @param text - The idea text to classify
+     * @param excludePath - Optional path to exclude from related notes (e.g., current file path)
      */
-    classifyIdea(text: string): Promise<IdeaClassification>;
+    classifyIdea(text: string, excludePath?: string): Promise<IdeaClassification>;
 }
 
 /**
