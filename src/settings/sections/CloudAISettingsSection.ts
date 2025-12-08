@@ -9,6 +9,7 @@ import type { CloudProviderType } from '../../types/llm-provider';
 
 export class CloudAISettingsSection extends BaseSettingsSection {
     private showComparison: boolean = false;
+    private showApiKey: boolean = false;
 
     display(containerEl: HTMLElement): void {
         containerEl.createEl('h3', { text: 'Cloud AI' });
@@ -126,32 +127,46 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         currentApiKey = this.plugin.settings.cloudApiKey;
                     }
 
-                    new Setting(containerEl)
+                    const apiKeySetting = new Setting(containerEl)
                         .setName('API key')
-                        .setDesc(`Enter your ${providerNames[this.plugin.settings.cloudProvider] || 'provider'} API key`)
-                        .addText(text => {
-                            // eslint-disable-next-line obsidianmd/ui/sentence-case
-                            text.setPlaceholder('sk-...')
-                                .setValue(currentApiKey);
-                            text.inputEl.setAttribute('type', 'password');
-                            text.onChange(async (value: string) => {
-                                // Ensure cloudApiKeys exists
-                                if (!this.plugin.settings.cloudApiKeys) {
-                                    this.plugin.settings.cloudApiKeys = {
-                                        anthropic: '',
-                                        openai: '',
-                                        gemini: '',
-                                        groq: '',
-                                        openrouter: ''
-                                    };
-                                }
-                                // Save to provider-specific key
-                                if (currentProvider in this.plugin.settings.cloudApiKeys) {
-                                    this.plugin.settings.cloudApiKeys[currentProvider as keyof typeof this.plugin.settings.cloudApiKeys] = value;
-                                }
-                                await this.saveSettings();
-                            });
+                        .setDesc(`Enter your ${providerNames[this.plugin.settings.cloudProvider] || 'provider'} API key`);
+                    
+                    let apiKeyInput: HTMLInputElement;
+                    apiKeySetting.addText(text => {
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        text.setPlaceholder('sk-...')
+                            .setValue(currentApiKey);
+                        apiKeyInput = text.inputEl;
+                        text.inputEl.setAttribute('type', this.showApiKey ? 'text' : 'password');
+                        text.onChange(async (value: string) => {
+                            // Ensure cloudApiKeys exists
+                            if (!this.plugin.settings.cloudApiKeys) {
+                                this.plugin.settings.cloudApiKeys = {
+                                    anthropic: '',
+                                    openai: '',
+                                    gemini: '',
+                                    groq: '',
+                                    openrouter: ''
+                                };
+                            }
+                            // Save to provider-specific key
+                            if (currentProvider in this.plugin.settings.cloudApiKeys) {
+                                this.plugin.settings.cloudApiKeys[currentProvider as keyof typeof this.plugin.settings.cloudApiKeys] = value;
+                            }
+                            await this.saveSettings();
                         });
+                    });
+                    
+                    apiKeySetting.addButton(button => button
+                        .setButtonText(this.showApiKey ? 'Hide' : 'Show')
+                        .setCta(false)
+                        .onClick(() => {
+                            this.showApiKey = !this.showApiKey;
+                            if (apiKeyInput) {
+                                apiKeyInput.setAttribute('type', this.showApiKey ? 'text' : 'password');
+                            }
+                            button.setButtonText(this.showApiKey ? 'Hide' : 'Show');
+                        }));
 
                     const helpText = containerEl.createDiv('setting-item-description');
                     (helpText as HTMLElement).setCssProps({
@@ -341,7 +356,8 @@ export class CloudAISettingsSection extends BaseSettingsSection {
         // Group models by provider
         // Model comparison removed in MVP - just show a simple list
         containerEl.createEl('p', {
-            text: 'Available cloud AI providers: Anthropic (Claude), OpenAI (GPT), Google Gemini, Groq, and OpenRouter (100+ models).',
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
+            text: 'Available cloud AI providers: Anthropic (Claude), OpenAI (ChatGPT), Google Gemini, Groq, and OpenRouter (100+ models).',
             cls: 'setting-item-description'
         });
         

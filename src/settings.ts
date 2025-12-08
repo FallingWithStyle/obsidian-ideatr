@@ -165,7 +165,8 @@ export class IdeatrSettingTab extends PluginSettingTab {
             'border-left': '3px solid var(--text-accent)'
         });
         
-        const mvpTitle = mvpNotice.createEl('strong', { text: '✨ Ideatr MVP - Cloud AI Only' });
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        const mvpTitle = mvpNotice.createEl('strong', { text: 'Ideatr MVP - Cloud AI Only' });
         (mvpTitle).setCssProps({
             'display': 'block',
             'margin-bottom': '0.5em',
@@ -173,7 +174,8 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const mvpText = mvpNotice.createEl('p', { 
-            text: 'This version (v0.9.0-mvp) focuses on the core feature: fast idea capture with optional AI enhancement. Local AI has been removed to keep things simple. Use cloud AI providers (Anthropic, OpenAI, Gemini, Groq, or OpenRouter) for best results.'
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
+            text: 'This version (v0.9.0-mvp) focuses on the core feature: fast idea capture with optional AI enhancement. Use supported cloud AI providers (Anthropic, OpenAI, Gemini, Groq, or OpenRouter) for best results. Additional features will be added soon, once core features are verified.'
         });
         (mvpText as HTMLElement).setCssProps({
             'margin': '0.5em 0',

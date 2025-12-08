@@ -84,21 +84,79 @@ export class FirstLaunchSetupModal extends Modal {
             attr: { id: 'ideatr-provider-select' }
         });
         // eslint-disable-next-line obsidianmd/ui/sentence-case
-        providerSelect.createEl('option', { text: 'Anthropic (Claude)', attr: { value: 'anthropic' } });
+        providerSelect.createEl('option', { text: 'Anthropic (Claude 3.5 Haiku)', attr: { value: 'anthropic' } });
         // eslint-disable-next-line obsidianmd/ui/sentence-case
-        providerSelect.createEl('option', { text: 'OpenAI (GPT)', attr: { value: 'openai' } });
+        providerSelect.createEl('option', { text: 'OpenAI (GPT-4o Mini)', attr: { value: 'openai' } });
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        providerSelect.createEl('option', { text: 'Google Gemini (Gemini 1.5 Flash)', attr: { value: 'gemini' } });
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        providerSelect.createEl('option', { text: 'Groq (Llama 3.3 70B)', attr: { value: 'groq' } });
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        providerSelect.createEl('option', { text: 'OpenRouter (multiple models)', attr: { value: 'openrouter' } });
+        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        providerSelect.createEl('option', { text: 'Custom endpoint (Ollama/LM Studio)', attr: { value: 'custom' } });
         providerSelect.createEl('option', { text: 'Skip for now', attr: { value: 'none' } });
 
-        // API key input
+        // API key input (or endpoint URL for custom)
         const keyContainer = contentEl.createEl('div', { cls: 'ideatr-setting-item' });
-        keyContainer.createEl('label', { text: 'API key:', attr: { for: 'ideatr-api-key-input' } });
-        const apiKeyInput = keyContainer.createEl('input', {
+        const isCustomProvider = () => providerSelect.value === 'custom';
+        let showApiKey = false;
+        
+        keyContainer.createEl('label', { 
+            text: 'API key:', 
+            attr: { for: 'ideatr-api-key-input' } 
+        });
+        const inputWrapper = keyContainer.createDiv({ cls: 'ideatr-api-key-input-wrapper' });
+        inputWrapper.setCssProps({
+            'display': 'flex',
+            'gap': '0.5em',
+            'align-items': 'center'
+        });
+        const apiKeyInput = inputWrapper.createEl('input', {
             attr: {
                 id: 'ideatr-api-key-input',
                 type: 'password',
                 placeholder: 'Enter your API key'
             }
         });
+        apiKeyInput.setCssProps({
+            'flex': '1'
+        });
+        
+        const toggleButton = inputWrapper.createEl('button', {
+            text: 'Show',
+            attr: { type: 'button' }
+        });
+        toggleButton.setCssProps({
+            'padding': '0.25em 0.75em',
+            'font-size': '0.9em'
+        });
+        toggleButton.addEventListener('click', () => {
+            showApiKey = !showApiKey;
+            if (!isCustomProvider()) {
+                apiKeyInput.setAttribute('type', showApiKey ? 'text' : 'password');
+            }
+            toggleButton.textContent = showApiKey ? 'Hide' : 'Show';
+        });
+
+        const updateInputLabel = () => {
+            const label = keyContainer.querySelector('label');
+            if (label) {
+                label.textContent = isCustomProvider() ? 'Endpoint URL:' : 'API key:';
+            }
+            if (isCustomProvider()) {
+                apiKeyInput.setAttribute('placeholder', 'http://localhost:11434/api/chat');
+                apiKeyInput.setAttribute('type', 'text');
+                toggleButton.style.display = 'none';
+            } else {
+                apiKeyInput.setAttribute('placeholder', 'Enter your API key');
+                apiKeyInput.setAttribute('type', showApiKey ? 'text' : 'password');
+                toggleButton.style.display = 'block';
+            }
+        };
+
+        // Update input when provider changes
+        providerSelect.addEventListener('change', updateInputLabel);
 
         // Help text
         contentEl.createEl('p', {
@@ -121,12 +179,21 @@ export class FirstLaunchSetupModal extends Modal {
                 return;
             }
 
+            if (provider === 'custom') {
+                if (!apiKey.trim()) {
+                    new Notice('Please enter an endpoint URL');
+                    return;
+                }
+                this.handleCustomEndpointSubmit(apiKey);
+                return;
+            }
+
             if (!apiKey.trim()) {
                 new Notice('Please enter an API key');
                 return;
             }
 
-            this.handleApiKeySubmit(apiKey, provider as 'anthropic' | 'openai');
+            this.handleApiKeySubmit(apiKey, provider as 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter');
         });
 
         const backButton = buttonContainer.createEl('button', {
@@ -145,7 +212,7 @@ export class FirstLaunchSetupModal extends Modal {
         });
     }
 
-    private handleApiKeySubmit(apiKey: string, provider: 'anthropic' | 'openai'): void {
+    private handleApiKeySubmit(apiKey: string, provider: 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter'): void {
         // Ensure cloudApiKeys exists
         if (!this.settings.cloudApiKeys) {
             this.settings.cloudApiKeys = {
@@ -167,6 +234,20 @@ export class FirstLaunchSetupModal extends Modal {
         // TODO: Test API key connection
         // For now, just mark as complete
         new Notice('API key saved. Cloud AI setup complete!');
+        this.onComplete();
+        this.close();
+    }
+
+    private handleCustomEndpointSubmit(endpointUrl: string): void {
+        this.settings.customEndpointUrl = endpointUrl;
+        this.settings.cloudProvider = 'custom';
+        this.settings.preferCloud = true;
+        this.settings.llmProvider = 'custom';
+        this.settings.setupCompleted = true;
+
+        // TODO: Test endpoint connection
+        // For now, just mark as complete
+        new Notice('Custom endpoint saved. Cloud AI setup complete!');
         this.onComplete();
         this.close();
     }
