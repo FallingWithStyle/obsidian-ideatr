@@ -20,9 +20,13 @@ This MVP version removes all the extra features that were adding complexity and 
    - Expands the idea with related concepts, questions, and next steps
    - All happens in one action!
 4. **Automatic File Creation** - Ideas are automatically saved as markdown files in `Ideas/` with structured frontmatter
-5. **AI Provider Support** - Works with multiple AI providers:
-   - Local AI (Llama.cpp with bundled binaries)
-   - Cloud AI (Anthropic, OpenAI, Google Gemini, Groq, OpenRouter, custom endpoints)
+5. **Cloud AI Support** - Works with multiple cloud AI providers:
+   - Anthropic (Claude)
+   - OpenAI (GPT-4, GPT-3.5)
+   - Google Gemini
+   - Groq
+   - OpenRouter (access to 100+ models)
+   - Custom endpoints (Ollama, self-hosted, etc.)
 
 ### Extra Features (Disabled)
 
@@ -80,23 +84,21 @@ npm run deploy
 ### First Launch Setup
 
 On first launch, Ideatr will guide you through:
-1. **AI Provider Selection**: Choose between local (Llama.cpp) or cloud AI providers
-2. **Model Configuration**: 
-   - For local: Download or configure model path
-   - For cloud: Enter API keys
-3. **Directory Setup**: Verify or configure idea storage directories
+1. **AI Provider Selection**: Choose your cloud AI provider
+2. **API Key Configuration**: Enter your API key for your chosen provider
+3. **Directory Setup**: Verify or configure idea storage directories (automatic)
 
 ### Configuration
 
 Access settings via **Obsidian Settings → Ideatr**:
 
 **Core Settings:**
-- **AI Configuration**: Configure local Llama server or cloud AI providers
-- **Cloud AI**: Set up API keys for cloud providers (Anthropic, OpenAI, Gemini, Groq, OpenRouter)
+- **Cloud AI**: Set up API keys for cloud providers (Anthropic, OpenAI, Gemini, Groq, OpenRouter, or custom endpoints)
 - **Capture Modal**: Customize keyboard shortcuts for Save and Ideate buttons
 - **Error Logging**: Configure error tracking and reporting
+- **Feedback & Support**: Submit bug reports and feature requests
 
-**Extra settings** (validation tools, transformation tools, etc.) are hidden in this MVP version.
+**Note**: This MVP version uses cloud AI only. Local AI has been removed to keep the plugin simple and focused.
 
 ## Usage
 
@@ -158,14 +160,15 @@ That's it! No overwhelming list of commands. Just capture.
 
 ## Why MVP?
 
-**Problem**: The full version of Ideatr grew to include many features (validation, transformation, lifecycle management, views, analysis, batch operations, etc.). While powerful, this complexity made it harder to:
+**Problem**: The full version of Ideatr grew to include many features (validation, transformation, lifecycle management, views, analysis, batch operations, local AI, etc.). While powerful, this complexity made it harder to:
 - Understand what the plugin does
 - Get started quickly
 - Focus on the core value proposition
+- Maintain and support
 
-**Solution**: This MVP focuses on the essential feature that provides the most value: **fast idea capture with optional AI enhancement**. 
+**Solution**: This MVP focuses on the essential feature that provides the most value: **fast idea capture with optional AI enhancement using cloud providers**. 
 
-Everything else is nice-to-have, but not essential for the core workflow.
+Everything else is nice-to-have, but not essential for the core workflow. Local AI has been removed to eliminate complexity around model management and platform-specific binaries.
 
 ## What's Next?
 

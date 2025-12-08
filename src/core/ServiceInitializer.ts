@@ -212,7 +212,8 @@ export class ServiceInitializer {
     }
 
     /**
-     * Initialize LLM services (local and cloud)
+     * Initialize LLM services (CLOUD AI ONLY - MVP)
+     * Local AI has been removed in MVP version
      * Note: This method is async because it's called with await,
      * even though it doesn't contain any await expressions
      */
@@ -244,7 +245,7 @@ export class ServiceInitializer {
                     Logger.info('Cloud AI provider initialized:', provider.name);
                 } catch (error) {
                     Logger.warn('Failed to initialize cloud provider:', error);
-                    new Notice('Failed to initialize cloud AI provider. Using local AI only.');
+                    new Notice('Failed to initialize cloud AI provider.');
                 }
             }
         } else if (settings.cloudProvider === 'custom-model') {
@@ -269,7 +270,7 @@ export class ServiceInitializer {
                         Logger.info('Custom model provider initialized:', provider.name, settings.customModel);
                     } catch (error) {
                         Logger.warn('Failed to initialize custom model provider:', error);
-                        new Notice('Failed to initialize custom model provider. Using local AI only.');
+                        new Notice('Failed to initialize custom model provider.');
                     }
                 }
             }
@@ -288,23 +289,14 @@ export class ServiceInitializer {
                     Logger.info('Cloud AI provider initialized:', provider.name);
                 } catch (error) {
                     Logger.warn('Failed to initialize custom endpoint:', error);
-                    new Notice('Failed to initialize custom endpoint. Using local AI only.');
+                    new Notice('Failed to initialize custom endpoint.');
                 }
             }
         }
 
         // If no cloud LLM configured, throw error
         if (!cloudLLM) {
-            return Promise.reject(new Error('No LLM service configured. Please configure a cloud AI provider in settings.'));
-        }
-
-        // Preload model on startup if enabled
-        if (settings.preloadOnStartup && cloudLLM.isAvailable()) {
-            cloudLLM.ensureReady?.().then((_ready: unknown) => {
-                Logger.debug('LLM preloaded on startup');
-            }).catch((error: unknown) => {
-                Logger.warn('Failed to preload LLM on startup:', error);
-            });
+            return Promise.reject(new Error('No cloud AI provider configured. Please add an API key in settings.'));
         }
 
         return Promise.resolve(cloudLLM);

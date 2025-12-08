@@ -42,20 +42,38 @@ This branch simplifies Ideatr to focus on the core MVP functionality: **fast ide
 - ✅ Error logging settings
 - ✅ Feedback & support settings
 
-### 4. Version Updates
+### 4. Local AI Removal (NEW - Dec 8, 2025)
+**Complete removal of local AI support:**
+- ❌ Removed `ModelManager.ts` (local model management)
+- ❌ Removed `LLMSettingsSection` (local AI settings UI)
+- ❌ Updated `ServiceInitializer` to cloud-only (removed local AI provider initialization)
+- ❌ Updated `IdeatrSettings` interface to make local AI settings optional (for backward compatibility)
+- ❌ Removed references to "local AI" from error messages
+- ❌ Updated first-launch setup to cloud-only
+
+**Why?** Local AI added significant complexity:
+- Platform-specific binaries for multiple architectures
+- Model download and management
+- File verification and checksums
+- Memory management and lifecycle
+- Settings complexity
+
+Cloud AI is simpler, faster, and provides better results. Users who need local AI can use custom endpoints (Ollama, etc.).
+
+### 5. Version Updates
 - **manifest.json**: Updated version to `0.9.0-mvp` and description
 - **package.json**: Updated version to `0.9.0-mvp` and description
 
-### 5. Documentation
-- **README-MVP.md**: Created new MVP-focused README explaining the simplified feature set
+### 6. Documentation
+- **README-MVP.md**: Created new MVP-focused README explaining the simplified feature set (updated to reflect cloud-only)
 - **MVP-CHANGES.md**: This document summarizing all changes
 
-### 6. Bug Fixes
+### 7. Bug Fixes
 - Fixed TypeScript compilation errors in:
   - `ResurfacingService.ts`: Fixed operator precedence issue with `??` and `||`
   - `SyncService.ts`: Added proper type casting for `FileChange[]`
   - `FeedbackSettingsSection.ts`: Removed unused `@ts-expect-error` directive
-  - Created stub `ModelManager.ts` to satisfy type system (local AI model management)
+  - Removed all ModelManager dependencies (no longer needed after local AI removal)
 
 ## Core MVP Features (What's Still Working)
 
@@ -66,11 +84,15 @@ This branch simplifies Ideatr to focus on the core MVP functionality: **fast ide
    - Generates titles/subject lines
    - Expands ideas with related concepts, questions, next steps
 4. **Automatic File Creation** - Creates markdown files in `Ideas/` with frontmatter
-5. **AI Provider Support** - Works with local and cloud AI:
-   - Local: Llama.cpp (with stub ModelManager)
-   - Cloud: Anthropic, OpenAI, Google Gemini, Groq, OpenRouter, custom endpoints
-6. **First Launch Setup** - Guided AI provider configuration
-7. **Settings** - Core settings for AI configuration and capture modal
+5. **Cloud AI Support** - Works with multiple cloud AI providers:
+   - Anthropic (Claude)
+   - OpenAI (GPT-4, GPT-3.5)
+   - Google Gemini
+   - Groq
+   - OpenRouter (100+ models)
+   - Custom endpoints (Ollama, self-hosted, etc.)
+6. **First Launch Setup** - Guided cloud AI provider configuration
+7. **Settings** - Core settings for cloud AI configuration and capture modal
 
 ## What Was Removed (But Can Be Re-enabled)
 

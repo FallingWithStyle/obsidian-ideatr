@@ -3,8 +3,9 @@ import { BaseSettingsSection } from '../components/SettingsSection';
 import type { IdeatrSettings } from '../../settings';
 import { ProviderFactory } from '../../services/providers/ProviderFactory';
 import type { CloudProviderType } from '../../types/llm-provider';
-import { getCloudModelsByProvider, type CloudModelConfig } from '../../utils/ModelValidator';
-import { cloudModelToDisplayInfo, renderModelGroup } from '../../utils/modelComparisonRenderer';
+// Model comparison removed in MVP
+// import { getCloudModelsByProvider, type CloudModelConfig } from '../../utils/ModelValidator';
+// import { cloudModelToDisplayInfo, renderModelGroup } from '../../utils/modelComparisonRenderer';
 
 export class CloudAISettingsSection extends BaseSettingsSection {
     private showComparison: boolean = false;
@@ -319,15 +320,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                             }));
                 }
 
-                new Setting(containerEl)
-                    .setName('Prefer cloud AI')
-                    .setDesc('Use cloud AI when available, fallback to local AI on failure')
-                    .addToggle(toggle => toggle
-                        .setValue(this.plugin.settings.preferCloud)
-                        .onChange(async (value) => {
-                            this.plugin.settings.preferCloud = value;
-                            await this.saveSettings();
-                        }));
+                // Removed "Prefer cloud AI" toggle - MVP uses cloud AI only
             }
         }
     }
@@ -346,20 +339,16 @@ export class CloudAISettingsSection extends BaseSettingsSection {
         });
 
         // Group models by provider
-        const modelsByProvider: Record<string, CloudModelConfig[]> = {
-            'Anthropic': getCloudModelsByProvider('anthropic'),
-            'OpenAI': getCloudModelsByProvider('openai'),
-            'Google Gemini': getCloudModelsByProvider('gemini'),
-            'Groq': getCloudModelsByProvider('groq')
-        };
-
-        // Render each provider's models using standardized format
-        for (const [providerName, models] of Object.entries(modelsByProvider)) {
-            if (models.length === 0) continue;
-            
-            const displayModels = models.map(cloudModelToDisplayInfo);
-            renderModelGroup(containerEl, providerName, displayModels, false);
-        }
+        // Model comparison removed in MVP - just show a simple list
+        containerEl.createEl('p', {
+            text: 'Available cloud AI providers: Anthropic (Claude), OpenAI (GPT), Google Gemini, Groq, and OpenRouter (100+ models).',
+            cls: 'setting-item-description'
+        });
+        
+        containerEl.createEl('p', {
+            text: 'Configure your API key above to start using AI-powered idea enhancement.',
+            cls: 'setting-item-description'
+        });
     }
 }
 
