@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { LlamaService } from '../../src/services/LlamaService';
+// MVP MODE: LlamaService is not available in MVP version
+// import { LlamaService } from '../../src/services/LlamaService';
 import type { IdeatrSettings } from '../../src/settings';
 
 // Mock requestUrl (used by LlamaService instead of fetch)
@@ -62,7 +63,8 @@ vi.mock('obsidian', () => ({
     }
 }));
 
-describe('LlamaService - Idle Timeout', () => {
+describe.skip('LlamaService - Idle Timeout', () => {
+    // MVP MODE: LlamaService is not available in MVP version
     let service: LlamaService;
     let mockSettings: IdeatrSettings;
 

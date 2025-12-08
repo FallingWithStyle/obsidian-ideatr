@@ -17,13 +17,15 @@ import { StatusPickerModal } from '../../../src/views/StatusPickerModal';
 global.Notice = Notice;
 
 // Mock StatusPickerModal
+const MockStatusPickerModal = vi.hoisted(() => vi.fn().mockImplementation((app, currentStatus, callback) => ({
+    open: vi.fn(() => {
+        // Simulate user selecting a status
+        callback('validated');
+    })
+})));
+
 vi.mock('../../../src/views/StatusPickerModal', () => ({
-    StatusPickerModal: vi.fn().mockImplementation((app, currentStatus, callback) => ({
-        open: vi.fn(() => {
-            // Simulate user selecting a status
-            callback('validated');
-        })
-    }))
+    StatusPickerModal: MockStatusPickerModal
 }));
 
 describe('Status & Lifecycle Commands', () => {
@@ -123,7 +125,7 @@ Test idea
             
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
-            expect(StatusPickerModal).toHaveBeenCalled();
+            expect(MockStatusPickerModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {

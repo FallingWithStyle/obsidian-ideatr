@@ -36,7 +36,7 @@ export class ScaffoldCommand extends IdeaFileCommand {
         const scaffold = this.context.scaffoldService.generateScaffold(content.ideaText, category);
 
         // Determine action (append or new note)
-        const action = this.context.settings.scaffoldDefaultAction || 'append';
+        const action = this.context.settings.scaffoldDefaultAction ?? 'append';
 
         if (action === 'append') {
             await this.context.fileManager.appendToFileBody(file, 'Scaffold', scaffold);

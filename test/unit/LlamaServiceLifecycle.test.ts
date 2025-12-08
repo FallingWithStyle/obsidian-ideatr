@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { LlamaService } from '../../src/services/LlamaService';
+// MVP MODE: LlamaService is not available in MVP version
+// import { LlamaService } from '../../src/services/LlamaService';
 import type { IdeatrSettings } from '../../src/settings';
 
 // Mock fetch global
@@ -110,7 +111,8 @@ vi.mock('../../src/utils/ProcessHealthMonitor', () => ({
     }
 }));
 
-describe('LlamaService - Lifecycle Management', () => {
+describe.skip('LlamaService - Lifecycle Management', () => {
+    // MVP MODE: LlamaService is not available in MVP version
     let mockSettings: IdeatrSettings;
 
     beforeEach(() => {

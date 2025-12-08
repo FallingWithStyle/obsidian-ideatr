@@ -145,13 +145,13 @@ export class FirstLaunchSetupModal extends Modal {
                 label.textContent = isCustomProvider() ? 'Endpoint URL:' : 'API key:';
             }
             if (isCustomProvider()) {
-                apiKeyInput.setAttribute('placeholder', 'http://localhost:11434/api/chat');
+                apiKeyInput.setAttribute('placeholder', 'Enter endpoint URL (e.g., http://localhost:11434/api/chat)');
                 apiKeyInput.setAttribute('type', 'text');
-                toggleButton.style.display = 'none';
+                toggleButton.setCssProps({ 'display': 'none' });
             } else {
                 apiKeyInput.setAttribute('placeholder', 'Enter your API key');
                 apiKeyInput.setAttribute('type', showApiKey ? 'text' : 'password');
-                toggleButton.style.display = 'block';
+                toggleButton.setCssProps({ 'display': 'block' });
             }
         };
 

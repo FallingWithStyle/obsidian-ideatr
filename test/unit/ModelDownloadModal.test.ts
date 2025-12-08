@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ModelDownloadModal } from '../../src/views/ModelDownloadModal';
+// MVP MODE: ModelDownloadModal is not available in MVP version
+// import { ModelDownloadModal } from '../../src/views/ModelDownloadModal';
 import type { IModelManager } from '../../src/services/ModelManager';
 import { App } from 'obsidian';
 
@@ -8,7 +9,8 @@ const createMockApp = (): App => {
     return {} as App;
 };
 
-describe('ModelDownloadModal', () => {
+describe.skip('ModelDownloadModal', () => {
+    // MVP MODE: ModelDownloadModal is not available in MVP version
     let app: App;
     let mockModelManager: IModelManager;
     let modal: ModelDownloadModal;

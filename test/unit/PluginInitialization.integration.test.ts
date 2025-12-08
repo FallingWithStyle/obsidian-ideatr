@@ -299,9 +299,10 @@ Test idea content
 
             // Assert - Verify commands were registered
             expect(plugin.addCommand).toHaveBeenCalled();
-            // Should register at least 20 commands
+            // MVP MODE: Only capture command is registered (plus debug command if debug mode is enabled)
+            // In MVP mode, Logger.isDebugEnabled() returns false, so only 1 command should be registered
             const callCount = (plugin.addCommand as any).mock.calls.length;
-            expect(callCount).toBeGreaterThanOrEqual(20);
+            expect(callCount).toBeGreaterThanOrEqual(1);
         });
     });
 });

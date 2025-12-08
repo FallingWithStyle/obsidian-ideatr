@@ -92,7 +92,8 @@ describe('CommandRegistry', () => {
             expect(typeof captureCommand?.callback).toBe('function');
         });
 
-        it('should register validation commands', () => {
+        it.skip('should register validation commands', () => {
+            // MVP MODE: Validation commands are disabled
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
             const validationCommands = [
@@ -111,7 +112,8 @@ describe('CommandRegistry', () => {
             });
         });
 
-        it('should register transformation commands', () => {
+        it.skip('should register transformation commands', () => {
+            // MVP MODE: Transformation commands are disabled
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
             const transformationCommands = [
@@ -130,7 +132,8 @@ describe('CommandRegistry', () => {
             });
         });
 
-        it('should register lifecycle commands', () => {
+        it.skip('should register lifecycle commands', () => {
+            // MVP MODE: Lifecycle commands are disabled
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
             const lifecycleCommands = [
@@ -148,7 +151,8 @@ describe('CommandRegistry', () => {
             });
         });
 
-        it('should register view commands', () => {
+        it.skip('should register view commands', () => {
+            // MVP MODE: View commands are disabled
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
             const viewCommands = [
@@ -165,7 +169,8 @@ describe('CommandRegistry', () => {
             });
         });
 
-        it('should register management commands', () => {
+        it.skip('should register management commands', () => {
+            // MVP MODE: Management commands are disabled
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
             const managementCommands = [
@@ -185,7 +190,8 @@ describe('CommandRegistry', () => {
             });
         });
 
-        it('should register batch operation commands', () => {
+        it.skip('should register batch operation commands', () => {
+            // MVP MODE: Batch operation commands are disabled
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
             const batchCommands = [
@@ -202,7 +208,8 @@ describe('CommandRegistry', () => {
             });
         });
 
-        it('should register analysis commands', () => {
+        it.skip('should register analysis commands', () => {
+            // MVP MODE: Analysis commands are disabled
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
             const analysisCommands = [
@@ -222,9 +229,9 @@ describe('CommandRegistry', () => {
         it('should register all expected commands', () => {
             CommandRegistry.registerAll(mockPlugin, mockContext);
 
-            // Count all registered commands (should be 30 based on current implementation)
-            // Note: check-domains command was removed/hidden
-            expect(registeredCommands.length).toBe(30);
+            // MVP MODE: Only capture command is registered (plus debug command if debug mode is enabled)
+            // In MVP mode, Logger.isDebugEnabled() returns false, so only 1 command should be registered
+            expect(registeredCommands.length).toBe(1);
         });
 
         it('should create command instances when callbacks are invoked', () => {
@@ -239,7 +246,8 @@ describe('CommandRegistry', () => {
             }).not.toThrow();
         });
 
-        it('should log when callback is invoked', async () => {
+        it.skip('should log when callback is invoked', async () => {
+            // MVP MODE: Expand command is disabled
             const loggerSpy = vi.spyOn(Logger, 'info').mockImplementation(() => {});
             
             CommandRegistry.registerAll(mockPlugin, mockContext);

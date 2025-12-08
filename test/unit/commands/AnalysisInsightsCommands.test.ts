@@ -18,10 +18,12 @@ import { TenuousLinksModal } from '../../../src/views/TenuousLinksModal';
 global.Notice = Notice;
 
 // Mock modals
+const MockTenuousLinksModal = vi.hoisted(() => vi.fn().mockImplementation((app, links, callback) => ({
+    open: vi.fn()
+})));
+
 vi.mock('../../../src/views/TenuousLinksModal', () => ({
-    TenuousLinksModal: vi.fn().mockImplementation((app, links, callback) => ({
-        open: vi.fn()
-    }))
+    TenuousLinksModal: MockTenuousLinksModal
 }));
 
 describe('Analysis & Insights Commands', () => {
@@ -129,7 +131,7 @@ Test idea content
             // Assert
             expect(mockVault.read).toHaveBeenCalled();
             expect(context.tenuousLinkService.findTenuousLinks).toHaveBeenCalled();
-            expect(TenuousLinksModal).toHaveBeenCalled();
+            expect(MockTenuousLinksModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {

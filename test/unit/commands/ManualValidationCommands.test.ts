@@ -30,16 +30,20 @@ import { ExistenceSearchCommand } from '../../../src/commands/validation/Existen
 global.Notice = Notice;
 
 // Mock modals
+const MockDuplicateResultsModal = vi.hoisted(() => vi.fn().mockImplementation((app, duplicates, callback) => ({
+    open: vi.fn()
+})));
+
+const MockRelatedNotesModal = vi.hoisted(() => vi.fn().mockImplementation((app, notes, current, callback) => ({
+    open: vi.fn()
+})));
+
 vi.mock('../../../src/views/DuplicateResultsModal', () => ({
-    DuplicateResultsModal: vi.fn().mockImplementation((app, duplicates, callback) => ({
-        open: vi.fn()
-    }))
+    DuplicateResultsModal: MockDuplicateResultsModal
 }));
 
 vi.mock('../../../src/views/RelatedNotesModal', () => ({
-    RelatedNotesModal: vi.fn().mockImplementation((app, notes, current, callback) => ({
-        open: vi.fn()
-    }))
+    RelatedNotesModal: MockRelatedNotesModal
 }));
 
 describe('Manual Validation Commands', () => {
@@ -345,7 +349,7 @@ A mobile app for task management
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
             expect(checkDuplicateSpy).toHaveBeenCalled();
-            expect(DuplicateResultsModal).toHaveBeenCalled();
+            expect(MockDuplicateResultsModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {
@@ -425,7 +429,7 @@ A mobile app for task management
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
             expect(findRelatedSpy).toHaveBeenCalled();
-            expect(RelatedNotesModal).toHaveBeenCalled();
+            expect(MockRelatedNotesModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {
@@ -474,7 +478,7 @@ A mobile app for task management
 
             // Assert
             expect(findRelatedSpy).toHaveBeenCalled();
-            expect(RelatedNotesModal).toHaveBeenCalled();
+            expect(MockRelatedNotesModal).toHaveBeenCalled();
             // Note: Modal interaction would be tested separately
         });
     });

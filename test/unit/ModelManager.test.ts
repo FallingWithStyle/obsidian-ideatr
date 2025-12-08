@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ModelManager, IModelManager } from '../../src/services/ModelManager';
+// MVP MODE: ModelManager is not available in MVP version
+// import { ModelManager, IModelManager } from '../../src/services/ModelManager';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createWriteStream } from 'fs';
@@ -60,7 +61,8 @@ vi.mock('fs', () => ({
 // Mock fetch
 global.fetch = vi.fn();
 
-describe('ModelManager', () => {
+describe.skip('ModelManager', () => {
+    // MVP MODE: ModelManager is not available in MVP version
     let modelManager: IModelManager;
     const mockHomeDir = '/home/test';
 

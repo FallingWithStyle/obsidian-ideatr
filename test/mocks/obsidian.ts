@@ -25,7 +25,8 @@ export function requestUrl(options: { url: string; method?: string; headers?: Re
 }
 
 export class Notice {
-    constructor(message: string) { }
+    constructor(message: string, timeout?: number) { }
+    hide(): void { }
 }
 export class Plugin {
     app: any;
@@ -40,6 +41,10 @@ export class Plugin {
     addRibbonIcon(icon: string, title: string, callback: () => void): any {
         return new MockHTMLElement();
     }
+
+    registerView(viewType: string, viewConstructor: any): void { }
+    addCommand(command: { id: string; name: string; callback: () => void }): void { }
+    addSettingTab(tab: any): void { }
 }
 export class PluginSettingTab { }
 export class Setting {
@@ -521,4 +526,12 @@ export const Platform = {
     isWin: process.platform === 'win32',
     isLinuxApp: process.platform === 'linux'
 };
+
+/**
+ * Mock addIcon function from Obsidian API
+ */
+export function addIcon(iconId: string, svgContent: string): void {
+    // Mock implementation - just track that icon was added
+    // In real Obsidian, this registers an icon globally
+}
 

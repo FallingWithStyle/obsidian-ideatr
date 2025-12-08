@@ -13,30 +13,34 @@ import { FrontmatterParser } from '../../../src/services/FrontmatterParser';
 import { FileOrganizer } from '../../../src/utils/fileOrganization';
 import { DEFAULT_SETTINGS } from '../../../src/settings';
 import type { Mutation, ExpansionResult, ReorganizationResult } from '../../../src/types/transformation';
-import { MutationSelectionModal } from '../../../src/views/MutationSelectionModal';
-import { ReorganizationPreviewModal } from '../../../src/views/ReorganizationPreviewModal';
-import { ExpansionPreviewModal } from '../../../src/views/ExpansionPreviewModal';
+// Modals are mocked below
 
 // Mock Obsidian globals
 global.Notice = Notice;
 
 // Mock modals
+const MockMutationSelectionModal = vi.hoisted(() => vi.fn().mockImplementation((app, mutations, callback) => ({
+    open: vi.fn()
+})));
+
+const MockReorganizationPreviewModal = vi.hoisted(() => vi.fn().mockImplementation((app, original, reorganized, callback) => ({
+    open: vi.fn()
+})));
+
+const MockExpansionPreviewModal = vi.hoisted(() => vi.fn().mockImplementation((app, expansion, callback) => ({
+    open: vi.fn()
+})));
+
 vi.mock('../../../src/views/MutationSelectionModal', () => ({
-    MutationSelectionModal: vi.fn().mockImplementation((app, mutations, callback) => ({
-        open: vi.fn()
-    }))
+    MutationSelectionModal: MockMutationSelectionModal
 }));
 
 vi.mock('../../../src/views/ReorganizationPreviewModal', () => ({
-    ReorganizationPreviewModal: vi.fn().mockImplementation((app, original, reorganized, callback) => ({
-        open: vi.fn()
-    }))
+    ReorganizationPreviewModal: MockReorganizationPreviewModal
 }));
 
 vi.mock('../../../src/views/ExpansionPreviewModal', () => ({
-    ExpansionPreviewModal: vi.fn().mockImplementation((app, expansion, callback) => ({
-        open: vi.fn()
-    }))
+    ExpansionPreviewModal: MockExpansionPreviewModal
 }));
 
 describe('Idea Transformation Commands', () => {
@@ -160,7 +164,7 @@ A mobile app for task management
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
             expect(mockLLMService.generateMutations).toHaveBeenCalled();
-            expect(MutationSelectionModal).toHaveBeenCalled();
+            expect(MockMutationSelectionModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {
@@ -233,7 +237,7 @@ A mobile app for task management
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
             expect(mockLLMService.expandIdea).toHaveBeenCalled();
-            expect(ExpansionPreviewModal).toHaveBeenCalled();
+            expect(MockExpansionPreviewModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {
@@ -288,7 +292,7 @@ Some chaotic idea text with no structure. More text here. Even more text.
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
             expect(mockLLMService.reorganizeIdea).toHaveBeenCalled();
-            expect(ReorganizationPreviewModal).toHaveBeenCalled();
+            expect(MockReorganizationPreviewModal).toHaveBeenCalled();
             expect(mockVault.create).toHaveBeenCalled(); // Backup file
         });
 

@@ -274,7 +274,8 @@ describe('IdeatrPlugin', () => {
             );
         });
 
-        it('should register Dashboard view', async () => {
+        it.skip('should register Dashboard view', async () => {
+            // MVP MODE: Dashboard view is disabled
             await plugin.onload();
 
             expect(plugin.registerView).toHaveBeenCalledWith(
@@ -283,7 +284,8 @@ describe('IdeatrPlugin', () => {
             );
         });
 
-        it('should register Graph view', async () => {
+        it.skip('should register Graph view', async () => {
+            // MVP MODE: Graph view is disabled
             await plugin.onload();
 
             expect(plugin.registerView).toHaveBeenCalledWith(

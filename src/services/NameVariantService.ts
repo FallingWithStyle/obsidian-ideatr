@@ -124,7 +124,7 @@ export class NameVariantService implements INameVariantService {
         const name = ideaName ?? await extractIdeaName(
             ideaText,
             this.llmService,
-            this.settings.useLLMForNameExtraction || false
+            this.settings.useLLMForNameExtraction ?? false
         );
 
         if (!name || name.trim().length === 0) {
@@ -257,7 +257,7 @@ export class NameVariantService implements INameVariantService {
                         quality: this.calculateVariantQuality(textValue.trim(), this.validateVariantType(typeValue))
                     };
                 })
-                .slice(0, this.settings.maxVariants || 10);
+                .slice(0, this.settings.maxVariants ?? 10);
         } catch (error) {
             Logger.warn('Failed to parse variant response:', content, error);
             return [];
@@ -374,7 +374,7 @@ Output: {`;
      * Format variants as markdown for file body
      */
     formatVariantsForMarkdown(variants: NameVariant[]): string {
-        return formatVariantsForMarkdown(variants, this.settings.maxVariants || 10);
+        return formatVariantsForMarkdown(variants, this.settings.maxVariants ?? 10);
     }
 
     /**
@@ -504,7 +504,7 @@ Output: {`;
                 ...v,
                 quality: this.calculateVariantQuality(v.text, v.type)
             }))
-            .slice(0, this.settings.maxVariants || 8);
+            .slice(0, this.settings.maxVariants ?? 8);
 
         return variantsWithQuality;
     }
