@@ -22,7 +22,7 @@ export class FeedbackSettingsSection extends BaseSettingsSection {
                 .onClick(() => {
                     let obsidianVersion = 'Unknown';
                     try {
-                    // @ts-expect-error - Obsidian internal API
+                    // Obsidian internal API - using type assertion
                     const appVersion = (this.app as { appVersion?: string; version?: string }).appVersion;
                     const version = (this.app as { appVersion?: string; version?: string }).version;
                     obsidianVersion = appVersion ?? version ?? 'Unknown';

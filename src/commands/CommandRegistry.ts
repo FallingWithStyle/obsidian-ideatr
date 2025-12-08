@@ -2,6 +2,10 @@ import type { Plugin } from 'obsidian';
 import { Notice } from 'obsidian';
 import { CommandContext } from './base/CommandContext';
 import { CaptureCommand } from './capture/CaptureCommand';
+// ===== MVP VERSION - EXTRA IMPORTS COMMENTED OUT =====
+// All extra command imports are commented out since they're not used in MVP
+// To re-enable, uncomment the imports and the corresponding command registrations below
+/*
 // Domain checking removed - functionality hidden
 // import { DomainCheckCommand } from './validation/DomainCheckCommand';
 import { ExistenceSearchCommand } from './validation/ExistenceSearchCommand';
@@ -32,6 +36,7 @@ import { RefreshRelatedNotesCommand } from './batch/RefreshRelatedNotesCommand';
 import { TenuousLinksCommand } from './analysis/TenuousLinksCommand';
 import { ClusterAnalysisCommand } from './analysis/ClusterAnalysisCommand';
 import { IdeaStatsCommand } from './analysis/IdeaStatsCommand';
+*/
 
 import { Logger } from '../utils/logger';
 
@@ -131,11 +136,13 @@ export class CommandRegistry {
 
     /**
      * Register all commands with the plugin
+     * MVP VERSION - Only core capture functionality enabled
      */
     static registerAll(plugin: Plugin, context: CommandContext): void {
-        Logger.debug('Registering commands...');
+        Logger.debug('Registering commands (MVP mode - core capture only)...');
 
-        // Capture commands
+        // ===== CORE MVP COMMANDS =====
+        // Capture commands - PRIMARY FEATURE
         const captureCallback = CommandRegistry.createCommandCallback('Capture idea', async () => await new CaptureCommand(context).execute());
         plugin.addCommand({
             id: 'capture-idea',
@@ -144,14 +151,20 @@ export class CommandRegistry {
         });
         Logger.debug('Registered: Capture idea');
 
-        // Validation commands
-        // Domain checking command hidden - functionality removed
-        // plugin.addCommand({
-        //     id: 'check-domains',
-        //     name: 'Check Domains',
-        //     callback: CommandRegistry.createCommandCallback('Check Domains', async () => await new DomainCheckCommand(context).execute())
-        // });
+        // ===== EXTRA FEATURES DISABLED FOR MVP =====
+        // The following features are disabled to focus on core MVP:
+        // - Validation tools (domain check, web search, duplicates, related notes)
+        // - Transformation tools (name variants, scaffolds, mutations, expand, reorganize, guided ideation)
+        // - Lifecycle management (status, archive, codename)
+        // - Views (dashboard, graph, tutorials)
+        // - Management commands (classify, refresh, export, import, digest, elevate)
+        // - Batch operations (reclassify all, find all duplicates, refresh all)
+        // - Analysis commands (tenuous links, cluster analysis, statistics)
+        //
+        // To re-enable these features, uncomment the sections below:
 
+        /*
+        // Validation commands
         plugin.addCommand({
             id: 'search-existence',
             name: 'Search existence',
@@ -178,13 +191,11 @@ export class CommandRegistry {
 
         // Transformation commands
         const nameVariantCallback = CommandRegistry.createCommandCallback('Generate name variants', async () => await new NameVariantCommand(context).execute());
-        Logger.debug('Created nameVariantCallback, type:', typeof nameVariantCallback);
         plugin.addCommand({
             id: 'generate-name-variants',
             name: 'Generate name variants',
             callback: nameVariantCallback
         });
-        Logger.debug('Registered: Generate name variants');
 
         plugin.addCommand({
             id: 'generate-scaffold',
@@ -199,13 +210,11 @@ export class CommandRegistry {
         });
 
         const expandCallback = CommandRegistry.createCommandCallback('Expand idea', async () => await new ExpandCommand(context).execute());
-        Logger.debug('Created expandCallback, type:', typeof expandCallback, 'is function:', typeof expandCallback === 'function');
         plugin.addCommand({
             id: 'expand-idea',
             name: 'Expand idea',
             callback: expandCallback
         });
-        Logger.debug('Registered: Expand idea, callback stored:', typeof expandCallback);
 
         plugin.addCommand({
             id: 'reorganize-idea',
@@ -337,6 +346,7 @@ export class CommandRegistry {
             name: 'Show idea statistics',
             callback: CommandRegistry.createCommandCallback('Show idea statistics', async () => await new IdeaStatsCommand(context).execute())
         });
+        */
 
         // DEBUG: Add a test command via CommandRegistry (only in debug mode)
         if (Logger.isDebugEnabled()) {
@@ -356,6 +366,8 @@ export class CommandRegistry {
             });
             Logger.debug('Registered debug command via CommandRegistry');
         }
+
+        Logger.info('Command registration complete - MVP mode (only Capture idea enabled)');
     }
 }
 

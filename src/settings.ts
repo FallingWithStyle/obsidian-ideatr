@@ -2,16 +2,17 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import type IdeatrPlugin from './main';
 import { LLMSettingsSection } from './settings/sections/LLMSettingsSection';
 import { CloudAISettingsSection } from './settings/sections/CloudAISettingsSection';
+// ===== MVP VERSION - EXTRA SETTINGS SECTIONS COMMENTED OUT =====
 // Domain checking removed - functionality hidden
 // import { DomainSettingsSection } from './settings/sections/DomainSettingsSection';
-import { WebSearchSettingsSection } from './settings/sections/WebSearchSettingsSection';
-import { NameVariantSettingsSection } from './settings/sections/NameVariantSettingsSection';
-import { ScaffoldSettingsSection } from './settings/sections/ScaffoldSettingsSection';
-import { ProjectElevationSettingsSection } from './settings/sections/ProjectElevationSettingsSection';
+// import { WebSearchSettingsSection } from './settings/sections/WebSearchSettingsSection';
+// import { NameVariantSettingsSection } from './settings/sections/NameVariantSettingsSection';
+// import { ScaffoldSettingsSection } from './settings/sections/ScaffoldSettingsSection';
+// import { ProjectElevationSettingsSection } from './settings/sections/ProjectElevationSettingsSection';
+// import { TutorialSettingsSection } from './settings/sections/TutorialSettingsSection';
 import { ErrorLoggingSettingsSection } from './settings/sections/ErrorLoggingSettingsSection';
 import { FeedbackSettingsSection } from './settings/sections/FeedbackSettingsSection';
 import { CaptureModalSettingsSection } from './settings/sections/CaptureModalSettingsSection';
-import { TutorialSettingsSection } from './settings/sections/TutorialSettingsSection';
 import { createHelpIcon } from './utils/HelpIcon';
 
 export interface IdeatrSettings {
@@ -327,43 +328,17 @@ export class IdeatrSettingTab extends PluginSettingTab {
             'text-decoration': 'none'
         });
 
-        // Initialize sections
+        // ===== MVP SETTINGS - CORE CAPTURE + AI ONLY =====
+        // Initialize core sections only
         const llmSection = new LLMSettingsSection(this.app, this.plugin, this);
         const cloudAISection = new CloudAISettingsSection(this.app, this.plugin, this);
-        // Domain checking removed - functionality hidden
-        // const domainSection = new DomainSettingsSection(this.app, this.plugin, this);
-        const webSearchSection = new WebSearchSettingsSection(this.app, this.plugin, this);
-        const nameVariantSection = new NameVariantSettingsSection(this.app, this.plugin, this);
-        const scaffoldSection = new ScaffoldSettingsSection(this.app, this.plugin, this);
-        const projectElevationSection = new ProjectElevationSettingsSection(this.app, this.plugin, this);
         const errorLoggingSection = new ErrorLoggingSettingsSection(this.app, this.plugin, this);
         const feedbackSection = new FeedbackSettingsSection(this.app, this.plugin, this);
         const captureModalSection = new CaptureModalSettingsSection(this.app, this.plugin, this);
-        const tutorialSection = new TutorialSettingsSection(this.app, this.plugin, this);
 
-        // Display sections
+        // Display core sections
         llmSection.display(containerEl);
         cloudAISection.display(containerEl);
-
-        // Validation Tools Section
-        const validationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
-        new Setting(validationTitle).setName('Validation tools').setHeading();
-        const validationHelpIcon = createHelpIcon(this.app, 'validation', 'Learn about Validation Tools');
-        validationTitle.appendChild(validationHelpIcon);
-        // Domain checking settings hidden - functionality removed
-        // domainSection.display(containerEl);
-        webSearchSection.display(containerEl);
-
-        // Transformation Tools Section
-        const transformationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
-        new Setting(transformationTitle).setName('Transformation tools').setHeading();
-        const transformationHelpIcon = createHelpIcon(this.app, 'transformation', 'Learn about Transformation Tools');
-        transformationTitle.appendChild(transformationHelpIcon);
-        nameVariantSection.display(containerEl);
-        scaffoldSection.display(containerEl);
-
-        // Project Elevation Section
-        projectElevationSection.display(containerEl);
 
         // Feedback Section
         const feedbackTitle = containerEl.createDiv({ cls: 'settings-section-title', attr: { id: 'ideatr-feedback-section' } });
@@ -381,7 +356,43 @@ export class IdeatrSettingTab extends PluginSettingTab {
         captureTitle.appendChild(captureHelpIcon);
         captureModalSection.display(containerEl);
 
+        // ===== EXTRA SETTINGS DISABLED FOR MVP =====
+        // The following settings sections are disabled to focus on core capture functionality:
+        // - Validation Tools (web search, domain checking)
+        // - Transformation Tools (name variants, scaffolds)
+        // - Project Elevation
+        // - Tutorials
+        //
+        // To re-enable these settings, uncomment the following sections:
+
+        /*
+        // Initialize extra sections
+        const webSearchSection = new WebSearchSettingsSection(this.app, this.plugin, this);
+        const nameVariantSection = new NameVariantSettingsSection(this.app, this.plugin, this);
+        const scaffoldSection = new ScaffoldSettingsSection(this.app, this.plugin, this);
+        const projectElevationSection = new ProjectElevationSettingsSection(this.app, this.plugin, this);
+        const tutorialSection = new TutorialSettingsSection(this.app, this.plugin, this);
+
+        // Validation Tools Section
+        const validationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
+        new Setting(validationTitle).setName('Validation tools').setHeading();
+        const validationHelpIcon = createHelpIcon(this.app, 'validation', 'Learn about Validation Tools');
+        validationTitle.appendChild(validationHelpIcon);
+        webSearchSection.display(containerEl);
+
+        // Transformation Tools Section
+        const transformationTitle = containerEl.createDiv({ cls: 'settings-section-title' });
+        new Setting(transformationTitle).setName('Transformation tools').setHeading();
+        const transformationHelpIcon = createHelpIcon(this.app, 'transformation', 'Learn about Transformation Tools');
+        transformationTitle.appendChild(transformationHelpIcon);
+        nameVariantSection.display(containerEl);
+        scaffoldSection.display(containerEl);
+
+        // Project Elevation Section
+        projectElevationSection.display(containerEl);
+
         // Tutorial Settings
         tutorialSection.display(containerEl);
+        */
     }
 }

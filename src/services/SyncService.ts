@@ -175,7 +175,7 @@ export class SyncService {
 
                 if (response.status === 200) {
                     const data = response.json as { changes?: unknown[] } | null;
-                    return (data && Array.isArray(data.changes)) ? data.changes : [];
+                    return (data && Array.isArray(data.changes)) ? data.changes as FileChange[] : [];
                 }
 
                 // Don't retry on 4xx errors

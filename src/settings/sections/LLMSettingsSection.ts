@@ -174,7 +174,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
                 });
 
             // Model info display
-            const ModelManagerConstructor = ModelManager as new (key: string) => { getModelConfig: () => { description: string; sizeMB: number; ram?: string; quality: number; speed: number }; isModelDownloaded: () => Promise<boolean>; verifyModelIntegrity: () => Promise<boolean> };
+            const ModelManagerConstructor = ModelManager as new (key: string) => { getModelConfig: () => { name: string; badge: string; description: string; sizeMB: number; ram?: string; quality: number; speed: number }; isModelDownloaded: () => Promise<boolean>; verifyModelIntegrity: () => Promise<boolean> };
             const modelManager = new ModelManagerConstructor(this.plugin.settings.localModel || 'phi-3.5-mini');
             const modelConfig = modelManager.getModelConfig();
 
@@ -225,7 +225,7 @@ export class LLMSettingsSection extends BaseSettingsSection {
                     .onClick(() => {
                         const modal = new FirstLaunchSetupModal(
                             this.app,
-                            modelManager,
+                            null, // MVP: Model manager not used in simplified version
                             this.plugin.settings,
                             () => {
                                 void (async () => {

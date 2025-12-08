@@ -19,13 +19,7 @@ export class ModelDownloadModal extends Modal {
 
     constructor(app: App, modelManager: IModelManager) {
         super(app);
-        this.modelManager = modelManager as {
-            getModelInfo: () => { name: string; sizeMB: number };
-            getModelPath: () => string;
-            downloadModel: (onProgress: (progress: number, downloadedMB: number, totalMB: number) => void, onError?: (error: Error) => void, overwrite?: boolean) => Promise<void>;
-            verifyModelIntegrity: () => Promise<boolean>;
-            cancelDownload: () => void;
-        };
+        this.modelManager = modelManager;
     }
 
     onOpen(): void {
@@ -37,14 +31,7 @@ export class ModelDownloadModal extends Modal {
         contentEl.createEl('h2', { text: 'Download AI model' });
 
         // Model information
-        const typedModelManager = this.modelManager as {
-            getModelInfo: () => { name: string; sizeMB: number };
-            getModelPath: () => string;
-            downloadModel: (onProgress: (progress: number, downloadedMB: number, totalMB: number) => void, onError?: (error: Error) => void, overwrite?: boolean) => Promise<void>;
-            verifyModelIntegrity: () => Promise<boolean>;
-            cancelDownload: () => void;
-        };
-        const info = typedModelManager.getModelInfo();
+        const info = this.modelManager.getModelInfo();
         this.modelInfo = contentEl.createEl('div', { cls: 'ideatr-model-info' });
         this.modelInfo.createEl('p', {
             text: `Model: ${info.name}`
@@ -52,7 +39,7 @@ export class ModelDownloadModal extends Modal {
         this.modelInfo.createEl('p', {
             text: `Size: ${info.sizeMB.toFixed(1)} MB (${(info.sizeMB / 1024).toFixed(2)} GB)`
         });
-        const modelPath = typedModelManager.getModelPath();
+        const modelPath = this.modelManager.getModelPath();
         this.modelInfo.createEl('p', {
             text: `Storage: ${modelPath}`
         });
@@ -119,12 +106,8 @@ export class ModelDownloadModal extends Modal {
         this.isWarning = false;
         this.progressText.textContent = overwrite ? 'Re-downloading model...' : 'Starting download...';
 
-        const typedModelManager = this.modelManager as {
-            downloadModel: (onProgress: (progress: number, downloadedMB: number, totalMB: number) => void, onError?: (error: Error) => void, overwrite?: boolean) => Promise<void>;
-            verifyModelIntegrity: () => Promise<boolean>;
-        };
         try {
-            await typedModelManager.downloadModel(
+            await this.modelManager.downloadModel(
                 (progress: number, downloadedMB: number, totalMB: number) => {
                     // Only update UI if modal is still open
                     if (this.isDownloading) {
@@ -139,7 +122,7 @@ export class ModelDownloadModal extends Modal {
             new Notice('Model download complete! Verifying...');
 
             // Verify integrity
-            const isValid = await typedModelManager.verifyModelIntegrity();
+            const isValid = await this.modelManager.verifyModelIntegrity();
 
             if (isValid) {
                 // Only update UI if modal is still open
@@ -296,8 +279,7 @@ export class ModelDownloadModal extends Modal {
 
     private handleCancel(): void {
         if (this.isDownloading) {
-            const typedModelManager = this.modelManager as { cancelDownload: () => void };
-            typedModelManager.cancelDownload();
+            this.modelManager.cancelDownload();
             this.isDownloading = false;
             this.progressText.textContent = 'Download cancelled';
             this.cancelButton.textContent = 'Close';
@@ -312,8 +294,7 @@ export class ModelDownloadModal extends Modal {
         // Only cancel download if we're actually downloading and user didn't choose background download
         // If user clicked "Download in Background", allowBackgroundDownload will be true
         if (this.isDownloading && !this.allowBackgroundDownload) {
-            const typedModelManager = this.modelManager as { cancelDownload: () => void };
-            typedModelManager.cancelDownload();
+            this.modelManager.cancelDownload();
         }
 
         contentEl.empty();
