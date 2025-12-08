@@ -244,7 +244,7 @@ export class ServiceInitializer {
                     Logger.info('Cloud AI provider initialized:', provider.name);
                 } catch (error) {
                     Logger.warn('Failed to initialize cloud provider:', error);
-                    new Notice('Failed to initialize cloud AI provider. Using local AI only.');
+                    new Notice('Failed to initialize cloud AI provider.');
                 }
             }
         } else if (settings.cloudProvider === 'custom-model') {
@@ -269,7 +269,7 @@ export class ServiceInitializer {
                         Logger.info('Custom model provider initialized:', provider.name, settings.customModel);
                     } catch (error) {
                         Logger.warn('Failed to initialize custom model provider:', error);
-                        new Notice('Failed to initialize custom model provider. Using local AI only.');
+                        new Notice('Failed to initialize custom model provider.');
                     }
                 }
             }
@@ -288,7 +288,7 @@ export class ServiceInitializer {
                     Logger.info('Cloud AI provider initialized:', provider.name);
                 } catch (error) {
                     Logger.warn('Failed to initialize custom endpoint:', error);
-                    new Notice('Failed to initialize custom endpoint. Using local AI only.');
+                    new Notice('Failed to initialize custom endpoint.');
                 }
             }
         }

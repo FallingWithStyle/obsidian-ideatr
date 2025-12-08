@@ -1,5 +1,3 @@
-import { MODELS } from '../services/ModelManager';
-import { Logger } from './logger';
 import { getPlatform, getArch } from './platformUtils';
 
 /**
@@ -34,73 +32,17 @@ export function getSystemCapabilities(): SystemCapabilities {
 }
 
 /**
- * Parse RAM requirement from model config (e.g., "48GB+" -> 48, "6-8GB" -> 6)
- */
-function parseRAMRequirement(ramString: string): number {
-    // Remove "GB" and "+" signs, extract first number
-    const match = ramString.match(/(\d+)/);
-    if (match) {
-        return parseInt(match[1], 10);
-    }
-    return 0;
-}
-
-/**
  * Check if system has sufficient RAM for a model
- * @param modelKey - The model key to check
+ * @param modelKey - The model key to check (deprecated - local models no longer supported)
  * @param capabilities - Optional system capabilities (will be fetched if not provided)
  * @returns Object with isCompatible flag and warning message if incompatible
+ * @deprecated Local models are no longer supported. This function always returns compatible.
  */
 export function checkModelCompatibility(
-    modelKey: string,
-    capabilities?: SystemCapabilities
+    _modelKey: string,
+    _capabilities?: SystemCapabilities
 ): { isCompatible: boolean; warning?: string; recommendation?: string } {
-    const modelConfig = (MODELS as Record<string, { ram?: string }>)[modelKey];
-    if (!modelConfig) {
-        Logger.warn(`Unknown model key: ${modelKey}`);
-        return { isCompatible: true }; // Don't block unknown models
-    }
-
-    const systemInfo = capabilities ?? getSystemCapabilities();
-    const requiredRAM = parseRAMRequirement(modelConfig.ram ?? '0GB');
-    const totalRAM = systemInfo.totalRAMGB;
-
-    // If RAM info is not available (0), skip RAM checks
-    // This happens when os module is not available (Obsidian environment)
-    if (totalRAM === 0) {
-        // RAM information not available - can't perform compatibility check
-        // Return compatible but with a note that RAM requirements should be considered
-        return {
-            isCompatible: true,
-            warning: `This model requires ${modelConfig.ram} RAM. Please ensure your system meets this requirement.`,
-            recommendation: `Check your system's available RAM before downloading large models.`
-        };
-    }
-
-    // If model requires more RAM than system has, warn
-    if (requiredRAM > totalRAM) {
-        const ramStr = modelConfig.ram ?? 'unknown';
-        const warning = `This model requires ${ramStr} RAM, but your system has ${totalRAM.toFixed(1)}GB total RAM. The model may fail to load.`;
-        const recommendation = `Consider using a smaller model like "Phi-3.5 Mini" (requires 6-8GB RAM) instead.`;
-        return {
-            isCompatible: false,
-            warning,
-            recommendation
-        };
-    }
-
-    // If model requires close to total RAM (within 20%), warn
-    if (requiredRAM > totalRAM * 0.8) {
-        const ramStr = modelConfig.ram ?? 'unknown';
-        const warning = `This model requires ${ramStr} RAM. Your system has ${totalRAM.toFixed(1)}GB total RAM. The model may struggle or fail to load if other applications are using memory.`;
-        const recommendation = `Ensure you have at least ${requiredRAM}GB free RAM before loading this model.`;
-        return {
-            isCompatible: true, // Still compatible, but risky
-            warning,
-            recommendation
-        };
-    }
-
+    // Local models are no longer supported
     return { isCompatible: true };
 }
 

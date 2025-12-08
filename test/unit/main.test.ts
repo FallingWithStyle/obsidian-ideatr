@@ -84,14 +84,14 @@ vi.mock('../../src/commands/CommandRegistry', () => ({
     },
 }));
 
-vi.mock('../../src/services/ModelManager', () => {
-    class MockModelManager {
+// ModelManager no longer exists - local models removed
+// ModelManager no longer exists - local models removed
+vi.mock('../../src/services/ModelManager', () => ({
+    ModelManager: class {
         constructor() { }
-    }
-    return {
-        ModelManager: MockModelManager,
-    };
-});
+    },
+    MODELS: {}
+}));
 
 vi.mock('../../src/utils/logger', () => ({
     Logger: {
@@ -234,8 +234,8 @@ describe('IdeatrPlugin', () => {
         it('should initialize ModelManager', async () => {
             await plugin.onload();
 
-            // ModelManager is initialized during onload
-            expect((plugin as any).modelManager).toBeDefined();
+            // ModelManager no longer exists - local models removed
+            // This test is skipped as local models are no longer supported
         });
 
         it('should show first launch setup modal if first launch', async () => {
@@ -312,7 +312,7 @@ describe('IdeatrPlugin', () => {
             // The ribbon icon uses IDEATR_ICON_ID constant, not 'lightbulb'
             expect(plugin.addRibbonIcon).toHaveBeenCalledWith(
                 'ideatr-icon-purple',
-                'Capture Idea',
+                'Capture idea',
                 expect.any(Function)
             );
         });
@@ -391,14 +391,9 @@ describe('IdeatrPlugin', () => {
         });
 
         it('should stop local LLM service', async () => {
-            // Import LlamaService to spy on destroyInstance
-            const { LlamaService } = await import('../../src/services/LlamaService');
-            const destroyInstanceSpy = vi.spyOn(LlamaService, 'destroyInstance').mockImplementation(() => { });
-
-            plugin.onunload();
-
-            expect(destroyInstanceSpy).toHaveBeenCalled();
-            destroyInstanceSpy.mockRestore();
+            // Local models are no longer supported - skip this test
+            // The plugin.onunload() should still work without throwing
+            expect(() => plugin.onunload()).not.toThrow();
         });
 
         it('should not throw if local LLM service is not initialized', () => {

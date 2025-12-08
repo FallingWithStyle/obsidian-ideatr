@@ -194,7 +194,6 @@ export function isFirstLaunch(settings: IdeatrSettings): boolean {
     const hasLegacyApiKey = settings.cloudApiKey && settings.cloudApiKey.length > 0;
 
     return !settings.setupCompleted &&
-        !settings.modelDownloaded &&
         !hasAnyApiKey &&
         !hasLegacyApiKey;
 }

@@ -69,83 +69,29 @@ describe('FirstLaunchSetupModal', () => {
     });
 
     describe('onOpen', () => {
-        it('should display three setup options', () => {
+        it('should display setup options', () => {
             const modal = new FirstLaunchSetupModal(
                 app,
-                mockModelManager,
+                null, // No ModelManager - local models not supported
                 mockSettings,
                 onCompleteCallback
             );
             modal.onOpen();
 
-            // Check that setup options are created
+            // Check that setup options are created (API key and Skip)
             const options = modal.contentEl.querySelectorAll('.ideatr-setup-option');
-            expect(options.length).toBeGreaterThanOrEqual(3);
-        });
-
-        it('should show model download option with size information', () => {
-            const modal = new FirstLaunchSetupModal(
-                app,
-                mockModelManager,
-                mockSettings,
-                onCompleteCallback
-            );
-            modal.onOpen();
-
-            // Check that model download option is displayed
-            const downloadOption = modal.contentEl.querySelector('.ideatr-setup-option');
-            expect(downloadOption).toBeTruthy();
+            expect(options.length).toBeGreaterThanOrEqual(2);
         });
     });
 
-    describe('download option', () => {
-        it('should open ModelDownloadModal when download option is selected', async () => {
-            const modal = new FirstLaunchSetupModal(
-                app,
-                mockModelManager,
-                mockSettings,
-                onCompleteCallback
-            );
-            modal.onOpen();
-
-            // Simulate clicking download option
-            await (modal as any).handleDownloadOption();
-
-            // The handleDownloadOption creates UI with model selection
-            // Verify that content was created by checking if contentEl has children
-            // (The mock's querySelector may not work as expected, so we check children directly)
-            expect(modal.contentEl.children.length).toBeGreaterThan(0);
-            
-            // The actual download flow would open ModelDownloadModal when a button is clicked
-            // which is tested in ModelDownloadModal tests
-        });
-
-        it('should mark setup as complete after successful download', async () => {
-            vi.mocked(mockModelManager.isModelDownloaded).mockResolvedValue(true);
-
-            const modal = new FirstLaunchSetupModal(
-                app,
-                mockModelManager,
-                mockSettings,
-                onCompleteCallback
-            );
-            modal.onOpen();
-
-            await (modal as any).handleDownloadOption();
-
-            // Verify that the UI is created by checking if contentEl has children
-            expect(modal.contentEl.children.length).toBeGreaterThan(0);
-            
-            // The actual completion happens when ModelDownloadModal closes after successful download
-            // which would be tested in integration tests or ModelDownloadModal tests
-        });
-    });
+    // Download option removed - local models no longer supported
+    // These tests are skipped
 
     describe('API key option', () => {
         it('should prompt for API key when API key option is selected', () => {
             const modal = new FirstLaunchSetupModal(
                 app,
-                mockModelManager,
+                null, // No ModelManager - local models not supported
                 mockSettings,
                 onCompleteCallback
             );
@@ -172,7 +118,7 @@ describe('FirstLaunchSetupModal', () => {
 
             const modal = new FirstLaunchSetupModal(
                 app,
-                mockModelManager,
+                null, // No ModelManager - local models not supported
                 mockSettings,
                 onCompleteCallback
             );
@@ -191,7 +137,7 @@ describe('FirstLaunchSetupModal', () => {
         it('should mark setup as complete when skip is selected', () => {
             const modal = new FirstLaunchSetupModal(
                 app,
-                mockModelManager,
+                null, // No ModelManager - local models not supported
                 mockSettings,
                 onCompleteCallback
             );
@@ -207,7 +153,7 @@ describe('FirstLaunchSetupModal', () => {
         it('should close modal when skip is selected', () => {
             const modal = new FirstLaunchSetupModal(
                 app,
-                mockModelManager,
+                null, // No ModelManager - local models not supported
                 mockSettings,
                 onCompleteCallback
             );
@@ -246,16 +192,8 @@ describe('isFirstLaunch', () => {
         expect(settings.setupCompleted).toBe(true);
     });
 
-    it('should return false when model is downloaded', () => {
-        const settings: IdeatrSettings = {
-            setupCompleted: false,
-            modelDownloaded: true,
-            cloudApiKey: '',
-            // ... other required fields
-        } as IdeatrSettings;
-
-        expect(settings.modelDownloaded).toBe(true);
-    });
+    // modelDownloaded setting removed - local models no longer supported
+    // This test is skipped
 
     it('should return false when API key is set', () => {
         const settings: IdeatrSettings = {

@@ -144,7 +144,7 @@ export class ResurfacingService implements IResurfacingService {
         // Check frontmatter for dismissed or actedUpon flags
         // These are optional properties not in the base IdeaFrontmatter type
         const frontmatter = idea.frontmatter as IdeaFrontmatter & { dismissed?: boolean; actedUpon?: boolean };
-        return !!(frontmatter.dismissed ?? false || frontmatter.actedUpon ?? false);
+        return !!((frontmatter.dismissed ?? false) || (frontmatter.actedUpon ?? false));
     }
 
     /**

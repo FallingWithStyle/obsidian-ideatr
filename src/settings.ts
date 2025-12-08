@@ -15,11 +15,7 @@ import { TutorialSettingsSection } from './settings/sections/TutorialSettingsSec
 import { createHelpIcon } from './utils/HelpIcon';
 
 export interface IdeatrSettings {
-    llmProvider: 'llama' | 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter' | 'custom' | 'none';
-    llamaServerUrl: string; // Keep for backward compatibility or external server
-    llamaBinaryPath: string;
-    modelPath: string;
-    llamaServerPort: number;
+    llmProvider: 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter' | 'custom' | 'none';
     concurrency: number;
     llmTimeout: number;
     autoClassify: boolean;
@@ -82,10 +78,7 @@ export interface IdeatrSettings {
 
     // AI Model Management
     setupCompleted: boolean; // First-launch setup completed
-    modelDownloaded: boolean; // Model has been downloaded
-    keepModelLoaded: boolean; // Keep model loaded in memory
     preloadOnStartup: boolean; // Preload model on Obsidian startup
-    localModel: 'phi-3.5-mini' | 'qwen-2.5-7b' | 'llama-3.1-8b' | 'llama-3.3-70b'; // Selected local AI model
 
     // Cloud AI
     preferCloud: boolean; // Prefer cloud AI over local
@@ -115,13 +108,9 @@ export interface IdeatrSettings {
 }
 
 export const DEFAULT_SETTINGS: IdeatrSettings = {
-    llmProvider: 'llama',
-    llamaServerUrl: 'http://127.0.0.1:8080',
-    llamaBinaryPath: '',
-    modelPath: '',
-    llamaServerPort: 8080,
+    llmProvider: 'none',
     concurrency: 1,
-    llmTimeout: 10000, // Increased default for local inference
+    llmTimeout: 10000,
     autoClassify: true,
 
     // Domain checking
@@ -182,10 +171,7 @@ export const DEFAULT_SETTINGS: IdeatrSettings = {
 
     // AI Model Management
     setupCompleted: false,
-    modelDownloaded: false,
-    keepModelLoaded: false,
     preloadOnStartup: false,
-    localModel: 'phi-3.5-mini',
 
     // Cloud AI
     preferCloud: false,

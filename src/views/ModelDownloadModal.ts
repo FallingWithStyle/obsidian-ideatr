@@ -1,11 +1,17 @@
 import { Modal, App, Notice } from 'obsidian';
-import type { IModelManager } from '../services/ModelManager';
 
 /**
  * ModelDownloadModal - Modal for displaying model download progress
+ * @deprecated Local models are no longer supported
  */
 export class ModelDownloadModal extends Modal {
-    private modelManager: IModelManager;
+    private modelManager: {
+        getModelInfo: () => { name: string; sizeMB: number };
+        getModelPath: () => string;
+        downloadModel: (onProgress: (progress: number, downloadedMB: number, totalMB: number) => void, onError?: (error: Error) => void, overwrite?: boolean) => Promise<void>;
+        verifyModelIntegrity: () => Promise<boolean>;
+        cancelDownload: () => void;
+    };
     private progressBar!: HTMLElement;
     private progressText!: HTMLElement;
     private cancelButton!: HTMLElement;
@@ -17,15 +23,18 @@ export class ModelDownloadModal extends Modal {
     private isWarning: boolean = false;
     private allowBackgroundDownload: boolean = false;
 
-    constructor(app: App, modelManager: IModelManager) {
-        super(app);
-        this.modelManager = modelManager as {
+    constructor(
+        app: App,
+        modelManager: {
             getModelInfo: () => { name: string; sizeMB: number };
             getModelPath: () => string;
             downloadModel: (onProgress: (progress: number, downloadedMB: number, totalMB: number) => void, onError?: (error: Error) => void, overwrite?: boolean) => Promise<void>;
             verifyModelIntegrity: () => Promise<boolean>;
             cancelDownload: () => void;
-        };
+        }
+    ) {
+        super(app);
+        this.modelManager = modelManager;
     }
 
     onOpen(): void {

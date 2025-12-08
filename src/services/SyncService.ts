@@ -174,7 +174,7 @@ export class SyncService {
                 });
 
                 if (response.status === 200) {
-                    const data = response.json as { changes?: unknown[] } | null;
+                    const data = response.json as { changes?: FileChange[] } | null;
                     return (data && Array.isArray(data.changes)) ? data.changes : [];
                 }
 

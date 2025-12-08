@@ -69,11 +69,11 @@ describe('CommandRegistry Reproduction (Fixed)', () => {
 
         // Verify Logger.error WAS called
         expect(Logger.error).toHaveBeenCalledWith(
-            expect.stringContaining("Command 'Capture Idea' failed:"),
+            expect.stringContaining("Command 'Capture idea' failed:"),
             expect.any(Error)
         );
 
         // Verify start log was called (uses Logger.info, not Logger.debug)
-        expect(Logger.info).toHaveBeenCalledWith(expect.stringContaining("Starting command: Capture Idea"));
+        expect(Logger.info).toHaveBeenCalledWith(expect.stringContaining("Starting command: Capture idea"));
     });
 });

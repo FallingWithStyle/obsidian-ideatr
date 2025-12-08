@@ -88,7 +88,7 @@ describe('CommandRegistry', () => {
 
             const captureCommand = registeredCommands.find(cmd => cmd.id === 'capture-idea');
             expect(captureCommand).toBeDefined();
-            expect(captureCommand?.name).toBe('Capture Idea');
+            expect(captureCommand?.name).toBe('Capture idea');
             expect(typeof captureCommand?.callback).toBe('function');
         });
 
