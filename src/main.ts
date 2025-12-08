@@ -1,7 +1,8 @@
 import { Plugin, Notice, addIcon } from 'obsidian';
 import { CaptureModal } from './capture/CaptureModal';
-import { DashboardView } from './views/DashboardView';
-import { GraphView } from './views/GraphView';
+// ===== MVP VERSION - EXTRA VIEWS COMMENTED OUT =====
+// import { DashboardView } from './views/DashboardView';
+// import { GraphView } from './views/GraphView';
 import { IdeatrSettings, DEFAULT_SETTINGS, IdeatrSettingTab } from './settings';
 import { FirstLaunchSetupModal, isFirstLaunch } from './views/FirstLaunchSetupModal';
 import { Logger } from './utils/logger';
@@ -92,6 +93,11 @@ export default class IdeatrPlugin extends Plugin {
         // Auto-copy tutorials to vault if they're available in plugin directory but not in vault
         await this.ensureTutorialsAvailable();
 
+        // ===== EXTRA VIEWS DISABLED FOR MVP =====
+        // Dashboard and Graph views are disabled to focus on core capture functionality
+        // To re-enable, uncomment the following sections:
+
+        /*
         // Register Dashboard View
         this.registerView(
             'ideatr-dashboard',
@@ -117,6 +123,7 @@ export default class IdeatrPlugin extends Plugin {
                 this.pluginContext.projectElevationService
             )
         );
+        */
 
         // Register Settings Tab
         this.addSettingTab(new IdeatrSettingTab(this.app, this));
