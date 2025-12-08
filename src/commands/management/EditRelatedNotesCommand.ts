@@ -19,7 +19,7 @@ export class EditRelatedNotesCommand extends IdeaFileCommand {
     protected executeWithFile(
         file: TFile,
         content: { frontmatter: Record<string, unknown>; body: string; content: string; ideaText: string }
-    ): void {
+    ): Promise<void> {
         // Get current related IDs
         const relatedItems = Array.isArray(content.frontmatter.related) 
             ? content.frontmatter.related 
@@ -48,6 +48,8 @@ export class EditRelatedNotesCommand extends IdeaFileCommand {
             currentFileId,
             handleSave
         ).open();
+        
+        return Promise.resolve();
     }
 }
 
