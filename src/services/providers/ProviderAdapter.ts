@@ -237,6 +237,10 @@ export class ProviderAdapter implements ILLMService {
                 const endpointUrl = customProvider.endpointUrl;
                 const format = customProvider.format; // 'ollama' or 'openai'
 
+                if (!endpointUrl) {
+                    throw new Error('Custom endpoint URL is not configured');
+                }
+
                 let requestBody: Record<string, unknown>;
                 let responsePath: string;
 
@@ -310,6 +314,11 @@ export class ProviderAdapter implements ILLMService {
                 const openRouterProvider = this.provider as ILLMProvider & OpenRouterProviderInternal;
                 const apiKey = openRouterProvider.apiKey;
                 const model = openRouterProvider.model;
+                
+                if (!apiKey || !model) {
+                    throw new Error('OpenRouter API key or model is not configured');
+                }
+                
                 const baseUrl = openRouterProvider.baseUrl ?? 'https://openrouter.ai/api/v1/chat/completions';
 
                 const response = await requestUrl({
