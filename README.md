@@ -10,19 +10,17 @@ Ideatr is a comprehensive idea management system for Obsidian that captures idea
 
 **Solution**: Ideatr provides a single, intelligent "front door" for ideas with automatic AI enhancement, validation tools, clustering, and seamless integration with your Obsidian vault.
 
-### ⚠️ Local AI Version Notice
+### Current Version: 0.9.2
 
-**This version (v0.8.6) includes local AI functionality but will not receive updates or bug fixes.**
+Ideatr v0.9.2 focuses on cloud AI providers (Anthropic, OpenAI, Google Gemini, Groq, OpenRouter) and continues to receive regular updates. Local AI functionality has been removed in favor of cloud providers for better reliability and performance.
 
-This is a one-time snapshot release for users who want to try local AI in the Obsidian plugin. We recommend keeping an eye out for the upcoming **Ideatr Desktop App**, which will include:
+For users interested in local AI, keep an eye out for the upcoming **Ideatr Desktop App**, which will include:
 - Local AI with ongoing updates and support
 - Native performance
 - System-wide hotkey support
 - Complete privacy
 
 [Learn more about the Desktop App →](https://ideatr.app/desktop)
-
-The main plugin version (v0.9.0+) focuses on cloud AI providers and will continue to receive regular updates.
 
 ## Features
 
@@ -38,10 +36,7 @@ The main plugin version (v0.9.0+) focuses on cloud AI providers and will continu
 - **AI Idea Enhancement**: Multi-provider LLM-powered classification (categorization, tag suggestions), expansion, and related note detection
 - **Customizable Keyboard Shortcuts**: Configure your own keyboard shortcuts for Save and Ideate buttons (with tooltips showing shortcuts on hover)
 - **First-Launch Setup**: Guided setup wizard for configuring AI models and providers
-- **Hybrid LLM Support**: Seamlessly switch between local (Llama.cpp) and cloud AI providers
-
 ### AI Providers
-- **Local AI**: Built-in Llama.cpp server with bundled binaries (macOS ARM64, Intel, Linux, Windows)
 - **Cloud AI**: Support for multiple providers:
   - Anthropic (Claude)
   - OpenAI (GPT-4, GPT-3.5)
@@ -49,42 +44,6 @@ The main plugin version (v0.9.0+) focuses on cloud AI providers and will continu
   - Groq
   - OpenRouter (access to 100+ models)
   - Custom endpoints (Ollama, self-hosted, etc.)
-- **Smart Fallback**: Automatic fallback from cloud to local AI if requests fail
-- **Model Management**: Download, configure, and manage local AI models through the UI
-
-### Local AI Models
-
-Ideatr offers four local AI models for offline idea enhancement, organized by tier:
-
-#### Tier 1: Phi-3.5 Mini [EFFICIENT] (Recommended)
-- **Download size**: ~4.2GB
-- **RAM required**: 6-8GB
-- **Quality**: 4/5 | **Speed**: 5/5
-- **Best for**: Most users
-- Fast, lightweight, and ideal for everyday tasks. Excellent at structured work like categorization and tagging.
-
-#### Tier 2: Qwen 2.5 7B [VERSATILE]
-- **Download size**: ~7.8GB
-- **RAM required**: 10GB
-- **Quality**: 4.5/5 | **Speed**: 4/5
-- **Best for**: Users with 16GB+ RAM who want better quality
-- A well-rounded model with stronger reasoning. Great at handling more complex and multilingual tasks.
-
-#### Tier 3: Llama 3.1 8B [RELIABLE]
-- **Download size**: ~8.5GB
-- **RAM required**: 10-12GB
-- **Quality**: 4.5/5 | **Speed**: 3/5
-- **Best for**: Power users who want Meta's best
-- Meta's trusted and widely documented model. Excellent accuracy with strong community support.
-
-#### Tier 4: Llama 3.3 70B [MAXIMUM]
-- **Download size**: ~42.5GB
-- **RAM required**: 48GB+
-- **Quality**: 5/5 | **Speed**: 1/5
-- **Best for**: Desktop workstations with 64GB+ RAM
-- Top-tier performance with near-GPT-4 quality. Requires a high-end desktop workstation or powerful laptop with substantial RAM.
-
-You can switch models anytime in **Settings → AI Configuration → Local AI Model**.
 
 ### Validation Tools
 - **Domain Availability Check**: Quick domain name validation (local or API-based)
@@ -173,7 +132,6 @@ If you're installing from source or a pre-release version:
    - `manifest.json`
    - `styles.css`
    - `tutorials/` folder (includes all tutorial documentation)
-   - `binaries/` folder (if included, platform-specific binaries)
 3. Reload Obsidian or restart the app
 4. Enable the plugin in **Settings → Community Plugins → Installed plugins**
 5. Configure your AI provider in **Settings → Ideatr**
@@ -208,10 +166,8 @@ npm run package
 ### First Launch Setup
 
 On first launch, Ideatr will guide you through:
-1. **AI Provider Selection**: Choose between local (Llama.cpp) or cloud AI providers
-2. **Model Configuration**: 
-   - For local: Download or configure model path
-   - For cloud: Enter API keys
+1. **AI Provider Selection**: Choose from cloud AI providers
+2. **Model Configuration**: Enter API keys for your chosen provider(s)
 3. **Feature Preferences**: Configure which features to enable/disable
 4. **Directory Setup**: Verify or configure idea storage directories
 
@@ -219,7 +175,6 @@ On first launch, Ideatr will guide you through:
 
 Access settings via **Obsidian Settings → Ideatr**:
 
-- **LLM Settings**: Configure local Llama server or cloud AI providers
 - **Cloud AI Settings**: Set up API keys for cloud providers
 - **Domain Settings**: Configure domain checking (planned expansion for domain checking service)
 - **Web Search Settings**: Configure Google/DuckDuckGo search
@@ -356,8 +311,6 @@ Your idea text goes here...
   │   ├── types/             # TypeScript type definitions
   │   ├── utils/             # Utility functions
   │   └── views/             # View components and modals
-  ├── binaries/              # Bundled llama-server binaries
-  │   └── darwin-arm64/      # Platform-specific binaries
   ├── test/                  # Test suite
   │   ├── unit/              # Unit tests
   │   ├── compatibility/    # Compatibility tests
@@ -468,7 +421,7 @@ npm run format
 
 ## Roadmap
 
-### Current Version: 0.8.6
+### Current Version: 0.9.2
 
 **Implemented Features:**
 
@@ -481,11 +434,8 @@ npm run format
 - ✅ Customizable keyboard shortcuts with tooltips
 
 #### AI Providers
-- ✅ Multi-provider AI support (local + cloud)
-- ✅ Local AI: Built-in Llama.cpp server with bundled binaries
+- ✅ Multi-provider cloud AI support
 - ✅ Cloud AI: Anthropic, OpenAI, Google Gemini, Groq, OpenRouter, custom endpoints
-- ✅ Smart fallback from cloud to local AI
-- ✅ Model management UI for local models
 
 #### Validation Tools
 - ✅ Domain availability checking
@@ -573,7 +523,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Obsidian for the excellent plugin API
 - The Obsidian community for inspiration and support
-- llama.cpp for local AI inference
 - All AI provider APIs (Anthropic, OpenAI, Google, Groq, OpenRouter)
 
 ## Related Projects (coming soon(tm))

@@ -1,6 +1,6 @@
 {
   "name": "obsidian-ideatr",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Fast idea capture with optional AI enhancement. Simple, focused, and effective.",
   "main": "main.js",
   "scripts": {
