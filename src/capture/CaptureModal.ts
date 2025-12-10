@@ -506,7 +506,60 @@ Title:`;
             let expansionText = '';
             if (this.llmService.expandIdea) {
                 try {
-                    // Use a simpler expansion focused on ideas and questions
+                    // Try using the expandIdea method first
+                    const expansionResult = await this.llmService.expandIdea(idea.text, {
+                        category: classification.category,
+                        tags: classification.tags,
+                        detailLevel: 'detailed'
+                    });
+                    expansionText = expansionResult.expandedText;
+                } catch (error) {
+                    Logger.warn('Expansion via expandIdea failed, trying fallback:', error);
+                    // Fallback to custom prompt if expandIdea fails
+                    if (this.llmService.complete) {
+                        try {
+                            const expansionPrompt = `Expand this idea with related concepts, questions, and next steps.
+
+Original Idea:
+${idea.text}
+
+Category: ${classification.category || 'general'}
+Tags: ${classification.tags.join(', ') || 'none'}
+
+Generate a structured expansion with:
+
+## Related Ideas
+2-3 variations or related concepts that explore different angles or implementations. Each should be:
+- Distinct from the original but clearly related
+- Brief (1-2 sentences each)
+- Practical and actionable
+
+## Key Questions
+3-4 important questions to explore. Focus on:
+- Validation questions (who needs this? what problem does it solve?)
+- Implementation questions (how would this work? what's needed?)
+- Strategic questions (what are the risks? what's the market?)
+
+## Next Steps
+1-2 concrete, actionable next steps to move forward. Be specific and practical.
+
+Format as markdown with the sections above. Keep it concise and actionable - each item should be brief but meaningful.
+
+Response:`;
+
+                            expansionText = await this.llmService.complete(expansionPrompt, {
+                                temperature: 0.7,
+                                n_predict: 800
+                            });
+                        } catch (fallbackError) {
+                            Logger.warn('Expansion generation failed:', fallbackError);
+                            expansionText = '';
+                        }
+                    }
+                }
+            } else if (this.llmService.complete) {
+                // If expandIdea is not available, use complete with custom prompt
+                try {
                     const expansionPrompt = `Expand this idea with related concepts, questions, and next steps.
 
 Original Idea:
@@ -536,12 +589,10 @@ Format as markdown with the sections above. Keep it concise and actionable - eac
 
 Response:`;
 
-                    if (this.llmService.complete) {
-                        expansionText = await this.llmService.complete(expansionPrompt, {
-                            temperature: 0.7,
-                            n_predict: 800
-                        });
-                    }
+                    expansionText = await this.llmService.complete(expansionPrompt, {
+                        temperature: 0.7,
+                        n_predict: 800
+                    });
                 } catch (error) {
                     Logger.warn('Expansion generation failed:', error);
                     expansionText = '';
@@ -579,14 +630,29 @@ Response:`;
                 const bodyMatch = content.match(frontmatterRegex);
                 const body = bodyMatch ? content.substring(bodyMatch[0].length) : content;
 
+                // Preserve body content - only trim trailing whitespace, not leading
+                const trimmedBody = body.replace(/\s+$/, '');
+
+                // Check if body already has a heading (starts with #)
+                const hasHeading = /^#+\s/.test(trimmedBody.trimStart());
+
                 // Build new body: title heading + original text + expansion
                 let newBody = '';
-                if (title) {
+                if (title && !hasHeading) {
                     newBody += `# ${title}\n\n`;
                 }
-                newBody += body.trim();
-                if (expansionText) {
-                    newBody += '\n\n---\n\n## Ideas & Questions\n\n' + expansionText.trim();
+                // Preserve the body content, only removing trailing whitespace
+                newBody += trimmedBody;
+                if (expansionText?.trim()) {
+                    // Check if expansion section already exists
+                    const hasExpansion = trimmedBody.includes('## Ideas & Questions') || trimmedBody.includes('## Related Ideas');
+                    if (!hasExpansion) {
+                        // Add spacing if body doesn't end with newline
+                        if (!trimmedBody.endsWith('\n')) {
+                            newBody += '\n';
+                        }
+                        newBody += '\n---\n\n## Ideas & Questions\n\n' + expansionText.trim();
+                    }
                 }
 
                 // Reconstruct full content
