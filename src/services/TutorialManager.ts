@@ -1,11 +1,4 @@
 import { App, Notice, TFile, TFolder } from 'obsidian';
-// NOTE: fs is required for reading bundled tutorial files from plugin directory
-// Obsidian allows plugins to access their own directory for bundled resources
-// This is used as a fallback when tutorials aren't found in the vault
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - Node.js builtin required for plugin directory access
-import * as fs from 'fs';
-import { joinPath } from '../utils/pathUtils';
 
 /**
  * Service for managing tutorial files (copy, delete, reset)
@@ -44,55 +37,29 @@ export class TutorialManager {
     }
 
     /**
-     * Get tutorial file paths from plugin directory or vault
-     * Tries multiple locations where tutorials might be stored
+     * Get tutorial file paths from vault
+     * Reads tutorials from the vault's Tutorials folder
      */
     private async getBundledTutorialFiles(): Promise<Map<string, string>> {
         const tutorials = new Map<string, string>();
         
-        // Try to read from plugin directory first
-        if (this.pluginDir) {
-            const tutorialDir = joinPath(this.pluginDir, 'tutorials');
-            try {
-                if (fs.existsSync(tutorialDir) && fs.statSync(tutorialDir).isDirectory()) {
-                    const files = fs.readdirSync(tutorialDir);
-                    for (const file of files) {
-                        if (file.endsWith('.md')) {
-                            const filePath = joinPath(tutorialDir, file);
-                            try {
-                                const content = fs.readFileSync(filePath, 'utf-8');
-                                tutorials.set(file, content);
-                            } catch (fileError) {
-                                console.warn(`Error reading tutorial file ${file}:`, fileError);
-                            }
+        // Read tutorials from vault
+        try {
+            const tutorialDir = this.findTutorialFolder();
+            if (tutorialDir instanceof TFolder && tutorialDir.children) {
+                for (const child of tutorialDir.children) {
+                    if (child instanceof TFile && child.name.endsWith('.md')) {
+                        try {
+                            const content = await this.app.vault.read(child);
+                            tutorials.set(child.name, content);
+                        } catch (fileError) {
+                            console.warn(`Error reading tutorial file ${child.name}:`, fileError);
                         }
                     }
                 }
-            } catch (error) {
-                console.warn('Error reading tutorial directory from plugin:', error);
             }
-        }
-
-        // If no tutorials found in plugin dir, try reading from vault as fallback
-        // (in case they were manually placed there)
-        if (tutorials.size === 0) {
-            try {
-                const tutorialDir = this.findTutorialFolder();
-                if (tutorialDir instanceof TFolder && tutorialDir.children) {
-                    for (const child of tutorialDir.children) {
-                        if (child instanceof TFile && child.name.endsWith('.md')) {
-                            try {
-                                const content = await this.app.vault.read(child);
-                                tutorials.set(child.name, content);
-                            } catch (fileError) {
-                                console.warn(`Error reading tutorial file ${child.name}:`, fileError);
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn('Error reading tutorial directory from vault:', error);
-            }
+        } catch (error) {
+            console.warn('Error reading tutorial directory from vault:', error);
         }
 
         return tutorials;
@@ -244,9 +211,8 @@ export class TutorialManager {
             // Try to delete the directory if it's empty
             try {
                 if (tutorialDir instanceof TFolder && (!tutorialDir.children || tutorialDir.children.length === 0)) {
-                    // For folders, we still use vault.delete as trashFile is for files
-                    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file
-                    await this.app.vault.delete(tutorialDir, true);
+                    // For folders, we use vault.adapter.rmdir as trashFile is only for files
+                    await this.app.vault.adapter.rmdir(tutorialDir.path, true);
                 }
             } catch {
                 // Directory might not be empty or deletion might fail, that's okay

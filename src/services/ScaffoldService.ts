@@ -158,7 +158,8 @@ export class ScaffoldService implements IScaffoldService {
             if (this.app) {
                 await this.app.fileManager.trashFile(file);
             } else if (this.vault) {
-                // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file
+                // Fallback: use vault.delete when app is not available
+                // This is a fallback case and should be rare
                 await this.vault.delete(file);
             }
             await this.loadCustomTemplates();

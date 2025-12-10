@@ -95,12 +95,14 @@ export class MutationErrorModal extends Modal {
             });
         } else {
             causesList.createEl('li', {
+                // eslint-disable-next-line obsidianmd/ui/sentence-case -- Error message contains technical term "JSON" that must be capitalized
                 text: 'The AI model returned malformed JSON that could not be parsed'
             });
             causesList.createEl('li', {
                 text: 'The response may have been cut off mid-generation'
             });
             causesList.createEl('li', {
+                // eslint-disable-next-line obsidianmd/ui/sentence-case -- Error message contains technical term "JSON" that must be capitalized
                 text: 'Try again - the model may generate valid JSON on retry'
             });
         }

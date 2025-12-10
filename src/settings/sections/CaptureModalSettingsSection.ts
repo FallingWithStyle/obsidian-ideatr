@@ -9,8 +9,8 @@ export class CaptureModalSettingsSection extends BaseSettingsSection {
         // Capture Idea Hotkey
         new Setting(containerEl)
             .setName('Capture idea hotkey')
-            // eslint-disable-next-line obsidianmd/ui/sentence-case
-            .setDesc('Keyboard shortcut for opening the Capture idea modal. Click the field and press your desired key combination. Note: This setting stores your preference. To actually bind the hotkey, you must also set it in Obsidian\'s Hotkeys settings (Settings → Hotkeys → search for "Capture idea").')
+            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Description references command name "Capture Idea" which must be capitalized
+            .setDesc('Keyboard shortcut for opening the Capture Idea modal. Click the field and press your desired key combination. Note: This setting stores your preference. To actually bind the hotkey, you must also set it in Obsidian\'s Hotkeys settings (Settings → Hotkeys → search for "Capture Idea").')
             .addText(text => {
                 createHotkeyPicker(
                     text.inputEl,
@@ -27,8 +27,8 @@ export class CaptureModalSettingsSection extends BaseSettingsSection {
         // Save Shortcut
         new Setting(containerEl)
             .setName('Save shortcut')
-            // eslint-disable-next-line obsidianmd/ui/sentence-case
-            .setDesc('Keyboard shortcut for the Save button in the Capture idea modal. Click the field and press your desired key combination.')
+            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Description references command name "Capture Idea" which must be capitalized
+            .setDesc('Keyboard shortcut for the Save button in the Capture Idea modal. Click the field and press your desired key combination.')
             .addText(text => {
                 createHotkeyPicker(
                     text.inputEl,
@@ -45,8 +45,8 @@ export class CaptureModalSettingsSection extends BaseSettingsSection {
         // Ideate Shortcut
         new Setting(containerEl)
             .setName('Ideate shortcut')
-            // eslint-disable-next-line obsidianmd/ui/sentence-case
-            .setDesc('Keyboard shortcut for the Ideate button in the Capture idea modal. Click the field and press your desired key combination.')
+            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Description references command name "Capture Idea" which must be capitalized
+            .setDesc('Keyboard shortcut for the Ideate button in the Capture Idea modal. Click the field and press your desired key combination.')
             .addText(text => {
                 createHotkeyPicker(
                     text.inputEl,

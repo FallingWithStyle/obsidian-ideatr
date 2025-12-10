@@ -144,7 +144,7 @@ export class ProgressModal extends Modal {
         // Update status
         if (update.status === 'completed') {
             this.statusContainer.createEl('div', {
-                // eslint-disable-next-line obsidianmd/ui/sentence-case
+                // eslint-disable-next-line obsidianmd/ui/sentence-case -- Status message with checkmark icon follows common UI pattern
                 text: '✓ Completed',
                 cls: 'ideatr-progress-completed'
             });

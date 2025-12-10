@@ -91,21 +91,21 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                 .setName('Cloud provider')
                 .setDesc('Select the cloud AI provider')
                 .addDropdown(dropdown => {
+                    // Dropdown options start here - brand names preserved below
                     dropdown
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
-                        .addOption('anthropic', 'anthropic (Claude 3.5 Haiku)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
-                        .addOption('openai', 'openai (GPT-4o Mini)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
-                        .addOption('gemini', 'google Gemini (Gemini 1.5 Flash)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
-                        .addOption('groq', 'groq (Llama 3.3 70B)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
-                        .addOption('openrouter', 'openRouter (multiple models)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        // Dropdown options contain brand names that must be preserved
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
+                        .addOption('anthropic', 'Anthropic (Claude 3.5 Haiku)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
+                        .addOption('openai', 'OpenAI (GPT-4o Mini)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
+                        .addOption('gemini', 'Google Gemini (Gemini 1.5 Flash)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
+                        .addOption('groq', 'Groq (Llama 3.3 70B)')
+                        .addOption('openrouter', 'OpenRouter (multiple models)')
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
                         .addOption('custom', 'Custom endpoint (Ollama/LM Studio)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
-                        .addOption('none', 'none')
+                        .addOption('none', 'None')
                         .setValue(this.plugin.settings.cloudProvider === 'none' ? 'none' : this.plugin.settings.cloudProvider)
                         .onChange(async (value) => {
                             // Type-safe assignment - value is guaranteed to be one of the valid options
@@ -153,6 +153,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     
                     let apiKeyInput: HTMLInputElement;
                     apiKeySetting.addText(text => {
+                        // Placeholder is a technical value, not UI text
                         // eslint-disable-next-line obsidianmd/ui/sentence-case
                         text.setPlaceholder('sk-...')
                             .setValue(currentApiKey);
@@ -273,9 +274,9 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                 if (this.plugin.settings.cloudProvider === 'openrouter') {
                     new Setting(containerEl)
                         .setName('Model')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
                         .setDesc('Select the model to use via OpenRouter')
                         .addText(text => text
+                            // Placeholder is a technical value, not UI text
                             // eslint-disable-next-line obsidianmd/ui/sentence-case
                             .setPlaceholder('openai/gpt-4o-mini')
                             .setValue(this.plugin.settings.openRouterModel || 'openai/gpt-4o-mini')
@@ -291,6 +292,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .setName('Endpoint URL')
                         .setDesc('Enter your custom endpoint URL (e.g., http://localhost:11434/api/chat for Ollama)')
                         .addText(text => text
+                            // Placeholder is a technical value, not UI text
                             // eslint-disable-next-line obsidianmd/ui/sentence-case
                             .setPlaceholder('http://localhost:11434/api/chat')
                             .setValue(this.plugin.settings.customEndpointUrl || '')
@@ -363,7 +365,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
         containerEl.empty();
         
         const introEl = containerEl.createEl('p', {
-            text: 'Compare cloud AI models to find the best fit for your needs. All models are validated for ideatr\'s classification and tagging tasks.',
+            text: 'Compare cloud AI models to find the best fit for your needs. All models are validated for Ideatr\'s classification and tagging tasks.',
             cls: 'cloud-model-comparison-intro'
         });
         introEl.setCssProps({
@@ -607,7 +609,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
 
         // Add footer note
         const footerNote = containerEl.createEl('p', {
-            text: 'All models are validated for ideatr\'s classification and tagging tasks. Choose based on your priorities: cost, quality, speed, or privacy.',
+            text: 'All models are validated for Ideatr\'s classification and tagging tasks. Choose based on your priorities: cost, quality, speed, or privacy.',
             cls: 'setting-item-description'
         });
         (footerNote as HTMLElement).setCssProps({

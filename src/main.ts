@@ -200,7 +200,7 @@ export default class IdeatrPlugin extends Plugin {
         } catch (error) {
             console.error('[Ideatr] Error registering commands:', error);
             console.error('[Ideatr] Error details:', error instanceof Error ? error.stack : error);
-            new Notice('Failed to register ideatr commands. Check console for details');
+            new Notice('Failed to register Ideatr commands. Check console for details');
         }
 
         // Start memory monitoring if debug mode is enabled

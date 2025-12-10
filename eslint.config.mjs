@@ -20,7 +20,18 @@ export default [
     },
     rules: {
       // Obsidian plugin recommended rules
-      ...obsidianmd.configs.recommended,
+      // Note: We access .rules directly since the recommended config may use old format
+      // This ensures all Obsidian recommended rules are applied
+      ...(obsidianmd.configs.recommended?.rules || obsidianmd.configs.recommended?.[0]?.rules || {}),
+      
+      // Configure sentence-case rule to preserve brand names and acronyms
+      // Override the recommended "warn" level to "error" for stricter enforcement
+      // This aligns with Obsidian's documentation: https://github.com/obsidianmd/eslint-plugin
+      "obsidianmd/ui/sentence-case": ["error", {
+        brands: ["Anthropic", "OpenAI", "Gemini", "Groq", "OpenRouter", "Ideatr", "Obsidian", "GitHub"],
+        acronyms: ["AI", "API", "URL", "HTML", "MVP", "GPT", "CSE", "OS"],
+        enforceCamelCaseLower: true,
+      }],
 
       // TypeScript ESLint recommended rules
       ...tseslint.configs.recommended.rules,

@@ -91,12 +91,12 @@ export class CommandRegistry {
 
             // Try to add spinner styling (optional enhancement)
             try {
-                // Access noticeEl via type-safe property access
-                // Notice class has a noticeEl property but it's not in the public API
-                const noticeEl = (loadingNotice as Notice & { noticeEl?: HTMLElement }).noticeEl;
-                if (noticeEl) {
+                // Access messageEl via type-safe property access
+                // Notice class has a messageEl property but it's not in the public API
+                const messageEl = (loadingNotice as Notice & { messageEl?: HTMLElement }).messageEl;
+                if (messageEl) {
                     // Add spinner class for CSS animation
-                    const spinnerSpan = noticeEl.createSpan({ cls: 'ideatr-loading-spinner' });
+                    const spinnerSpan = messageEl.createSpan({ cls: 'ideatr-loading-spinner' });
                     spinnerSpan.textContent = '⏳';
                     spinnerSpan.addClass('ideatr-loading-spinner');
                 }

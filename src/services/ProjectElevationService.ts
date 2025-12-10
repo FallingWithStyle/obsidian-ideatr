@@ -190,7 +190,8 @@ export class ProjectElevationService implements IProjectElevationService {
                 if (this.app) {
                     await this.app.fileManager.trashFile(originalFile);
                 } else {
-                    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file
+                    // Fallback: use vault.delete when app is not available
+                    // This is a fallback case and should be rare
                     await this.vault.delete(originalFile);
                 }
             } catch (error) {
@@ -328,7 +329,8 @@ export class ProjectElevationService implements IProjectElevationService {
                         if (this.app) {
                             await this.app.fileManager.trashFile(file);
                         } else {
-                            // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file
+                            // Fallback: use vault.delete when app is not available
+                            // This is a fallback case and should be rare
                             await this.vault.delete(file);
                         }
                     } else {

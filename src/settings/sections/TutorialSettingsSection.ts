@@ -60,7 +60,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
 
         new Setting(containerEl)
             .setName('Delete tutorials')
-            // eslint-disable-next-line obsidianmd/ui/sentence-case
+            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Description references command name "Reset tutorials" which must match the actual command name
             .setDesc('Remove all tutorial files from your vault. You can restore them later using "Reset tutorials".')
             .addButton(button => button
                 .setButtonText('Delete tutorials')

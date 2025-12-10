@@ -36,7 +36,6 @@ export class FirstLaunchSetupModal extends Modal {
         const apiKeyOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
         apiKeyOption.createEl('h3', { text: 'Use my API key' });
         apiKeyOption.createEl('p', {
-            // eslint-disable-next-line obsidianmd/ui/sentence-case
             text: 'Use a cloud AI provider (Anthropic, OpenAI, etc.) for better quality and faster responses.'
         });
         const apiFeaturesList = apiKeyOption.createEl('ul', {
@@ -83,17 +82,17 @@ export class FirstLaunchSetupModal extends Modal {
         const providerSelect = providerContainer.createEl('select', {
             attr: { id: 'ideatr-provider-select' }
         });
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        // Dropdown options contain brand names that must be preserved
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
         providerSelect.createEl('option', { text: 'Anthropic (Claude 3.5 Haiku)', attr: { value: 'anthropic' } });
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
         providerSelect.createEl('option', { text: 'OpenAI (GPT-4o Mini)', attr: { value: 'openai' } });
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
         providerSelect.createEl('option', { text: 'Google Gemini (Gemini 1.5 Flash)', attr: { value: 'gemini' } });
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
         providerSelect.createEl('option', { text: 'Groq (Llama 3.3 70B)', attr: { value: 'groq' } });
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
         providerSelect.createEl('option', { text: 'OpenRouter (multiple models)', attr: { value: 'openrouter' } });
-        // eslint-disable-next-line obsidianmd/ui/sentence-case
+        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
         providerSelect.createEl('option', { text: 'Custom endpoint (Ollama/LM Studio)', attr: { value: 'custom' } });
         providerSelect.createEl('option', { text: 'Skip for now', attr: { value: 'none' } });
 
