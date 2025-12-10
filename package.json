@@ -1,7 +1,7 @@
 {
   "name": "obsidian-ideatr",
   "version": "0.9.2",
-  "description": "Fast idea capture with optional AI enhancement. Simple, focused, and effective.",
+  "description": "Capture ideas effortlessly, and optionally enhance with AI.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",

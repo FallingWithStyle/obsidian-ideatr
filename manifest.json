@@ -3,7 +3,7 @@
     "name": "Ideatr",
     "version": "0.9.2",
     "minAppVersion": "0.15.0",
-    "description": "Fast idea capture with optional AI enhancement. Simple, focused, and effective.",
+    "description": "Capture ideas effortlessly, and optionally enhance with AI.",
     "author": "Patrick A Regan <ideatr@paraphlabs.com>",
     "authorUrl": "https://github.com/FallingWithStyle",
     "isDesktopOnly": false
