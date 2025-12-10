@@ -4,6 +4,7 @@ import { CommandContext } from '../base/CommandContext';
 import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
 import { extractIdeaNameRuleBased } from '../../utils/ideaNameExtractor';
 import { Logger } from '../../utils/logger';
+import { normalizeTags } from '../../utils/tagNormalizer';
 
 /**
  * Command: ideate
@@ -183,9 +184,12 @@ Response:`;
                 ? allRelatedIds.filter(id => id !== currentFileId && id !== 0)
                 : allRelatedIds.filter(id => id !== 0);
             
+            // Normalize tags to ensure single words or underscores
+            const normalizedTags = normalizeTags(classification.tags);
+            
             await this.updateIdeaFrontmatter(file, {
                 category: classification.category,
-                tags: classification.tags,
+                tags: normalizedTags,
                 related: filteredRelatedIds
             });
 

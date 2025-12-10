@@ -2,6 +2,7 @@ import { TFile,  Notice } from 'obsidian';
 import { IdeaFileCommand } from '../base/IdeaFileCommand';
 import { CommandContext } from '../base/CommandContext';
 import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
+import { normalizeTags } from '../../utils/tagNormalizer';
 
 /**
  * Command: classify-current-note
@@ -27,10 +28,13 @@ export class ClassifyCurrentNoteCommand extends IdeaFileCommand {
         new Notice('Classifying idea...');
         const classification = await this.context.classificationService.classifyIdea(content.ideaText, file.path);
 
+        // Normalize tags to ensure single words or underscores
+        const normalizedTags = normalizeTags(classification.tags);
+        
         // Update frontmatter
         const parsed = this.context.frontmatterParser.parse(content.content);
         parsed.frontmatter.category = classification.category;
-        parsed.frontmatter.tags = classification.tags;
+        parsed.frontmatter.tags = normalizedTags;
         
         // Convert related paths to IDs and filter out the current file's ID
         if (classification.related.length > 0) {

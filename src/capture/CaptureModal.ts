@@ -26,6 +26,7 @@ import { createLightbulbIcon } from '../utils/iconUtils';
 import type { IIdeaRepository } from '../types/management';
 import { RelatedIdConverter } from '../utils/RelatedIdConverter';
 import { FrontmatterParser } from '../services/FrontmatterParser';
+import { normalizeTags } from '../utils/tagNormalizer';
 
 /**
  * Format keyboard shortcut for display (e.g., "cmd+enter" -> "⌘ Enter")
@@ -617,9 +618,12 @@ Response:`;
                 ? allRelatedIds.filter(id => id !== currentFileId && id !== 0)
                 : allRelatedIds.filter(id => id !== 0);
             
+            // Normalize tags to ensure single words or underscores
+            const normalizedTags = normalizeTags(classification.tags);
+            
             await this.fileManager.updateIdeaFrontmatter(file, {
                 category: classification.category,
-                tags: classification.tags,
+                tags: normalizedTags,
                 related: filteredRelatedIds
             });
 
@@ -927,10 +931,13 @@ Response:`;
         const allRelatedPaths = [...new Set([...classification.related, ...this.duplicatePaths])];
         const allRelatedIds = await this.idConverter.pathsToIds(allRelatedPaths);
 
+        // Normalize tags to ensure single words or underscores
+        const normalizedTags = normalizeTags(classification.tags);
+        
         // Update file with classification results
         await this.fileManager.updateIdeaFrontmatter(file, {
             category: classification.category,
-            tags: classification.tags,
+            tags: normalizedTags,
             related: allRelatedIds
         });
 
@@ -975,9 +982,12 @@ Response:`;
                     ? allRelatedIds.filter(id => id !== currentFileId && id !== 0)
                     : allRelatedIds.filter(id => id !== 0);
                 
+                // Normalize tags to ensure single words or underscores
+                const normalizedTags = normalizeTags(classification.tags);
+                
                 await this.fileManager.updateIdeaFrontmatter(file, {
                     category: classification.category,
-                    tags: classification.tags,
+                    tags: normalizedTags,
                     related: filteredRelatedIds
                 });
             } catch (error) {

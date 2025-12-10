@@ -3,6 +3,7 @@ import { BaseCommand } from '../base/BaseCommand';
 import { CommandContext } from '../base/CommandContext';
 import { ProgressModal } from '../../views/ProgressModal';
 import { RelatedIdConverter } from '../../utils/RelatedIdConverter';
+import { normalizeTags } from '../../utils/tagNormalizer';
 
 /**
  * Command: reclassify-all-ideas
@@ -74,11 +75,14 @@ export class ReclassifyAllCommand extends BaseCommand {
                     const idConverter = new RelatedIdConverter(this.context.ideaRepository);
                     const relatedIds = await idConverter.pathsToIds(classification.related);
 
+                    // Normalize tags to ensure single words or underscores
+                    const normalizedTags = normalizeTags(classification.tags);
+
                     // Update frontmatter
                     const updated = { 
                         ...parsed.frontmatter, 
                         category: classification.category,
-                        tags: classification.tags,
+                        tags: normalizedTags,
                         related: relatedIds
                     };
                     const newContent = this.context.frontmatterParser.build(updated, parsed.body);
