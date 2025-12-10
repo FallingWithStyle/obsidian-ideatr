@@ -4,6 +4,80 @@ import { requestUrl } from 'obsidian';
 import { Logger } from '../../utils/logger';
 
 /**
+ * Internal provider interfaces for accessing private properties
+ * These are used to access provider internals without using 'any'
+ */
+interface ProviderWithClient {
+    getClient?: () => {
+        chat?: {
+            completions?: {
+                create: (params: {
+                    model: string;
+                    messages: Array<{ role: string; content: string }>;
+                    max_tokens: number;
+                    temperature: number;
+                    stop?: string[];
+                }) => Promise<{
+                    choices?: Array<{
+                        message?: {
+                            content?: string;
+                        };
+                    }>;
+                }>;
+            };
+        };
+        messages?: {
+            create: (params: {
+                model: string;
+                max_tokens: number;
+                temperature: number;
+                messages: Array<{ role: string; content: string }>;
+            }) => Promise<{
+                content: Array<{
+                    type: string;
+                    text: string;
+                }>;
+            }>;
+        };
+        getGenerativeModel?: (params: {
+            model: string;
+            generationConfig?: {
+                maxOutputTokens: number;
+                temperature: number;
+                stopSequences?: string[];
+            };
+        }) => {
+            generateContent: (prompt: string) => Promise<{
+                response: {
+                    text: () => string;
+                };
+            }>;
+        };
+    };
+    model?: string;
+}
+
+interface CustomEndpointProviderInternal {
+    endpointUrl?: string;
+    format?: 'ollama' | 'openai';
+}
+
+interface OpenRouterProviderInternal {
+    apiKey?: string;
+    model?: string;
+    baseUrl?: string;
+}
+
+interface ProviderWithComplete {
+    complete?: (prompt: string, options?: {
+        temperature?: number;
+        n_predict?: number;
+        stop?: string[];
+        grammar?: string;
+    }) => Promise<string>;
+}
+
+/**
  * ProviderAdapter - Adapts ILLMProvider to ILLMService interface
  */
 export class ProviderAdapter implements ILLMService {
@@ -80,81 +154,88 @@ export class ProviderAdapter implements ILLMService {
 
         try {
             // Use provider name for reliable identification (works in bundled/minified code)
-            const providerAny = this.provider as any;
+            const providerWithClient = this.provider as ILLMProvider & ProviderWithClient;
             
             // OpenAI-compatible providers (OpenAI, Groq)
             if (providerName === 'OpenAI' || providerName === 'Groq') {
-                if (providerAny.getClient) {
-                    const client = providerAny.getClient();
-                    const model = providerAny.model;
+                if (providerWithClient.getClient && providerWithClient.model) {
+                    const client = providerWithClient.getClient();
+                    const model = providerWithClient.model;
                     
-                    const response = await client.chat.completions.create({
-                        model: model,
-                        messages: [{
-                            role: 'user',
-                            content: prompt
-                        }],
-                        max_tokens: maxTokens,
-                        temperature: temperature,
-                        stop: stop
-                    });
+                    if (client?.chat?.completions?.create) {
+                        const response = await client.chat.completions.create({
+                            model: model,
+                            messages: [{
+                                role: 'user',
+                                content: prompt
+                            }],
+                            max_tokens: maxTokens,
+                            temperature: temperature,
+                            stop: stop
+                        });
 
-                    const content = response.choices[0]?.message?.content;
-                    if (!content) {
-                        throw new Error(`No content in ${providerName} response`);
+                        const content = response.choices?.[0]?.message?.content;
+                        if (!content) {
+                            throw new Error(`No content in ${providerName} response`);
+                        }
+                        return content;
                     }
-                    return content;
                 }
             }
 
             // Anthropic
             if (providerName === 'Anthropic') {
-                if (providerAny.getClient) {
-                    const client = providerAny.getClient();
-                    const model = providerAny.model;
+                if (providerWithClient.getClient && providerWithClient.model) {
+                    const client = providerWithClient.getClient();
+                    const model = providerWithClient.model;
                     
-                    const response = await client.messages.create({
-                        model: model,
-                        max_tokens: maxTokens,
-                        temperature: temperature,
-                        messages: [{
-                            role: 'user',
-                            content: prompt
-                        }]
-                    });
+                    if (client?.messages?.create) {
+                        const response = await client.messages.create({
+                            model: model,
+                            max_tokens: maxTokens,
+                            temperature: temperature,
+                            messages: [{
+                                role: 'user',
+                                content: prompt
+                            }]
+                        });
 
-                    const content = response.content[0];
-                    if (content.type !== 'text') {
+                        const content = response.content[0];
+                        if (content?.type === 'text') {
+                            return content.text;
+                        }
                         throw new Error('Unexpected response type from Anthropic API');
                     }
-                    return content.text;
                 }
             }
 
             // Gemini
             if (providerName === 'Gemini') {
-                if (providerAny.getClient) {
-                    const client = providerAny.getClient();
-                    const model = providerAny.model;
+                if (providerWithClient.getClient && providerWithClient.model) {
+                    const client = providerWithClient.getClient();
+                    const model = providerWithClient.model;
                     
-                    const genModel = client.getGenerativeModel({ 
-                        model: model,
-                        generationConfig: {
-                            maxOutputTokens: maxTokens,
-                            temperature: temperature,
-                            stopSequences: stop
-                        }
-                    });
-                    const result = await genModel.generateContent(prompt);
-                    const response = result.response;
-                    return response.text();
+                    if (client?.getGenerativeModel) {
+                        const genModel = client.getGenerativeModel({ 
+                            model: model,
+                            generationConfig: {
+                                maxOutputTokens: maxTokens,
+                                temperature: temperature,
+                                stopSequences: stop
+                            }
+                        });
+                        const result = await genModel.generateContent(prompt);
+                        const response = result.response;
+                        return response.text();
+                    }
                 }
             }
 
             // CustomEndpointProvider
             if (providerName === 'Custom Endpoint') {
-                const endpointUrl = providerAny.endpointUrl;
-                const format = providerAny.format; // 'ollama' or 'openai'
+                const customProvider = this.provider as ILLMProvider & CustomEndpointProviderInternal;
+                const endpointUrl = customProvider.endpointUrl;
+                const format = customProvider.format; // 'ollama' or 'openai'
 
                 let requestBody: Record<string, unknown>;
                 let responsePath: string;
@@ -202,7 +283,7 @@ export class ProviderAdapter implements ILLMService {
                 if (response.status < 200 || response.status >= 300) {
                     const errorJson: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
                     const errorData = (errorJson as { error?: string } | null) ?? {};
-                    throw new Error(`Custom endpoint error: ${typeof errorData.error === 'string' ? errorData.error : 'Request failed'}`);
+                    throw new Error(`Custom endpoint error: ${errorData?.error ?? 'Request failed'}`);
                 }
 
                 const jsonData: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
@@ -226,9 +307,10 @@ export class ProviderAdapter implements ILLMService {
 
             // OpenRouterProvider
             if (providerName === 'OpenRouter') {
-                const apiKey = providerAny.apiKey;
-                const model = providerAny.model;
-                const baseUrl = providerAny.baseUrl || 'https://openrouter.ai/api/v1/chat/completions';
+                const openRouterProvider = this.provider as ILLMProvider & OpenRouterProviderInternal;
+                const apiKey = openRouterProvider.apiKey;
+                const model = openRouterProvider.model;
+                const baseUrl = openRouterProvider.baseUrl ?? 'https://openrouter.ai/api/v1/chat/completions';
 
                 const response = await requestUrl({
                     url: baseUrl,
@@ -274,8 +356,9 @@ export class ProviderAdapter implements ILLMService {
             }
 
             // Check if provider has complete method (for other custom providers)
-            if (providerAny.complete && typeof providerAny.complete === 'function') {
-                return await providerAny.complete(prompt, options);
+            const providerWithComplete = this.provider as ILLMProvider & ProviderWithComplete;
+            if (providerWithComplete.complete && typeof providerWithComplete.complete === 'function') {
+                return await providerWithComplete.complete(prompt, options);
             }
 
             throw new Error(`Provider ${providerName} does not support generic completions. Use local LLM or a provider with complete() method.`);
