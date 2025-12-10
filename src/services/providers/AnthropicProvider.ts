@@ -21,7 +21,10 @@ export class AnthropicProvider implements ILLMProvider {
     private getClient(): Anthropic {
         if (!this.client && this.apiKey && this.apiKey.trim().length > 0) {
             try {
-                this.client = new Anthropic({ apiKey: this.apiKey });
+                this.client = new Anthropic({ 
+                    apiKey: this.apiKey,
+                    dangerouslyAllowBrowser: true // Required for Obsidian's Electron environment
+                });
             } catch (error) {
                 Logger.warn('Failed to initialize Anthropic client:', error);
                 throw new Error('Failed to initialize Anthropic client');

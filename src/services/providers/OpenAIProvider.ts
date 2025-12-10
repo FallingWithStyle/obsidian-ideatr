@@ -21,7 +21,10 @@ export class OpenAIProvider implements ILLMProvider {
     private getClient(): OpenAI {
         if (!this.client && this.apiKey && this.apiKey.trim().length > 0) {
             try {
-                this.client = new OpenAI({ apiKey: this.apiKey });
+                this.client = new OpenAI({ 
+                    apiKey: this.apiKey,
+                    dangerouslyAllowBrowser: true // Required for Obsidian's Electron environment
+                });
             } catch (error) {
                 Logger.warn('Failed to initialize OpenAI client:', error);
                 throw new Error('Failed to initialize OpenAI client');
