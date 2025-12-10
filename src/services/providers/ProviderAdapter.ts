@@ -1,11 +1,5 @@
 import type { ILLMService, ClassificationResult } from '../../types/classification';
 import type { ILLMProvider } from '../../types/llm-provider';
-import { OpenAIProvider } from './OpenAIProvider';
-import { AnthropicProvider } from './AnthropicProvider';
-import { GroqProvider } from './GroqProvider';
-import { GeminiProvider } from './GeminiProvider';
-import { CustomEndpointProvider } from './CustomEndpointProvider';
-import { OpenRouterProvider } from './OpenRouterProvider';
 import { requestUrl } from 'obsidian';
 import { Logger } from '../../utils/logger';
 
@@ -85,45 +79,39 @@ export class ProviderAdapter implements ILLMService {
         const stop = options?.stop;
 
         try {
+            // Use provider name for reliable identification (works in bundled/minified code)
+            const providerAny = this.provider as any;
+            
             // OpenAI-compatible providers (OpenAI, Groq)
-            if (this.provider instanceof OpenAIProvider || this.provider instanceof GroqProvider) {
-                const provider = this.provider as OpenAIProvider | GroqProvider;
-                // Access the private client through a type-safe approach
-                // We'll use the provider's internal methods by calling classify and extracting the client
-                // Actually, we need to access the client directly - let's check if we can use a different approach
-                // For now, we'll use a workaround by accessing the provider's internal state
-                const providerAny = provider as any;
+            if (providerName === 'OpenAI' || providerName === 'Groq') {
                 if (providerAny.getClient) {
                     const client = providerAny.getClient();
                     const model = providerAny.model;
                     
-                    if (this.provider instanceof OpenAIProvider || this.provider instanceof GroqProvider) {
-                        const response = await client.chat.completions.create({
-                            model: model,
-                            messages: [{
-                                role: 'user',
-                                content: prompt
-                            }],
-                            max_tokens: maxTokens,
-                            temperature: temperature,
-                            stop: stop
-                        });
+                    const response = await client.chat.completions.create({
+                        model: model,
+                        messages: [{
+                            role: 'user',
+                            content: prompt
+                        }],
+                        max_tokens: maxTokens,
+                        temperature: temperature,
+                        stop: stop
+                    });
 
-                        const content = response.choices[0]?.message?.content;
-                        if (!content) {
-                            throw new Error(`No content in ${providerName} response`);
-                        }
-                        return content;
+                    const content = response.choices[0]?.message?.content;
+                    if (!content) {
+                        throw new Error(`No content in ${providerName} response`);
                     }
+                    return content;
                 }
             }
 
             // Anthropic
-            if (this.provider instanceof AnthropicProvider) {
-                const provider = this.provider as any;
-                if (provider.getClient) {
-                    const client = provider.getClient();
-                    const model = provider.model;
+            if (providerName === 'Anthropic') {
+                if (providerAny.getClient) {
+                    const client = providerAny.getClient();
+                    const model = providerAny.model;
                     
                     const response = await client.messages.create({
                         model: model,
@@ -144,11 +132,10 @@ export class ProviderAdapter implements ILLMService {
             }
 
             // Gemini
-            if (this.provider instanceof GeminiProvider) {
-                const provider = this.provider as any;
-                if (provider.getClient) {
-                    const client = provider.getClient();
-                    const model = provider.model;
+            if (providerName === 'Gemini') {
+                if (providerAny.getClient) {
+                    const client = providerAny.getClient();
+                    const model = providerAny.model;
                     
                     const genModel = client.getGenerativeModel({ 
                         model: model,
@@ -165,10 +152,9 @@ export class ProviderAdapter implements ILLMService {
             }
 
             // CustomEndpointProvider
-            if (this.provider instanceof CustomEndpointProvider) {
-                const provider = this.provider as any;
-                const endpointUrl = provider.endpointUrl;
-                const format = provider.format; // 'ollama' or 'openai'
+            if (providerName === 'Custom Endpoint') {
+                const endpointUrl = providerAny.endpointUrl;
+                const format = providerAny.format; // 'ollama' or 'openai'
 
                 let requestBody: Record<string, unknown>;
                 let responsePath: string;
@@ -239,11 +225,10 @@ export class ProviderAdapter implements ILLMService {
             }
 
             // OpenRouterProvider
-            if (this.provider instanceof OpenRouterProvider) {
-                const provider = this.provider as any;
-                const apiKey = provider.apiKey;
-                const model = provider.model;
-                const baseUrl = provider.baseUrl || 'https://openrouter.ai/api/v1/chat/completions';
+            if (providerName === 'OpenRouter') {
+                const apiKey = providerAny.apiKey;
+                const model = providerAny.model;
+                const baseUrl = providerAny.baseUrl || 'https://openrouter.ai/api/v1/chat/completions';
 
                 const response = await requestUrl({
                     url: baseUrl,
@@ -289,7 +274,6 @@ export class ProviderAdapter implements ILLMService {
             }
 
             // Check if provider has complete method (for other custom providers)
-            const providerAny = this.provider as any;
             if (providerAny.complete && typeof providerAny.complete === 'function') {
                 return await providerAny.complete(prompt, options);
             }
