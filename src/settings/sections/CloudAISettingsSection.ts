@@ -154,7 +154,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     let apiKeyInput: HTMLInputElement;
                     apiKeySetting.addText(text => {
                         // Placeholder is a technical value, not UI text
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder is a technical value (API key prefix), not UI text
                         text.setPlaceholder('sk-...')
                             .setValue(currentApiKey);
                         apiKeyInput = text.inputEl;
@@ -277,7 +277,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .setDesc('Select the model to use via OpenRouter')
                         .addText(text => text
                             // Placeholder is a technical value, not UI text
-                            // eslint-disable-next-line obsidianmd/ui/sentence-case
+                            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder is a technical value (model identifier), not UI text
                             .setPlaceholder('openai/gpt-4o-mini')
                             .setValue(this.plugin.settings.openRouterModel || 'openai/gpt-4o-mini')
                             .onChange(async (value) => {
@@ -293,7 +293,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .setDesc('Enter your custom endpoint URL (e.g., http://localhost:11434/api/chat for Ollama)')
                         .addText(text => text
                             // Placeholder is a technical value, not UI text
-                            // eslint-disable-next-line obsidianmd/ui/sentence-case
+                            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder is a technical value (URL), not UI text
                             .setPlaceholder('http://localhost:11434/api/chat')
                             .setValue(this.plugin.settings.customEndpointUrl || '')
                             .onChange(async (value) => {
