@@ -93,17 +93,11 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                 .addDropdown(dropdown => {
                     // Dropdown options start here - brand names preserved below
                     dropdown
-                        // Dropdown options contain brand names that must be preserved
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
                         .addOption('anthropic', 'Anthropic (Claude 3.5 Haiku)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
                         .addOption('openai', 'OpenAI (GPT-4o Mini)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
                         .addOption('gemini', 'Google Gemini (Gemini 1.5 Flash)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
                         .addOption('groq', 'Groq (Llama 3.3 70B)')
                         .addOption('openrouter', 'OpenRouter (multiple models)')
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Brand names (Anthropic, OpenAI, etc.) must be capitalized
                         .addOption('custom', 'Custom endpoint (Ollama/LM Studio)')
                         .addOption('none', 'None')
                         .setValue(this.plugin.settings.cloudProvider === 'none' ? 'none' : this.plugin.settings.cloudProvider)
@@ -153,8 +147,6 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     
                     let apiKeyInput: HTMLInputElement;
                     apiKeySetting.addText(text => {
-                        // Placeholder is a technical value, not UI text
-                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder is a technical value (API key prefix), not UI text
                         text.setPlaceholder('sk-...')
                             .setValue(currentApiKey);
                         apiKeyInput = text.inputEl;
@@ -196,7 +188,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     const apiKeyUrl = apiKeyUrls[this.plugin.settings.cloudProvider] || '#';
                     helpText.createEl('a', {
                         href: apiKeyUrl,
-                        text: `get your ${providerName} API key`,
+                        text: `Get your ${providerName} API key`,
                         attr: { target: '_blank' }
                     });
 
@@ -213,7 +205,7 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         'margin-top': '5px',
                         'color': 'var(--text-muted)'
                     });
-                    costText.textContent = `cost estimate: ${costEstimate}`;
+                    costText.textContent = `Cost estimate: ${costEstimate}`;
 
                     new Setting(containerEl)
                         .setName('Test connection')
@@ -276,8 +268,6 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .setName('Model')
                         .setDesc('Select the model to use via OpenRouter')
                         .addText(text => text
-                            // Placeholder is a technical value, not UI text
-                            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder is a technical value (model identifier), not UI text
                             .setPlaceholder('openai/gpt-4o-mini')
                             .setValue(this.plugin.settings.openRouterModel || 'openai/gpt-4o-mini')
                             .onChange(async (value) => {
@@ -292,8 +282,6 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                         .setName('Endpoint URL')
                         .setDesc('Enter your custom endpoint URL (e.g., http://localhost:11434/api/chat for Ollama)')
                         .addText(text => text
-                            // Placeholder is a technical value, not UI text
-                            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder is a technical value (URL), not UI text
                             .setPlaceholder('http://localhost:11434/api/chat')
                             .setValue(this.plugin.settings.customEndpointUrl || '')
                             .onChange(async (value) => {

@@ -28,8 +28,8 @@ export default [
       // Override the recommended "warn" level to "error" for stricter enforcement
       // This aligns with Obsidian's documentation: https://github.com/obsidianmd/eslint-plugin
       "obsidianmd/ui/sentence-case": ["error", {
-        brands: ["Anthropic", "OpenAI", "Gemini", "Groq", "OpenRouter", "Ideatr", "Obsidian", "GitHub"],
-        acronyms: ["AI", "API", "URL", "HTML", "MVP", "GPT", "CSE", "OS"],
+        brands: ["Anthropic", "OpenAI", "Gemini", "Groq", "OpenRouter", "Ideatr", "Obsidian", "GitHub", "Claude", "Haiku", "Llama", "Ollama", "LM Studio"],
+        acronyms: ["AI", "API", "URL", "HTML", "MVP", "GPT", "CSE", "OS", "GPT-4o"],
         enforceCamelCaseLower: true,
       }],
 

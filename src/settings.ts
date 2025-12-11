@@ -166,8 +166,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const mvpTitle = mvpNotice.createEl('strong', { 
-            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Title format with acronyms (MVP, AI) requires specific capitalization
-            text: 'Ideatr MVP - Cloud AI only' 
+            text: 'Ideatr MVP - cloud AI only' 
         });
         (mvpTitle).setCssProps({
             'display': 'block',
@@ -176,7 +175,6 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const mvpText = mvpNotice.createEl('p', { 
-            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Contains brand names (Anthropic, OpenAI, etc.) and acronyms (AI, MVP) that must be capitalized
             text: 'This version (v0.9.0-mvp) focuses on the core feature: fast idea capture with optional AI enhancement. Use supported cloud AI providers (Anthropic, OpenAI, Gemini, Groq, or OpenRouter) for best results. Additional features will be added soon, once core features are verified.'
         });
         (mvpText as HTMLElement).setCssProps({
@@ -193,7 +191,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const reportButton = mvpActions.createEl('a', { 
-            text: '📝 report bug or request a feature',
+            text: '📝 Report bug or request a feature',
             href: '#ideatr-feedback-section'
         });
         (reportButton as HTMLElement).setCssProps({

@@ -48,7 +48,6 @@ export class GuidedIdeationModal extends Modal {
 
         // Description
         const description = contentEl.createEl('p', {
-            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Description text contains example quotes that must preserve original formatting
             text: 'Describe the transformation you want to apply to this idea. Examples: "Organize this list alphabetically", "Add three alternatives", "Rename to Project Goodspring"'
         });
         description.addClass('ideatr-modal-description');

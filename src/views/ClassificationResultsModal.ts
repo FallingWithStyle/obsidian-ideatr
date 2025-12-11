@@ -78,8 +78,7 @@ export class ClassificationResultsModal extends Modal {
 
         // Add tag button
         const addTagButton = tagsList.createEl('button', {
-            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Button label with icon prefix follows common UI pattern
-            text: '+ Add tag',
+            text: 'Add tag',
             cls: 'ideatr-add-tag'
         });
         addTagButton.addEventListener('click', () => {
@@ -165,8 +164,7 @@ export class ClassificationResultsModal extends Modal {
 
         // Add tag button
         const addTagButton = container.createEl('button', {
-            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Button label with icon prefix follows common UI pattern
-            text: '+ Add tag',
+            text: 'Add tag',
             cls: 'ideatr-add-tag'
         });
         addTagButton.addEventListener('click', () => {

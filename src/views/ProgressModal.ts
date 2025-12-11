@@ -144,7 +144,6 @@ export class ProgressModal extends Modal {
         // Update status
         if (update.status === 'completed') {
             this.statusContainer.createEl('div', {
-                // eslint-disable-next-line obsidianmd/ui/sentence-case -- Status message with checkmark icon follows common UI pattern
                 text: '✓ Completed',
                 cls: 'ideatr-progress-completed'
             });
@@ -153,7 +152,7 @@ export class ProgressModal extends Modal {
             }
         } else if (update.status === 'cancelled') {
             this.statusContainer.createEl('div', {
-                text: '✗ cancelled',
+                text: '✗ Cancelled',
                 cls: 'ideatr-progress-cancelled'
             });
         }
