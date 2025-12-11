@@ -157,10 +157,8 @@ export class ScaffoldService implements IScaffoldService {
         if (file && file instanceof TFile) {
             if (this.app) {
                 await this.app.fileManager.trashFile(file);
-            } else if (this.vault) {
-                // Fallback: use vault.delete when app is not available
-                // This is a fallback case and should be rare
-                await this.vault.delete(file);
+            } else {
+                throw new Error('App not available to trash template file');
             }
             await this.loadCustomTemplates();
         }

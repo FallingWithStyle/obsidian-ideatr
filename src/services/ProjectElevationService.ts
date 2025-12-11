@@ -190,9 +190,8 @@ export class ProjectElevationService implements IProjectElevationService {
                 if (this.app) {
                     await this.app.fileManager.trashFile(originalFile);
                 } else {
-                    // Fallback: use vault.delete when app is not available
-                    // This is a fallback case and should be rare
-                    await this.vault.delete(originalFile);
+                    warnings.push('App not available to move original idea file to trash (project created successfully)');
+                    Logger.warn('App not available to trash original idea file.');
                 }
             } catch (error) {
                 warnings.push('Failed to delete original idea file (project created successfully)');
@@ -329,9 +328,7 @@ export class ProjectElevationService implements IProjectElevationService {
                         if (this.app) {
                             await this.app.fileManager.trashFile(file);
                         } else {
-                            // Fallback: use vault.delete when app is not available
-                            // This is a fallback case and should be rare
-                            await this.vault.delete(file);
+                            Logger.warn(`App not available to trash file during rollback: ${path}`);
                         }
                     } else {
                         // It's a folder
