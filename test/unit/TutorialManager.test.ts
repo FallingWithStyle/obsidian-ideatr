@@ -54,7 +54,7 @@ describe('TutorialManager', () => {
         vi.spyOn(mockVault, 'createFolder');
         vi.spyOn(mockVault, 'getAbstractFileByPath');
 
-        tutorialManager = new TutorialManager(mockApp, mockPluginDir);
+        tutorialManager = new TutorialManager(mockApp);
 
         // Reset mocks
         vi.clearAllMocks();

@@ -95,13 +95,13 @@ export class MutationErrorModal extends Modal {
             });
         } else {
             causesList.createEl('li', {
-                text: 'The AI model returned malformed JSON that could not be parsed'
+                text: 'The AI model returned malformed JSON that could not be parsed' // eslint-disable-line obsidianmd/ui/sentence-case -- Contains technical acronym "JSON"
             });
             causesList.createEl('li', {
                 text: 'The response may have been cut off mid-generation'
             });
             causesList.createEl('li', {
-                text: 'Try again - the model may generate valid JSON on retry'
+                text: 'Try again - the model may generate valid JSON on retry' // eslint-disable-line obsidianmd/ui/sentence-case -- Contains technical acronym "JSON"
             });
         }
 

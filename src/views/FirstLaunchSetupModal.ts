@@ -83,9 +83,9 @@ export class FirstLaunchSetupModal extends Modal {
             attr: { id: 'ideatr-provider-select' }
         });
         providerSelect.createEl('option', { text: 'Anthropic (Claude 3.5 Haiku)', attr: { value: 'anthropic' } });
-        providerSelect.createEl('option', { text: 'OpenAI (GPT-4o Mini)', attr: { value: 'openai' } });
-        providerSelect.createEl('option', { text: 'Google Gemini (Gemini 1.5 Flash)', attr: { value: 'gemini' } });
-        providerSelect.createEl('option', { text: 'Groq (Llama 3.3 70B)', attr: { value: 'groq' } });
+        providerSelect.createEl('option', { text: 'OpenAI (GPT-4o Mini)', attr: { value: 'openai' } }); // eslint-disable-line obsidianmd/ui/sentence-case -- Brand name and model designation
+        providerSelect.createEl('option', { text: 'Google Gemini (Gemini 1.5 Flash)', attr: { value: 'gemini' } }); // eslint-disable-line obsidianmd/ui/sentence-case -- Brand name appears twice
+        providerSelect.createEl('option', { text: 'Groq (Llama 3.3 70B)', attr: { value: 'groq' } }); // eslint-disable-line obsidianmd/ui/sentence-case -- Model name "Llama" is a proper noun
         providerSelect.createEl('option', { text: 'OpenRouter (multiple models)', attr: { value: 'openrouter' } });
         providerSelect.createEl('option', { text: 'Custom endpoint (Ollama/LM Studio)', attr: { value: 'custom' } });
         providerSelect.createEl('option', { text: 'Skip for now', attr: { value: 'none' } });

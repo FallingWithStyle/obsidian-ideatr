@@ -16,7 +16,6 @@ import { createModelStatusIndicator } from './utils/ModelStatusIndicator';
 import { MemoryMonitor } from './utils/MemoryMonitor';
 import { IDEATR_ICON_ID, IDEATR_ICON_GREEN, IDEATR_ICON_YELLOW, IDEATR_ICON_RED, createPNGIconSVG } from './utils/iconUtils';
 import { PURPLE_ICON_BASE64, GREEN_ICON_BASE64, YELLOW_ICON_BASE64, RED_ICON_BASE64 } from './utils/iconData';
-import { joinPath, resolvePath, isAbsolutePath } from './utils/pathUtils';
 import type { ILLMService } from './types/classification';
 
 /**
@@ -374,16 +373,7 @@ export default class IdeatrPlugin extends Plugin {
      */
     private async ensureTutorialsAvailable(): Promise<void> {
         try {
-            // Get plugin directory
-            // Vault adapter may have basePath property for file system access
-            const vaultAdapter = this.app.vault.adapter as { basePath?: string };
-            const vaultBasePath = vaultAdapter.basePath ?? this.app.vault.configDir;
-            const configDir = isAbsolutePath(this.app.vault.configDir)
-                ? this.app.vault.configDir
-                : joinPath(vaultBasePath, this.app.vault.configDir);
-            const pluginDir = resolvePath(joinPath(configDir, 'plugins', this.manifest.id));
-
-            const tutorialManager = new TutorialManager(this.app, pluginDir);
+            const tutorialManager = new TutorialManager(this.app);
 
             // Check if tutorials exist in vault
             const tutorialsInVault = tutorialManager.tutorialsExistInVault();

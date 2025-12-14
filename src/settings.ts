@@ -174,8 +174,9 @@ export class IdeatrSettingTab extends PluginSettingTab {
             'color': 'var(--text-accent)'
         });
         
+        // Long description with multiple sentences and brand names
         const mvpText = mvpNotice.createEl('p', { 
-            text: 'This version (v0.9.0-mvp) focuses on the core feature: fast idea capture with optional AI enhancement. Use supported cloud AI providers (Anthropic, OpenAI, Gemini, Groq, or OpenRouter) for best results. Additional features will be added soon, once core features are verified.'
+            text: 'This version (v0.9.0-mvp) focuses on the core feature: fast idea capture with optional AI enhancement. Use supported cloud AI providers (Anthropic, OpenAI, Gemini, Groq, or OpenRouter) for best results. Additional features will be added soon once core features are verified.' // eslint-disable-line obsidianmd/ui/sentence-case -- Long description with multiple brand names
         });
         (mvpText as HTMLElement).setCssProps({
             'margin': '0.5em 0',
@@ -191,7 +192,7 @@ export class IdeatrSettingTab extends PluginSettingTab {
         });
         
         const reportButton = mvpActions.createEl('a', { 
-            text: '📝 Report bug or request a feature',
+            text: '📝 report bug or request feature',
             href: '#ideatr-feedback-section'
         });
         (reportButton as HTMLElement).setCssProps({

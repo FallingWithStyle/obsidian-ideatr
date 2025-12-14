@@ -5,8 +5,7 @@ import { App, Notice, TFile, TFolder } from 'obsidian';
  */
 export class TutorialManager {
     constructor(
-        private app: App,
-        private pluginDir?: string
+        private app: App
     ) {}
 
     /**

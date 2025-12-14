@@ -2,7 +2,6 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import { BaseSettingsSection } from '../components/SettingsSection';
 import { TutorialManager } from '../../services/TutorialManager';
 import type IdeatrPlugin from '../../main';
-import { joinPath, resolvePath, isAbsolutePath } from '../../utils/pathUtils';
 import { showConfirmation } from '../../utils/confirmation';
 
 export class TutorialSettingsSection extends BaseSettingsSection {
@@ -11,15 +10,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
     constructor(app: App, plugin: IdeatrPlugin, settingsTab?: PluginSettingTab) {
         super(app, plugin, settingsTab);
         
-        // Get plugin directory for tutorial manager (same approach as ServiceInitializer)
-        // Vault adapter may have basePath property but it's not in the public API
-        const vaultBasePath = (app.vault.adapter as { basePath?: string }).basePath ?? app.vault.configDir;
-        const configDir = isAbsolutePath(app.vault.configDir) 
-            ? app.vault.configDir
-            : joinPath(vaultBasePath, app.vault.configDir);
-        const pluginDir = resolvePath(joinPath(configDir, 'plugins', plugin.manifest.id));
-        
-        this.tutorialManager = new TutorialManager(app, pluginDir);
+        this.tutorialManager = new TutorialManager(app);
     }
 
     display(containerEl: HTMLElement): void {
@@ -60,6 +51,7 @@ export class TutorialSettingsSection extends BaseSettingsSection {
 
         new Setting(containerEl)
             .setName('Delete tutorials')
+            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Description references command name "Reset tutorials" which must match the actual command name
             .setDesc('Remove all tutorial files from your vault. You can restore them later using "Reset tutorials".')
             .addButton(button => button
                 .setButtonText('Delete tutorials')

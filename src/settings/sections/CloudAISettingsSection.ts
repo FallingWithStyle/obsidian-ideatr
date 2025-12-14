@@ -91,12 +91,11 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                 .setName('Cloud provider')
                 .setDesc('Select the cloud AI provider')
                 .addDropdown(dropdown => {
-                    // Dropdown options start here - brand names preserved below
                     dropdown
                         .addOption('anthropic', 'Anthropic (Claude 3.5 Haiku)')
-                        .addOption('openai', 'OpenAI (GPT-4o Mini)')
-                        .addOption('gemini', 'Google Gemini (Gemini 1.5 Flash)')
-                        .addOption('groq', 'Groq (Llama 3.3 70B)')
+                        .addOption('openai', 'OpenAI (GPT-4o Mini)') // eslint-disable-line obsidianmd/ui/sentence-case -- Brand name and model designation
+                        .addOption('gemini', 'Google Gemini (Gemini 1.5 Flash)') // eslint-disable-line obsidianmd/ui/sentence-case -- Brand name appears twice (provider and model)
+                        .addOption('groq', 'Groq (Llama 3.3 70B)') // eslint-disable-line obsidianmd/ui/sentence-case -- Model name "Llama" is a proper noun
                         .addOption('openrouter', 'OpenRouter (multiple models)')
                         .addOption('custom', 'Custom endpoint (Ollama/LM Studio)')
                         .addOption('none', 'None')
@@ -147,6 +146,8 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     
                     let apiKeyInput: HTMLInputElement;
                     apiKeySetting.addText(text => {
+                        // Placeholder is a technical example value, not UI text
+                        // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder shows example API key format
                         text.setPlaceholder('sk-...')
                             .setValue(currentApiKey);
                         apiKeyInput = text.inputEl;
@@ -267,13 +268,16 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     new Setting(containerEl)
                         .setName('Model')
                         .setDesc('Select the model to use via OpenRouter')
-                        .addText(text => text
-                            .setPlaceholder('openai/gpt-4o-mini')
-                            .setValue(this.plugin.settings.openRouterModel || 'openai/gpt-4o-mini')
-                            .onChange(async (value) => {
-                                this.plugin.settings.openRouterModel = value;
-                                await this.saveSettings();
-                            }));
+                        .addText(text => {
+                            // Placeholder is a technical value showing model ID format
+                            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder shows example model identifier
+                            return text.setPlaceholder('openai/gpt-4o-mini')
+                                .setValue(this.plugin.settings.openRouterModel || 'openai/gpt-4o-mini')
+                                .onChange(async (value) => {
+                                    this.plugin.settings.openRouterModel = value;
+                                    await this.saveSettings();
+                                });
+                        });
                 }
 
                 // Custom endpoint URL
@@ -281,13 +285,16 @@ export class CloudAISettingsSection extends BaseSettingsSection {
                     new Setting(containerEl)
                         .setName('Endpoint URL')
                         .setDesc('Enter your custom endpoint URL (e.g., http://localhost:11434/api/chat for Ollama)')
-                        .addText(text => text
-                            .setPlaceholder('http://localhost:11434/api/chat')
-                            .setValue(this.plugin.settings.customEndpointUrl || '')
-                            .onChange(async (value) => {
-                                this.plugin.settings.customEndpointUrl = value;
-                                await this.saveSettings();
-                            }));
+                        .addText(text => {
+                            // Placeholder is a technical value, not UI text
+                            // eslint-disable-next-line obsidianmd/ui/sentence-case -- Placeholder shows example URL
+                            return text.setPlaceholder('http://localhost:11434/api/chat')
+                                .setValue(this.plugin.settings.customEndpointUrl || '')
+                                .onChange(async (value) => {
+                                    this.plugin.settings.customEndpointUrl = value;
+                                    await this.saveSettings();
+                                });
+                        });
 
                     const customCostText = containerEl.createDiv('setting-item-description');
                     (customCostText as HTMLElement).setCssProps({

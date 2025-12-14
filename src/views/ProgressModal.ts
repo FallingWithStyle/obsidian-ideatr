@@ -144,7 +144,7 @@ export class ProgressModal extends Modal {
         // Update status
         if (update.status === 'completed') {
             this.statusContainer.createEl('div', {
-                text: '✓ Completed',
+                text: '✓ completed',
                 cls: 'ideatr-progress-completed'
             });
             if (this.cancelButton) {
@@ -152,7 +152,7 @@ export class ProgressModal extends Modal {
             }
         } else if (update.status === 'cancelled') {
             this.statusContainer.createEl('div', {
-                text: '✗ Cancelled',
+                text: '✗ cancelled',
                 cls: 'ideatr-progress-cancelled'
             });
         }

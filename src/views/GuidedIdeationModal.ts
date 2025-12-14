@@ -48,7 +48,7 @@ export class GuidedIdeationModal extends Modal {
 
         // Description
         const description = contentEl.createEl('p', {
-            text: 'Describe the transformation you want to apply to this idea. Examples: "Organize this list alphabetically", "Add three alternatives", "Rename to Project Goodspring"'
+            text: 'Describe the transformation you want to apply to this idea. Examples: "organize this list alphabetically", "add three alternatives", "rename to Project Goodspring"' // eslint-disable-line obsidianmd/ui/sentence-case -- Contains quoted examples and proper noun "Project Goodspring"
         });
         description.addClass('ideatr-modal-description');
 
