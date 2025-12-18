@@ -40,6 +40,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",
     "@google/generative-ai": "^0.24.1",
+    "@ideatr/core": "file:../core",
     "groq-sdk": "^0.37.0",
     "openai": "^6.9.1"
   }

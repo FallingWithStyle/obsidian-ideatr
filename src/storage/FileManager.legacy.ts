@@ -1,29 +1,27 @@
+/**
+ * @deprecated This is the legacy FileManager implementation.
+ * It will be replaced by using @ideatr/core's IdeaManager with ObsidianAdapter.
+ * 
+ * This file is kept for reference during migration.
+ */
+
 import type { Vault, TFile } from 'obsidian';
 import type { IdeaInput } from '../types/idea';
 import { generateFilename, addCollisionSuffix } from './FilenameGenerator';
 import { buildFrontmatter, frontmatterToYAML } from '../metadata/FrontmatterBuilder';
 import type { IdeaFrontmatter } from '../types/idea';
-// Import core adapter (will be available after linking core package)
-// import { ObsidianAdapter } from '@ideatr/core';
-// import type { FileSystemAdapter } from '@ideatr/core';
 
 /**
  * FileManager - Handles file creation and management for ideas
- * 
- * Note: This will be migrated to use @ideatr/core's IdeaManager in Phase 3.
- * For now, it uses Vault directly but is prepared for adapter migration.
  */
 
 const IDEAS_DIRECTORY = 'Ideas';
 
 export class FileManager {
     private vault: Vault;
-    // private adapter: FileSystemAdapter; // Will be used in Phase 3
 
     constructor(vault: Vault) {
         this.vault = vault;
-        // TODO: Phase 3 - Initialize ObsidianAdapter
-        // this.adapter = new ObsidianAdapter(vault);
     }
 
     /**
@@ -226,3 +224,4 @@ export class FileManager {
         }
     }
 }
+

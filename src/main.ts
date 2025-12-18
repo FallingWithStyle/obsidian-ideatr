@@ -12,6 +12,9 @@ import { NameVariantService } from './services/NameVariantService';
 import { ScaffoldService } from './services/ScaffoldService';
 import { FrontmatterParser } from './services/FrontmatterParser';
 import { IdeaRepository } from './services/IdeaRepository';
+// Core package imports
+import { IdeaManager } from '@ideatr/core';
+import { createObsidianAdapter } from './adapters/ObsidianAdapterWrapper';
 import { EmbeddingService } from './services/EmbeddingService';
 import { ClusteringService } from './services/ClusteringService';
 import { GraphLayoutService } from './services/GraphLayoutService';
@@ -56,6 +59,7 @@ import { PROMPTS } from './services/prompts';
 export default class IdeatrPlugin extends Plugin {
     settings!: IdeatrSettings;
     private fileManager!: FileManager;
+    private ideaManager!: IdeaManager; // Core idea manager (initialized but not yet used - migration in progress)
     private classificationService!: ClassificationService;
     private duplicateDetector!: DuplicateDetector;
     private llmService!: ILLMService; // Now uses HybridLLM
@@ -102,8 +106,15 @@ export default class IdeatrPlugin extends Plugin {
             }, 100);
         }
 
-        // Initialize FileManager
+        // Initialize FileManager (legacy, will be replaced by IdeaManager)
         this.fileManager = new FileManager(this.app.vault);
+
+        // Initialize IdeaManager from core
+        // TODO: Phase 3.3 - Gradually migrate from IdeaRepository/FileManager to IdeaManager
+        const adapter = createObsidianAdapter(this.app.vault);
+        this.ideaManager = new IdeaManager(adapter);
+        // Suppress unused warning during migration
+        void this.ideaManager;
 
         // Initialize FileOrganizer
         this.fileOrganizer = new FileOrganizer(this.app.vault, this.settings);
