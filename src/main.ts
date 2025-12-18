@@ -19,7 +19,6 @@ import {
     ResurfacingService as CoreResurfacingService,
     ExportService,
     ImportService,
-    DEFAULT_VAULT_STRUCTURE,
     type VaultStructure,
     type ProjectElevationConfig
 } from '@ideatr/core';
@@ -36,6 +35,7 @@ import { GraphView } from './views/GraphView';
 import { IdeatrSettings, DEFAULT_SETTINGS, IdeatrSettingTab } from './settings';
 import { Notice, TFile } from 'obsidian';
 import type { IdeaCategory, IdeaClassification } from './types/classification';
+import type { IResurfacingService, IProjectElevationService } from './types/management';
 import { HybridLLM } from './services/HybridLLM';
 import { ProviderFactory } from './services/providers/ProviderFactory';
 import { ProviderAdapter } from './services/providers/ProviderAdapter';
@@ -84,8 +84,8 @@ export default class IdeatrPlugin extends Plugin {
     private embeddingService!: EmbeddingService;
     private clusteringService!: ClusteringService;
     private graphLayoutService!: GraphLayoutService;
-    private resurfacingService!: ResurfacingService;
-    private projectElevationService!: ProjectElevationService;
+    private resurfacingService!: IResurfacingService;
+    private projectElevationService!: IProjectElevationService;
     private modelManager!: ModelManager;
     fileOrganizer!: FileOrganizer; // Public for testing
     tenuousLinkService!: TenuousLinkServiceImpl; // Public for testing

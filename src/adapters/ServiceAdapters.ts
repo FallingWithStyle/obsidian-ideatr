@@ -5,8 +5,9 @@
  * to allow the plugin to use core services while maintaining backward compatibility.
  */
 
-import type { IdeaFile, IdeaFrontmatter } from '../types/idea';
+import type { IdeaFile } from '../types/idea';
 import type { Idea } from '@ideatr/core';
+import { IdeaStatus } from '@ideatr/core';
 import type { 
     IProjectElevationService, 
     IResurfacingService,
@@ -15,9 +16,7 @@ import type {
 } from '../types/management';
 import type { 
     ProjectElevationService as CoreProjectElevationService,
-    ResurfacingService as CoreResurfacingService,
-    ElevationResult as CoreElevationResult,
-    Digest as CoreDigest
+    ResurfacingService as CoreResurfacingService
 } from '@ideatr/core';
 
 /**
@@ -65,14 +64,15 @@ function ideaToIdeaFile(idea: Idea): IdeaFile {
 }
 
 /**
- * Map status string to IdeaStatus
+ * Map status string to IdeaStatus enum
  */
-function mapStatus(status: string): 'captured' | 'validated' | 'promoted' | 'archived' {
-    if (status === 'elevated') return 'promoted';
-    if (status === 'captured' || status === 'validated' || status === 'promoted' || status === 'archived') {
-        return status;
+function mapStatus(status: string): IdeaStatus {
+    if (status === 'elevated') return IdeaStatus.Promoted;
+    if (status === IdeaStatus.Captured || status === IdeaStatus.Validated || 
+        status === IdeaStatus.Promoted || status === IdeaStatus.Archived) {
+        return status as IdeaStatus;
     }
-    return 'captured';
+    return IdeaStatus.Captured;
 }
 
 /**
