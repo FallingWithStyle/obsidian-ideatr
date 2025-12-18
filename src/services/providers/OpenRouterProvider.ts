@@ -36,7 +36,7 @@ export class OpenRouterProvider implements ILLMProvider {
                 headers: {
                     'Authorization': `Bearer ${this.apiKey}`,
                     'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://github.com/FallingWithStyle/ideatr-project-internal',
+                    'HTTP-Referer': 'https://github.com/FallingWithStyle/ideatr',
                     'X-Title': 'Ideatr'
                 },
                 body: JSON.stringify({

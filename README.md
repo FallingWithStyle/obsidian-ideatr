@@ -41,8 +41,8 @@ Ideatr Project Internal is the central intake and triage layer for all creative 
 
 ```bash
 # Clone the repository
-git clone https://github.com/FallingWithStyle/ideatr-project-internal.git
-cd ideatr-project-internal
+git clone https://github.com/FallingWithStyle/obsidian-ideatr.git
+cd obsidian-ideatr
 
 # Install dependencies
 npm install
@@ -56,7 +56,7 @@ npm run dev
 
 ### Setup in Obsidian
 
-1. Copy the plugin files to your Obsidian vault's `.obsidian/plugins/ideatr-project-internal/` directory
+1. Copy the plugin files to your Obsidian vault's `.obsidian/plugins/ideatr/` directory
 2. Enable the plugin in Obsidian Settings → Community Plugins
 3. Configure hotkey in Obsidian Settings → Hotkeys (search for "Ideatr Project Internal: Capture Idea")
 4. Create or use existing `Ideas/` directory in your vault
@@ -105,7 +105,7 @@ Your idea text goes here...
 ## Project Structure
 
 ```
-/ideatr-project-internal
+/obsidian-ideatr
   ├── src/              # TypeScript source code
   │   ├── main.ts       # Plugin entry point
   │   ├── capture/      # Capture modal components
