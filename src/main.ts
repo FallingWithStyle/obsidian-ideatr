@@ -13,13 +13,24 @@ import { ScaffoldService } from './services/ScaffoldService';
 import { FrontmatterParser } from './services/FrontmatterParser';
 import { IdeaRepository } from './services/IdeaRepository';
 // Core package imports
-import { IdeaManager } from '@ideatr/core';
+import { 
+    IdeaManager, 
+    ProjectElevationService as CoreProjectElevationService,
+    ResurfacingService as CoreResurfacingService,
+    ExportService,
+    ImportService,
+    DEFAULT_VAULT_STRUCTURE,
+    type VaultStructure,
+    type ProjectElevationConfig
+} from '@ideatr/core';
 import { createObsidianAdapter } from './adapters/ObsidianAdapterWrapper';
+import { 
+    ProjectElevationServiceAdapter,
+    ResurfacingServiceAdapter
+} from './adapters/ServiceAdapters';
 import { EmbeddingService } from './services/EmbeddingService';
 import { ClusteringService } from './services/ClusteringService';
 import { GraphLayoutService } from './services/GraphLayoutService';
-import { ResurfacingService } from './services/ResurfacingService';
-import { ProjectElevationService } from './services/ProjectElevationService';
 import { DashboardView } from './views/DashboardView';
 import { GraphView } from './views/GraphView';
 import { IdeatrSettings, DEFAULT_SETTINGS, IdeatrSettingTab } from './settings';
@@ -49,8 +60,7 @@ import { ClusterAnalysisModal, type ClusterInfo } from './views/ClusterAnalysisM
 import { IdeaStatsModal, type IdeaStats } from './views/IdeaStatsModal';
 import { ImportFilePickerModal } from './views/ImportFilePickerModal';
 import { TenuousLinkServiceImpl } from './services/TenuousLinkService';
-import { ExportService, type ExportFormat } from './services/ExportService';
-import { ImportService } from './services/ImportService';
+import type { ExportFormat } from '@ideatr/core';
 import { PROMPTS } from './services/prompts';
 
 /**
@@ -110,11 +120,13 @@ export default class IdeatrPlugin extends Plugin {
         this.fileManager = new FileManager(this.app.vault);
 
         // Initialize IdeaManager from core
-        // TODO: Phase 3.3 - Gradually migrate from IdeaRepository/FileManager to IdeaManager
         const adapter = createObsidianAdapter(this.app.vault);
-        this.ideaManager = new IdeaManager(adapter);
-        // Suppress unused warning during migration
-        void this.ideaManager;
+        const vaultStructure: VaultStructure = {
+            ideasDirectory: 'Ideas',
+            projectsDirectory: this.settings.elevationProjectsDirectory || 'Projects',
+            archiveDirectory: 'Archive'
+        };
+        this.ideaManager = new IdeaManager(adapter, vaultStructure);
 
         // Initialize FileOrganizer
         this.fileOrganizer = new FileOrganizer(this.app.vault, this.settings);
@@ -191,25 +203,43 @@ export default class IdeatrPlugin extends Plugin {
             this.settings.clusteringSimilarityThreshold || 0.3
         );
         this.graphLayoutService = new GraphLayoutService();
-        this.resurfacingService = new ResurfacingService(
-            this.ideaRepository,
-            this.settings,
-            this.app.vault
+        
+        // Initialize core services (Phase 5)
+        const coreResurfacingService = new CoreResurfacingService(
+            this.ideaManager,
+            {
+                thresholdDays: this.settings.resurfacingThresholdDays
+            }
         );
-        this.projectElevationService = new ProjectElevationService(
-            this.app.vault,
-            this.frontmatterParser,
-            this.settings
+        this.resurfacingService = new ResurfacingServiceAdapter(
+            coreResurfacingService,
+            this.ideaRepository
+        );
+        
+        const elevationConfig: ProjectElevationConfig = {
+            projectsDirectory: this.settings.elevationProjectsDirectory || 'Projects',
+            defaultFolders: this.settings.elevationDefaultFolders,
+            createDevraMetadata: this.settings.elevationCreateDevraMetadata
+        };
+        const coreProjectElevationService = new CoreProjectElevationService(
+            adapter,
+            this.ideaManager,
+            vaultStructure,
+            elevationConfig
+        );
+        this.projectElevationService = new ProjectElevationServiceAdapter(
+            coreProjectElevationService,
+            this.ideaManager
         );
 
-        // Initialize analysis and export/import services
+        // Initialize analysis and export/import services (Phase 5)
         this.tenuousLinkService = new TenuousLinkServiceImpl(
             this.app.vault,
             this.embeddingService,
             this.llmService
         );
-        this.exportService = new ExportService(this.app.vault);
-        this.importService = new ImportService(this.app.vault);
+        this.exportService = new ExportService(this.ideaManager);
+        this.importService = new ImportService(this.ideaManager);
 
         // Register Dashboard View
         this.registerView(
