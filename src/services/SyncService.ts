@@ -1,3 +1,14 @@
+/**
+ * @deprecated This file is deprecated. Use @ideatr/core SyncService instead.
+ * 
+ * Migration:
+ * - Import SyncService from '@ideatr/core'
+ * - Use ObsidianHttpClient from './adapters/ObsidianHttpClient'
+ * - Create: new SyncService(config, httpClient, fileSystemAdapter?)
+ * 
+ * This file is kept for backward compatibility but will be removed in a future version.
+ */
+
 import { requestUrl } from 'obsidian';
 
 export interface SyncConfig {

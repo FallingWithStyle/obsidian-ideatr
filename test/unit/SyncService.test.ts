@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SyncService, SyncConfig } from '../../src/services/SyncService';
+import { SyncService, type SyncConfig, type FileChange } from '@ideatr/core';
+import { ObsidianHttpClient } from '../../src/adapters/ObsidianHttpClient';
 import * as obsidian from 'obsidian';
 
 // Mock Obsidian's requestUrl
@@ -7,8 +8,9 @@ vi.mock('obsidian', () => ({
     requestUrl: vi.fn()
 }));
 
-describe('SyncService', () => {
+describe('SyncService (Plugin Integration)', () => {
     let service: SyncService;
+    let httpClient: ObsidianHttpClient;
     const config: SyncConfig = {
         serverUrl: 'http://localhost:3000',
         token: 'test-token',
@@ -16,15 +18,16 @@ describe('SyncService', () => {
     };
 
     beforeEach(() => {
-        service = new SyncService(config);
+        httpClient = new ObsidianHttpClient();
+        service = new SyncService(config, httpClient);
         vi.clearAllMocks();
     });
 
     it('should push changes successfully', async () => {
-        const mockResponse = { status: 200, json: { success: true } };
+        const mockResponse = { status: 200, json: { success: true }, text: '' };
         (obsidian.requestUrl as any).mockResolvedValue(mockResponse);
 
-        const changes = [{ path: 'test.md', content: 'encrypted', hash: '123' }];
+        const changes: FileChange[] = [{ path: 'test.md', content: 'encrypted', hash: '123' }];
         const result = await service.push(changes);
 
         expect(result).toBe(true);
@@ -38,8 +41,8 @@ describe('SyncService', () => {
     });
 
     it('should pull changes successfully', async () => {
-        const mockChanges = [{ path: 'remote.md', content: 'encrypted', hash: '456' }];
-        const mockResponse = { status: 200, json: { changes: mockChanges } };
+        const mockChanges: FileChange[] = [{ path: 'remote.md', content: 'encrypted', hash: '456' }];
+        const mockResponse = { status: 200, json: { changes: mockChanges }, text: '' };
         (obsidian.requestUrl as any).mockResolvedValue(mockResponse);
 
         const result = await service.pull(0);
@@ -93,7 +96,7 @@ describe('SyncService', () => {
                 serverUrl: 'http://localhost:3000',
                 token: 'test-token',
                 encryptionKey: 'different-key'
-            });
+            }, httpClient);
 
             // Decryption with wrong key should fail (Web Crypto throws DOMException)
             await expect(differentService.decrypt(encrypted)).rejects.toBeInstanceOf(Error);
@@ -194,15 +197,15 @@ describe('SyncService', () => {
     });
 
     describe('conflict detection', () => {
-        it('should detect conflicts when server has newer version', async () => {
-            const localChange = {
+        it('should detect conflicts when server has newer version', () => {
+            const localChange: FileChange = {
                 path: 'test.md',
                 content: 'local content',
                 hash: 'local-hash',
                 timestamp: 1000
             };
 
-            const serverChange = {
+            const serverChange: FileChange = {
                 path: 'test.md',
                 content: 'server content',
                 hash: 'server-hash',
@@ -213,15 +216,15 @@ describe('SyncService', () => {
             expect(hasConflict).toBe(true);
         });
 
-        it('should not detect conflicts when local is newer', async () => {
-            const localChange = {
+        it('should not detect conflicts when local is newer', () => {
+            const localChange: FileChange = {
                 path: 'test.md',
                 content: 'local content',
                 hash: 'local-hash',
                 timestamp: 2000
             };
 
-            const serverChange = {
+            const serverChange: FileChange = {
                 path: 'test.md',
                 content: 'server content',
                 hash: 'server-hash',
@@ -232,15 +235,15 @@ describe('SyncService', () => {
             expect(hasConflict).toBe(false);
         });
 
-        it('should not detect conflicts for different files', async () => {
-            const localChange = {
+        it('should not detect conflicts for different files', () => {
+            const localChange: FileChange = {
                 path: 'file1.md',
                 content: 'content1',
                 hash: 'hash1',
                 timestamp: 1000
             };
 
-            const serverChange = {
+            const serverChange: FileChange = {
                 path: 'file2.md',
                 content: 'content2',
                 hash: 'hash2',
@@ -260,10 +263,10 @@ describe('SyncService', () => {
                 if (attemptCount < 3) {
                     throw new Error('Network error');
                 }
-                return Promise.resolve({ status: 200, json: { success: true } });
+                return Promise.resolve({ status: 200, json: { success: true }, text: '' });
             });
 
-            const changes = [{ path: 'test.md', content: 'encrypted', hash: '123' }];
+            const changes: FileChange[] = [{ path: 'test.md', content: 'encrypted', hash: '123' }];
             const result = await service.push(changes);
 
             expect(result).toBe(true);
@@ -273,7 +276,7 @@ describe('SyncService', () => {
         it('should fail after max retries', async () => {
             (obsidian.requestUrl as any).mockRejectedValue(new Error('Network error'));
 
-            const changes = [{ path: 'test.md', content: 'encrypted', hash: '123' }];
+            const changes: FileChange[] = [{ path: 'test.md', content: 'encrypted', hash: '123' }];
             const result = await service.push(changes);
 
             expect(result).toBe(false);
@@ -281,9 +284,9 @@ describe('SyncService', () => {
         });
 
         it('should not retry on 4xx errors', async () => {
-            (obsidian.requestUrl as any).mockResolvedValue({ status: 400, json: { error: 'Bad request' } });
+            (obsidian.requestUrl as any).mockResolvedValue({ status: 400, json: { error: 'Bad request' }, text: '' });
 
-            const changes = [{ path: 'test.md', content: 'encrypted', hash: '123' }];
+            const changes: FileChange[] = [{ path: 'test.md', content: 'encrypted', hash: '123' }];
             const result = await service.push(changes);
 
             expect(result).toBe(false);
