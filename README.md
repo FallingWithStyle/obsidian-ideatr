@@ -39,22 +39,92 @@ Ideatr Project Internal is the central intake and triage layer for all creative 
 
 ### Installation
 
+<<<<<<< Updated upstream
 ```bash
 # Clone the repository
 git clone https://github.com/FallingWithStyle/obsidian-ideatr.git
 cd obsidian-ideatr
+=======
+#### Install from Community Plugins (Recommended)
 
-# Install dependencies
+Once approved, Ideatr will be available in Obsidian's Community Plugins directory:
+
+1. Open **Obsidian Settings** (⚙️)
+2. Navigate to **Community plugins**
+3. Ensure **Restricted Mode** is disabled (if enabled, turn it off)
+4. Click **Browse** to open the Community Plugins browser
+5. Search for **"Ideatr"**
+6. Click **Install**, then **Enable**
+7. Configure your AI provider in **Settings → Ideatr**
+8. (Optional) Set up a hotkey in **Settings → Hotkeys** (search for "Ideatr: Capture Idea")
+
+#### Manual Installation (Pre-release / Development)
+
+If you're installing from source or a pre-release version:
+
+1. Download the latest release from the [Releases page](https://github.com/FallingWithStyle/obsidian-ideatr/releases)
+2. Extract the plugin files to your Obsidian vault's `.obsidian/plugins/ideatr/` directory:
+   - `main.js`
+   - `manifest.json`
+   - `styles.css`
+   - `tutorials/` folder (includes all tutorial documentation)
+3. Reload Obsidian or restart the app
+4. Enable the plugin in **Settings → Community Plugins → Installed plugins**
+5. Configure your AI provider in **Settings → Ideatr**
+6. Tutorials will be automatically copied to your vault on first launch
+
+#### For Developers
+
+**Note**: This plugin is part of a monorepo and depends on `@ideatr/core`. See the [main repository README](../README.md) for the full development setup.
+>>>>>>> Stashed changes
+
+```bash
+# Clone the main repository (includes plugin as submodule)
+git clone <main-repo-url>
+cd ideatr-project-internal
+
+# Initialize submodules
+git submodule update --init --recursive
+
+# Build core package first (required)
+cd core
+npm install
+npm run build
+cd ..
+
+# Then work with plugin
+cd plugin
+
+# Install dependencies (includes @ideatr/core via file:../core)
 npm install
 
-# Build the plugin
+# Build the plugin (bundles core into main.js)
 npm run build
 
 # For development with hot reload
 npm run dev
+<<<<<<< Updated upstream
 ```
 
 ### Setup in Obsidian
+=======
+
+# Run tests
+npm test
+
+# Deploy to your vault
+cd ..
+./deploy.sh
+
+# Package for release (creates a zip file with all necessary files)
+cd plugin
+npm run package
+```
+
+**Important**: The plugin uses `@ideatr/core` via `"@ideatr/core": "file:../core"` in `package.json`. The core package must be built before the plugin can be built. See [docs/deployment/DEPLOYMENT_ARCHITECTURE.md](../docs/deployment/DEPLOYMENT_ARCHITECTURE.md) for details.
+
+### First Launch Setup
+>>>>>>> Stashed changes
 
 1. Copy the plugin files to your Obsidian vault's `.obsidian/plugins/ideatr/` directory
 2. Enable the plugin in Obsidian Settings → Community Plugins
