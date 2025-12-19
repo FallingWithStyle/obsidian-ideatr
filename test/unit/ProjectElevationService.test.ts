@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProjectElevationService } from '../../src/services/ProjectElevationService';
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from '../mocks/obsidian';
 import type { IdeaFile, IdeaFrontmatter } from '../../src/types/idea';
 import type { IdeatrSettings } from '../../src/settings';
 import { FrontmatterParser } from '../../src/services/FrontmatterParser';
@@ -13,7 +14,10 @@ function createMockVault(): Vault {
     return {
         getAbstractFileByPath: vi.fn((path: string) => {
             if (files.has(path)) {
-                return { path, extension: 'md' } as TFile;
+                const file = new TFile();
+                file.path = path;
+                file.name = path.split('/').pop() || path;
+                return file;
             }
             if (folders.has(path)) {
                 return { path } as any;
@@ -26,7 +30,10 @@ function createMockVault(): Vault {
         }),
         create: vi.fn(async (path: string, content: string) => {
             files.set(path, content);
-            return { path, extension: 'md' } as unknown as TFile;
+            const file = new TFile();
+            file.path = path;
+            file.name = path.split('/').pop() || path;
+            return file;
         }),
         read: vi.fn(async (file: TFile) => {
             return files.get(file.path) || '';
@@ -37,7 +44,10 @@ function createMockVault(): Vault {
                 files.delete(file.path);
                 files.set(newPath, content);
             }
-            return { path: newPath, extension: 'md' } as unknown as TFile;
+            const renamedFile = new TFile();
+            renamedFile.path = newPath;
+            renamedFile.name = newPath.split('/').pop() || newPath;
+            return renamedFile;
         }),
         delete: vi.fn(async (file: TFile) => {
             files.delete(file.path);
@@ -180,7 +190,7 @@ describe('ProjectElevationService', () => {
         });
 
         it('should handle empty body by using filename', () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', '');
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', '');
             const name = service.generateProjectName(ideaFile);
             expect(name).toBe('test-idea');
         });
@@ -193,7 +203,7 @@ describe('ProjectElevationService', () => {
         });
 
         it('should handle only whitespace in body', () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', '   \n\n  ');
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', '   \n\n  ');
             const name = service.generateProjectName(ideaFile);
             expect(name).toBe('test-idea');
         });
@@ -219,8 +229,8 @@ describe('ProjectElevationService', () => {
     describe('elevateIdea', () => {
         it('should successfully elevate an idea to a project', async () => {
             // Setup: Create a mock idea file in vault
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', 'My Test Project');
-            const originalPath = 'Ideas/2025-11-28-test-idea.md';
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', 'My Test Project');
+            const originalPath = 'Ideas/2025-11-28 Test idea.md';
             const fileContent = `---
 type: idea
 status: captured
@@ -261,8 +271,8 @@ My Test Project`;
         });
 
         it('should update frontmatter with elevation metadata', async () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', 'My Test Project');
-            const originalPath = 'Ideas/2025-11-28-test-idea.md';
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', 'My Test Project');
+            const originalPath = 'Ideas/2025-11-28 Test idea.md';
             const fileContent = `---
 type: idea
 status: captured
@@ -295,12 +305,12 @@ My Test Project`;
         });
 
         it('should preserve original frontmatter fields', async () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', 'My Test Project');
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', 'My Test Project');
             ideaFile.frontmatter.category = 'saas';
             ideaFile.frontmatter.tags = ['web', 'app'];
             ideaFile.frontmatter.created = '2025-11-20';
 
-            const originalPath = 'Ideas/2025-11-28-test-idea.md';
+            const originalPath = 'Ideas/2025-11-28 Test idea.md';
             const fileContent = `---
 type: idea
 status: captured
@@ -330,8 +340,8 @@ My Test Project`;
         });
 
         it('should create Devra metadata file', async () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', 'My Test Project');
-            const originalPath = 'Ideas/2025-11-28-test-idea.md';
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', 'My Test Project');
+            const originalPath = 'Ideas/2025-11-28 Test idea.md';
             const fileContent = `---
 type: idea
 status: captured
@@ -368,8 +378,8 @@ My Test Project`;
         });
 
         it('should handle project name collisions', async () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', 'My Project');
-            const originalPath = 'Ideas/2025-11-28-test-idea.md';
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', 'My Project');
+            const originalPath = 'Ideas/2025-11-28 Test idea.md';
             const fileContent = `---
 type: idea
 status: captured
@@ -405,7 +415,7 @@ My Project`;
         });
 
         it('should return error if file does not exist', async () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', 'My Test Project');
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', 'My Test Project');
             // Don't create the file, so it won't exist
 
             const result = await service.elevateIdea(ideaFile);
@@ -415,8 +425,8 @@ My Project`;
         });
 
         it('should rollback on folder creation failure', async () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', 'My Test Project');
-            const originalPath = 'Ideas/2025-11-28-test-idea.md';
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', 'My Test Project');
+            const originalPath = 'Ideas/2025-11-28 Test idea.md';
             const fileContent = `---
 type: idea
 status: captured
@@ -441,8 +451,8 @@ My Test Project`;
         });
 
         it('should use provided project name if given', async () => {
-            const ideaFile = createMockIdeaFile('2025-11-28-test-idea.md', 'My Test Project');
-            const originalPath = 'Ideas/2025-11-28-test-idea.md';
+            const ideaFile = createMockIdeaFile('2025-11-28 Test idea.md', 'My Test Project');
+            const originalPath = 'Ideas/2025-11-28 Test idea.md';
             const fileContent = `---
 type: idea
 status: captured

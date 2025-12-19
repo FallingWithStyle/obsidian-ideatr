@@ -2,7 +2,7 @@
  * Modal for previewing reorganized idea with before/after comparison
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { ReorganizationResult } from '../types/transformation';
 
 export class ReorganizationPreviewModal extends Modal {
@@ -11,7 +11,7 @@ export class ReorganizationPreviewModal extends Modal {
     private onAction?: (action: 'accept' | 'reject') => void;
 
     constructor(
-        app: any,
+        app: App,
         originalText: string,
         reorganization: ReorganizationResult,
         onAction?: (action: 'accept' | 'reject') => void
@@ -26,7 +26,7 @@ export class ReorganizationPreviewModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Reorganized Idea Preview' });
+        contentEl.createEl('h2', { text: 'Reorganized idea preview' });
 
         const description = contentEl.createEl('p', {
             text: 'Review the reorganized idea below. A backup file has been created. Choose to accept or reject the changes:'
@@ -66,19 +66,25 @@ export class ReorganizationPreviewModal extends Modal {
         });
 
         const previewContainer = contentEl.createDiv('ideatr-reorganization-preview');
-        previewContainer.style.maxHeight = '400px';
-        previewContainer.style.overflowY = 'auto';
-        previewContainer.style.padding = '10px';
-        previewContainer.style.border = '1px solid var(--background-modifier-border)';
-        previewContainer.style.borderRadius = '4px';
-        previewContainer.style.marginTop = '10px';
+        (previewContainer as HTMLElement).setCssProps({
+            'max-height': '400px',
+            'overflow-y': 'auto',
+            'padding': '10px',
+            'border': '1px solid var(--background-modifier-border)',
+            'border-radius': '4px',
+            'margin-top': '10px'
+        });
 
         let currentView: 'before' | 'after' = 'after';
         const updateView = () => {
             previewContainer.empty();
             const text = currentView === 'before' ? this.originalText : this.reorganization.reorganizedText;
             const preview = previewContainer.createDiv('ideatr-reorganization-content');
-            preview.innerHTML = text.replace(/\n/g, '<br>');
+            // Use textContent and CSS to preserve line breaks safely (prevents XSS)
+            preview.textContent = text;
+            (preview as HTMLElement).setCssProps({
+                'white-space': 'pre-wrap'
+            });
             
             // Update tab styles
             beforeTab.classList.toggle('mod-cta', currentView === 'before');
@@ -100,7 +106,7 @@ export class ReorganizationPreviewModal extends Modal {
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         
         const acceptButton = buttonContainer.createEl('button', {
-            text: 'Accept Changes',
+            text: 'Accept changes',
             cls: 'mod-cta'
         });
         acceptButton.addEventListener('click', () => {

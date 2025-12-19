@@ -3,8 +3,10 @@
  * QA Issue #6: Enhance show-idea-stats UI
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { IdeaFrontmatter } from '../types/idea';
+import type { IIdeaRepository } from '../types/management';
+import { RelatedIdConverter } from '../utils/RelatedIdConverter';
 
 export interface IdeaStats {
     age: number; // days
@@ -20,36 +22,43 @@ export interface IdeaStats {
 
 export class IdeaStatsModal extends Modal {
     private stats: IdeaStats;
+    private idConverter?: RelatedIdConverter;
 
     constructor(
-        app: any,
-        stats: IdeaStats
+        app: App,
+        stats: IdeaStats,
+        ideaRepository?: IIdeaRepository
     ) {
         super(app);
         this.stats = stats;
+        if (ideaRepository) {
+            this.idConverter = new RelatedIdConverter(ideaRepository);
+        }
     }
 
-    onOpen() {
+    async onOpen() {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Idea Statistics' });
+        contentEl.createEl('h2', { text: 'Idea statistics' });
 
         // Stats grid
         const statsGrid = contentEl.createDiv('ideatr-stats-grid');
-        statsGrid.style.display = 'grid';
-        statsGrid.style.gridTemplateColumns = '1fr 1fr';
-        statsGrid.style.gap = '15px';
-        statsGrid.style.marginBottom = '20px';
+        statsGrid.setCssProps({
+            'display': 'grid',
+            'grid-template-columns': '1fr 1fr',
+            'gap': '15px',
+            'margin-bottom': '20px'
+        });
 
         // Age
         this.createStatCard(statsGrid, 'Age', `${this.stats.age} day${this.stats.age !== 1 ? 's' : ''}`);
         
         // Status
-        this.createStatCard(statsGrid, 'Status', this.stats.status || 'unknown');
+        this.createStatCard(statsGrid, 'Status', this.stats.status ?? 'unknown');
         
         // Category
-        this.createStatCard(statsGrid, 'Category', this.stats.category || 'none');
+        this.createStatCard(statsGrid, 'Category', this.stats.category ?? 'none');
         
         // Related notes
         this.createStatCard(statsGrid, 'Related Notes', this.stats.relatedCount.toString());
@@ -62,10 +71,12 @@ export class IdeaStatsModal extends Modal {
 
         // Dates section
         const datesSection = contentEl.createDiv('ideatr-stats-dates');
-        datesSection.style.marginBottom = '20px';
-        datesSection.style.padding = '10px';
-        datesSection.style.backgroundColor = 'var(--background-secondary)';
-        datesSection.style.borderRadius = '4px';
+        datesSection.setCssProps({
+            'margin-bottom': '20px',
+            'padding': '10px',
+            'background-color': 'var(--background-secondary)',
+            'border-radius': '4px'
+        });
 
         datesSection.createEl('h4', { 
             text: 'Dates',
@@ -87,11 +98,15 @@ export class IdeaStatsModal extends Modal {
         // Additional info if frontmatter available
         if (this.stats.frontmatter) {
             const additionalSection = contentEl.createDiv('ideatr-stats-additional');
-            additionalSection.style.marginBottom = '20px';
+            additionalSection.setCssProps({
+                'margin-bottom': '20px'
+            });
 
             if (this.stats.frontmatter.tags && this.stats.frontmatter.tags.length > 0) {
                 const tagsSection = additionalSection.createDiv('ideatr-stats-tags');
-                tagsSection.style.marginBottom = '10px';
+                tagsSection.setCssProps({
+                    'margin-bottom': '10px'
+                });
 
                 tagsSection.createEl('h4', { 
                     text: 'Tags',
@@ -99,9 +114,11 @@ export class IdeaStatsModal extends Modal {
                 });
 
                 const tagsContainer = tagsSection.createDiv('ideatr-stats-tags-list');
-                tagsContainer.style.display = 'flex';
-                tagsContainer.style.flexWrap = 'wrap';
-                tagsContainer.style.gap = '5px';
+                tagsContainer.setCssProps({
+                    'display': 'flex',
+                    'flex-wrap': 'wrap',
+                    'gap': '5px'
+                });
 
                 this.stats.frontmatter.tags.forEach(tag => {
                     tagsContainer.createEl('span', {
@@ -115,10 +132,12 @@ export class IdeaStatsModal extends Modal {
 
             if (this.stats.frontmatter.related && this.stats.frontmatter.related.length > 0) {
                 const relatedSection = additionalSection.createDiv('ideatr-stats-related');
-                relatedSection.style.marginBottom = '10px';
+                relatedSection.setCssProps({
+                    'margin-bottom': '10px'
+                });
 
                 relatedSection.createEl('h4', { 
-                    text: 'Related Notes',
+                    text: 'Related notes',
                     attr: { style: 'margin-bottom: 10px;' }
                 });
 
@@ -126,18 +145,53 @@ export class IdeaStatsModal extends Modal {
                     attr: { style: 'margin: 0; padding-left: 20px; max-height: 150px; overflow-y: auto;' }
                 });
 
-                this.stats.frontmatter.related.forEach(path => {
-                    relatedList.createEl('li', {
-                        text: path,
-                        attr: { style: 'font-size: 12px;' }
+                // Handle both IDs (numbers) and legacy paths (strings)
+                const relatedItems = this.stats.frontmatter.related;
+                const relatedIds = relatedItems.filter((item): item is number => typeof item === 'number' && item !== 0);
+                
+                if (relatedIds.length > 0 && this.idConverter) {
+                    // Load titles for tooltips
+                    try {
+                        const titles = await this.idConverter.idsToTitles(relatedIds);
+                        relatedIds.forEach(id => {
+                            const listItem = relatedList.createEl('li', {
+                                attr: { style: 'font-size: 12px; cursor: help;' }
+                            });
+                            listItem.createEl('span', {
+                                text: id.toString(),
+                                attr: {
+                                    style: 'text-decoration: underline; text-decoration-style: dotted;',
+                                    title: titles.get(id) ?? `ID: ${id}`
+                                }
+                            });
+                        });
+                    } catch {
+                        // Fallback if title lookup fails
+                        relatedIds.forEach(id => {
+                            relatedList.createEl('li', {
+                                text: id.toString(),
+                                attr: { style: 'font-size: 12px;' }
+                            });
+                        });
+                    }
+                } else {
+                    // Legacy: handle string paths or if no converter available
+                    relatedItems.forEach(item => {
+                        const text = typeof item === 'number' ? item.toString() : item;
+                        relatedList.createEl('li', {
+                            text: text,
+                            attr: { style: 'font-size: 12px;' }
+                        });
                     });
-                });
+                }
             }
         }
 
         // Close button
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
-        buttonContainer.style.marginTop = '20px';
+        buttonContainer.setCssProps({
+            'margin-top': '20px'
+        });
 
         const closeButton = buttonContainer.createEl('button', {
             text: 'Close',
@@ -150,10 +204,12 @@ export class IdeaStatsModal extends Modal {
 
     private createStatCard(container: HTMLElement, label: string, value: string): HTMLElement {
         const card = container.createDiv('ideatr-stat-card');
-        card.style.padding = '10px';
-        card.style.backgroundColor = 'var(--background-secondary)';
-        card.style.borderRadius = '4px';
-        card.style.border = '1px solid var(--background-modifier-border)';
+        card.setCssProps({
+            'padding': '10px',
+            'background-color': 'var(--background-secondary)',
+            'border-radius': '4px',
+            'border': '1px solid var(--background-modifier-border)'
+        });
 
         card.createEl('div', {
             text: label,

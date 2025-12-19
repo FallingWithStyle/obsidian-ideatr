@@ -2,7 +2,7 @@
  * Modal for picking idea status
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 
 export type IdeaStatus = 'captured' | 'validated' | 'promoted' | 'archived';
 
@@ -12,7 +12,7 @@ export class StatusPickerModal extends Modal {
     private selectedStatus: IdeaStatus | null = null;
 
     constructor(
-        app: any,
+        app: App,
         currentStatus: string,
         onSelect?: (status: IdeaStatus) => void
     ) {
@@ -25,7 +25,7 @@ export class StatusPickerModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Change Idea Status' });
+        contentEl.createEl('h2', { text: 'Change idea status' });
 
         const description = contentEl.createEl('p', {
             text: `Current status: ${this.currentStatus}. Select a new status:`
@@ -46,9 +46,9 @@ export class StatusPickerModal extends Modal {
             
             const radio = item.createEl('input', {
                 type: 'radio',
-                value: status.value,
                 attr: { 
                     name: 'status',
+                    value: status.value,
                     checked: this.currentStatus === status.value ? 'true' : null
                 }
             });

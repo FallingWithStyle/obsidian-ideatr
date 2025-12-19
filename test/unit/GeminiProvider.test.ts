@@ -10,9 +10,12 @@ const mocks = vi.hoisted(() => {
             generateContent: mockGenerateContent
         }))
     };
-    const MockGoogleGenerativeAI = vi.fn((config: any) => {
-        return mockGeminiInstance;
-    });
+    // Use a class-based mock for proper constructor support
+    class MockGoogleGenerativeAI {
+        constructor(config: any) {
+            return mockGeminiInstance;
+        }
+    }
     return {
         GoogleGenerativeAI: MockGoogleGenerativeAI,
         mockGeminiInstance,

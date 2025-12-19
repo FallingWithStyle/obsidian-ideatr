@@ -1,25 +1,32 @@
 import Groq from 'groq-sdk';
 import type { ILLMProvider } from '../../types/llm-provider';
-import type { ClassificationResult, IdeaCategory } from '../../types/classification';
+import type { ClassificationResult } from '../../types/classification';
+import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
- * Groq Provider - Llama 3.3 70B
+ * Groq Provider - Supports multiple models
  */
 export class GroqProvider implements ILLMProvider {
     name = 'Groq';
     private client: Groq | null = null;
     private apiKey: string;
+    private model: string;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
+        this.model = model ?? 'llama-3.3-70b-versatile';
     }
 
     private getClient(): Groq {
         if (!this.client && this.apiKey && this.apiKey.trim().length > 0) {
             try {
-                this.client = new Groq({ apiKey: this.apiKey });
+                this.client = new Groq({ 
+                    apiKey: this.apiKey,
+                    dangerouslyAllowBrowser: true 
+                });
             } catch (error) {
-                console.warn('Failed to initialize Groq client:', error);
+                Logger.warn('Failed to initialize Groq client:', error);
                 throw new Error('Failed to initialize Groq client');
             }
         }
@@ -29,8 +36,8 @@ export class GroqProvider implements ILLMProvider {
         return this.client;
     }
 
-    async authenticate(apiKey: string): Promise<boolean> {
-        return apiKey.trim().length > 0;
+    authenticate(apiKey: string): Promise<boolean> {
+        return Promise.resolve(apiKey.trim().length > 0);
     }
 
     isAvailable(): boolean {
@@ -47,7 +54,7 @@ export class GroqProvider implements ILLMProvider {
         try {
             const client = this.getClient();
             const response = await client.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
+                model: this.model,
                 messages: [{
                     role: 'user',
                     content: prompt
@@ -63,7 +70,7 @@ export class GroqProvider implements ILLMProvider {
 
             return this.parseResponse(content);
         } catch (error: unknown) {
-            const err = error as any;
+            const err = error as { status?: number; response?: { status?: number } };
             if (err?.status === 429 || err?.response?.status === 429) {
                 throw new Error('Rate limit exceeded. Please try again later.');
             }
@@ -71,7 +78,7 @@ export class GroqProvider implements ILLMProvider {
                 throw new Error('Invalid API key. Please check your Groq API key.');
             }
             if (error instanceof Error) {
-                const message = error.message || 'Unknown error';
+                const message = error.message ?? 'Unknown error';
                 throw new Error(`Groq API error: ${message}`);
             }
             throw new Error('Groq API error: Request failed');
@@ -79,16 +86,21 @@ export class GroqProvider implements ILLMProvider {
     }
 
     private constructPrompt(text: string): string {
-        return `You are an AI assistant that classifies ideas into categories and tags.
-Valid categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal.
+        return `Classify this idea into one category and suggest 2-4 relevant tags.
 
 Idea: "${text}"
 
-Respond with valid JSON only.
-Example:
+Categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal
+
+Rules:
+- Choose the single best category
+- Tags should be specific and relevant (2-4 tags)
+- Use lowercase for category and tags
+
+Example response:
 {
   "category": "game",
-  "tags": ["rpg", "fantasy"]
+  "tags": ["rpg", "fantasy", "multiplayer"]
 }
 
 Response:`;
@@ -96,20 +108,21 @@ Response:`;
 
     private parseResponse(content: string): ClassificationResult {
         try {
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('No JSON found in response');
-            }
-
-            const parsed = JSON.parse(jsonMatch[0]);
+            // Extract and repair JSON from response
+            const repaired = extractAndRepairJSON(content, false);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category),
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse Groq response:', content, error);
+            Logger.warn('Failed to parse Groq response:', content, error);
             return {
                 category: '',
                 tags: [],
@@ -118,14 +131,14 @@ Response:`;
         }
     }
 
-    private validateCategory(category: string): IdeaCategory {
-        const validCategories: IdeaCategory[] = [
+    private validateCategory(category: string): string {
+        const validCategories = [
             'game', 'saas', 'tool', 'story', 'mechanic',
             'hardware', 'ip', 'brand', 'ux', 'personal'
         ];
 
         const normalized = category?.toLowerCase().trim();
-        return (validCategories.includes(normalized as IdeaCategory)) ? (normalized as IdeaCategory) : '';
+        return validCategories.includes(normalized) ? normalized : '';
     }
 }
 

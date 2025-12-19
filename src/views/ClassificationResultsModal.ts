@@ -32,7 +32,7 @@ export class ClassificationResultsModal extends Modal {
         contentEl.addClass('ideatr-classification-results-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Classification Results' });
+        contentEl.createEl('h2', { text: 'Classification results' });
 
         // Category display
         const categoryContainer = contentEl.createEl('div', { cls: 'ideatr-setting-item' });
@@ -78,7 +78,7 @@ export class ClassificationResultsModal extends Modal {
 
         // Add tag button
         const addTagButton = tagsList.createEl('button', {
-            text: '+ Add Tag',
+            text: 'Add tag',
             cls: 'ideatr-add-tag'
         });
         addTagButton.addEventListener('click', () => {
@@ -111,19 +111,19 @@ export class ClassificationResultsModal extends Modal {
             text: 'Accept',
             cls: 'mod-cta'
         });
-        acceptButton.addEventListener('click', () => this.handleAccept());
+        acceptButton.addEventListener('click', () => void this.handleAccept());
 
         // Edit button (opens note editor)
         const editButton = buttonContainer.createEl('button', {
-            text: 'Edit in Note'
+            text: 'Edit in note'
         });
-        editButton.addEventListener('click', () => this.handleEdit());
+        editButton.addEventListener('click', () => void this.handleEdit());
 
         // Retry button
         const retryButton = buttonContainer.createEl('button', {
             text: 'Retry'
         });
-        retryButton.addEventListener('click', () => this.handleRetry());
+        retryButton.addEventListener('click', () => void this.handleRetry());
 
         // Cancel button
         const cancelButton = buttonContainer.createEl('button', {
@@ -164,7 +164,7 @@ export class ClassificationResultsModal extends Modal {
 
         // Add tag button
         const addTagButton = container.createEl('button', {
-            text: '+ Add Tag',
+            text: 'Add tag',
             cls: 'ideatr-add-tag'
         });
         addTagButton.addEventListener('click', () => {

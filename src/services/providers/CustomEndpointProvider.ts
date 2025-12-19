@@ -1,5 +1,8 @@
 import type { ILLMProvider } from '../../types/llm-provider';
-import type { ClassificationResult, IdeaCategory } from '../../types/classification';
+import type { ClassificationResult } from '../../types/classification';
+import { requestUrl } from 'obsidian';
+import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
  * Custom Endpoint Provider - Self-hosted (Ollama, LM Studio, etc.)
@@ -14,13 +17,13 @@ export class CustomEndpointProvider implements ILLMProvider {
         this.format = format;
     }
 
-    async authenticate(endpointUrl: string): Promise<boolean> {
+    authenticate(endpointUrl: string): Promise<boolean> {
         // Basic URL validation
         try {
             new URL(endpointUrl);
-            return endpointUrl.trim().length > 0;
+            return Promise.resolve(endpointUrl.trim().length > 0);
         } catch {
-            return false;
+            return Promise.resolve(false);
         }
     }
 
@@ -36,7 +39,9 @@ export class CustomEndpointProvider implements ILLMProvider {
         const prompt = this.constructPrompt(text);
 
         try {
-            let requestBody: any;
+            let requestBody: Record<string, unknown>;
+            let responsePath: string;
+
             if (this.format === 'ollama') {
                 // Ollama format
                 requestBody = {
@@ -47,6 +52,7 @@ export class CustomEndpointProvider implements ILLMProvider {
                     }],
                     stream: false
                 };
+                responsePath = 'message.content';
             } else {
                 // OpenAI-compatible format
                 requestBody = {
@@ -58,29 +64,37 @@ export class CustomEndpointProvider implements ILLMProvider {
                     max_tokens: 256,
                     temperature: 0.1
                 };
+                responsePath = 'choices[0].message.content';
             }
 
-            const response = await fetch(this.endpointUrl, {
+            const response = await requestUrl({
+                url: this.endpointUrl,
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                throw: false
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(`Custom endpoint error: ${errorData.error || response.statusText}`);
+            if (response.status < 200 || response.status >= 300) {
+                const errorJson: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+                const errorData = (errorJson as { error?: string } | null) ?? {};
+                throw new Error(`Custom endpoint error: ${typeof errorData.error === 'string' ? errorData.error : 'Request failed'}`);
             }
 
-            const data = await response.json();
+            const jsonData: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+            const data = jsonData as {
+                message?: { content?: string };
+                choices?: Array<{ message?: { content?: string } }>;
+            };
             
-            // Extract content based on format
+            // Extract content based on format (responsePath was determined earlier)
             let content: string;
-            if (this.format === 'ollama') {
-                content = data.message?.content || '';
+            if (responsePath === 'message.content') {
+                content = (typeof data.message?.content === 'string' ? data.message.content : '');
             } else {
-                content = data.choices?.[0]?.message?.content || '';
+                content = (typeof data.choices?.[0]?.message?.content === 'string' ? data.choices[0].message.content : '');
             }
 
             if (!content) {
@@ -97,16 +111,21 @@ export class CustomEndpointProvider implements ILLMProvider {
     }
 
     private constructPrompt(text: string): string {
-        return `You are an AI assistant that classifies ideas into categories and tags.
-Valid categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal.
+        return `Classify this idea into one category and suggest 2-4 relevant tags.
 
 Idea: "${text}"
 
-Respond with valid JSON only.
-Example:
+Categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal
+
+Rules:
+- Choose the single best category
+- Tags should be specific and relevant (2-4 tags)
+- Use lowercase for category and tags
+
+Example response:
 {
   "category": "game",
-  "tags": ["rpg", "fantasy"]
+  "tags": ["rpg", "fantasy", "multiplayer"]
 }
 
 Response:`;
@@ -114,20 +133,21 @@ Response:`;
 
     private parseResponse(content: string): ClassificationResult {
         try {
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('No JSON found in response');
-            }
-
-            const parsed = JSON.parse(jsonMatch[0]);
+            // Extract and repair JSON from response
+            const repaired = extractAndRepairJSON(content, false);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category),
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse custom endpoint response:', content, error);
+            Logger.warn('Failed to parse custom endpoint response:', content, error);
             return {
                 category: '',
                 tags: [],
@@ -136,14 +156,14 @@ Response:`;
         }
     }
 
-    private validateCategory(category: string): IdeaCategory {
-        const validCategories: IdeaCategory[] = [
+    private validateCategory(category: string): string {
+        const validCategories = [
             'game', 'saas', 'tool', 'story', 'mechanic',
             'hardware', 'ip', 'brand', 'ux', 'personal'
         ];
 
         const normalized = category?.toLowerCase().trim();
-        return (validCategories.includes(normalized as IdeaCategory)) ? (normalized as IdeaCategory) : '';
+        return validCategories.includes(normalized) ? normalized : '';
     }
 }
 

@@ -4,6 +4,18 @@
   padding: 20px;
 }
 
+.ideatr-capture-title-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ideatr-capture-title-container h2 {
+  margin: 0;
+  flex: 1;
+}
+
 .ideatr-capture-modal h2 {
   margin-top: 0;
   margin-bottom: 16px;
@@ -41,13 +53,64 @@
 
 .ideatr-button-container {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.ideatr-button-container button {
+.ideatr-help-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.ideatr-help-text p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ideatr-button-group {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ideatr-button-container button,
+.ideatr-button-group button {
   padding: 8px 16px;
   cursor: pointer;
+}
+
+.ideatr-ideate-button {
+  background-color: #d4af37 !important;
+  color: #1a1a1a !important;
+  border-color: #b8941f !important;
+  font-weight: 600;
+}
+
+.ideatr-ideate-button:hover {
+  background-color: #c9a52a !important;
+  border-color: #a0821a !important;
+}
+
+.ideatr-ideate-button:active {
+  background-color: #b8941f !important;
+  border-color: #8a6f16 !important;
+}
+
+.ideatr-ideate-button-disabled {
+  background-color: #6b5d3f !important;
+  color: #8a7a5f !important;
+  border-color: #5a4d35 !important;
+  opacity: 0.6;
+  cursor: not-allowed !important;
+}
+
+.ideatr-ideate-button-disabled:hover {
+  background-color: #6b5d3f !important;
+  border-color: #5a4d35 !important;
+  opacity: 0.7;
 }
 
 /* Graph tooltip styles */
@@ -60,6 +123,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   font-size: 13px;
   line-height: 1.5;
+}
+
+/* Graph node clickable style */
+.ideatr-graph-node-clickable {
+  cursor: pointer;
 }
 
 .ideatr-tooltip-header {
@@ -94,4 +162,478 @@
   max-height: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Help icon styles */
+.ideatr-help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 4px;
+  vertical-align: middle;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.ideatr-help-icon:hover {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.ideatr-button-with-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Settings section title with help icon */
+.settings-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-section-title h2 {
+  margin: 0;
+  display: inline-block;
+}
+
+/* Dashboard title and panel titles */
+.dashboard-title-container,
+.dashboard-panel-title,
+.dashboard-filters-title,
+.graph-title-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-title-container h2,
+.dashboard-panel-title h3,
+.dashboard-filters-title h3,
+.graph-title-container h2 {
+  margin: 0;
+  display: inline-block;
+}
+
+/* Fix z-index for frontmatter dropdowns to prevent them from appearing over modals */
+/* Obsidian modals typically use z-index around 1000-2000, so frontmatter dropdowns should be lower */
+/* IMPORTANT: Only target frontmatter-specific elements, NOT the command palette */
+
+/* Target Obsidian's frontmatter properties panel dropdowns and suggestions */
+/* Set a lower z-index to ensure they don't appear over modals */
+/* Only target elements that are direct descendants of metadata-properties to avoid affecting command palette */
+.metadata-properties > .suggestion-container,
+.metadata-properties .suggestion-container,
+.metadata-properties .suggestion,
+.metadata-properties .dropdown,
+.metadata-properties .menu,
+.metadata-properties .menu-container,
+.metadata-properties .suggestion-item,
+.metadata-properties .suggestion-list,
+.metadata-properties .suggestion-container .suggestion,
+.metadata-properties .suggestion-container .suggestion-item,
+.metadata-properties .suggestion-container .suggestion-list,
+.metadata-properties .suggestion-container .suggestion-item-list,
+.metadata-properties .suggestion-container .suggestion-item-list-item,
+.metadata-properties-view .suggestion-container,
+.metadata-properties-view .suggestion,
+.metadata-properties-view .dropdown,
+.metadata-properties-view .menu,
+.metadata-properties-view .menu-container {
+  z-index: 999 !important;
+}
+
+/* Explicitly exclude command palette from our z-index rules */
+/* Command palette uses .prompt class - ensure it's never affected */
+.prompt,
+.prompt *,
+.prompt .suggestion-container,
+.prompt .suggestion,
+.prompt .suggestion-item,
+.prompt .suggestion-list,
+.prompt .suggestion-content,
+.prompt-results,
+.prompt-results *,
+.prompt-input-container,
+.prompt-input {
+  z-index: auto !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure command palette modal and all its children are above everything */
+.modal-container:has(.prompt),
+.modal-container:has(.prompt) .prompt,
+.modal-container:has(.prompt) .prompt * {
+  z-index: 3000 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure modals and modal overlays are above frontmatter dropdowns */
+.modal-container,
+.modal,
+.modal-container-overlay,
+.modal-bg {
+  z-index: 2000 !important;
+}
+
+/* Command palette needs to be on top and fully functional */
+.modal-container .prompt,
+.prompt {
+  z-index: 3000 !important;
+}
+
+/* Ensure modal content is also above frontmatter dropdowns */
+.modal-container .modal,
+.modal-container .modal-content,
+.modal-container .modal-content-container {
+  z-index: 2001 !important;
+}
+
+/* When a modal is open, ensure frontmatter dropdowns are below it */
+/* Using :has() selector for modern browsers */
+body:has(.modal-container) .metadata-properties .suggestion-container,
+body:has(.modal-container) .metadata-properties .suggestion,
+body:has(.modal-container) .metadata-properties .dropdown,
+body:has(.modal-container) .metadata-properties .menu,
+body:has(.modal-container) .metadata-properties .menu-container,
+body:has(.modal-container) .metadata-properties-view .suggestion-container,
+body:has(.modal-container) .metadata-properties-view .suggestion,
+body:has(.modal-container) .metadata-properties-view .dropdown,
+body:has(.modal-container) .metadata-properties-view .menu,
+body:has(.modal-container) .metadata-properties-view .menu-container {
+  z-index: 500 !important;
+}
+
+/* REMOVED: Sibling selectors were too broad and interfered with command palette */
+/* If needed, use more specific selectors that only target frontmatter-related elements */
+
+/* Model Status Indicator */
+.ideatr-model-status-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+
+.ideatr-model-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  transition: all 0.2s ease;
+}
+
+.ideatr-model-status-icon:hover {
+  transform: scale(1.2);
+}
+
+.ideatr-model-status-icon svg {
+  width: 100%;
+  height: 100%;
+  transition: all 0.2s ease;
+}
+
+/* Status colors */
+.ideatr-model-status-connected {
+  color: #4caf50;
+}
+
+.ideatr-model-status-connected svg {
+  filter: drop-shadow(0 0 2px rgba(76, 175, 80, 0.6));
+}
+
+.ideatr-model-status-loading {
+  color: #ffc107;
+  animation: pulse-yellow 2s ease-in-out infinite;
+}
+
+.ideatr-model-status-loading svg {
+  filter: drop-shadow(0 0 2px rgba(255, 193, 7, 0.6));
+}
+
+.ideatr-model-status-not-connected,
+.ideatr-model-status-error {
+  color: #f44336;
+}
+
+.ideatr-model-status-not-connected svg,
+.ideatr-model-status-error svg {
+  filter: drop-shadow(0 0 2px rgba(244, 67, 54, 0.6));
+}
+
+@keyframes pulse-yellow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Tooltip */
+.ideatr-model-status-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-normal);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 150px;
+}
+
+/* Adjust tooltip position when in title container (right side) */
+.ideatr-capture-title-container .ideatr-model-status-indicator {
+  position: relative;
+}
+
+.ideatr-capture-title-container .ideatr-model-status-indicator:hover .ideatr-model-status-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.ideatr-capture-title-container .ideatr-model-status-tooltip::after {
+  left: auto;
+  right: 8px;
+  transform: none;
+}
+
+.ideatr-model-status-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--background-modifier-border);
+}
+
+.ideatr-model-status-indicator:hover .ideatr-model-status-tooltip {
+  opacity: 1;
+}
+
+/* Status bar specific styling */
+.status-bar-item .ideatr-model-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+  position: relative;
+}
+
+.status-bar-item .ideatr-model-status-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.status-bar-item .ideatr-model-status-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Adjust tooltip position for status bar (show above) */
+.status-bar-item .ideatr-model-status-tooltip {
+  bottom: auto;
+  top: 100%;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.status-bar-item .ideatr-model-status-tooltip::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--background-modifier-border);
+}
+
+/* Model Status Indicators (for download verification) */
+.model-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Ensure Setting controlEl displays items inline */
+.setting-item .setting-item-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-direction: row;
+}
+
+.model-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.model-status-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.model-status-valid {
+  color: #4caf50;
+}
+
+.model-status-invalid {
+  color: #f44336;
+}
+
+.model-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.model-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Settings section status indicator */
+.setting-item-description .model-status-icon {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Loading spinner for command execution */
+.ideatr-loading-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom Ideatr icons sizing */
+.ideatr-capture-modal svg,
+.ideatr-help-text svg {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Context menu styles */
+.ideatr-graph-context-menu {
+  position: fixed;
+  z-index: 10000;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.context-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.context-menu-item + .context-menu-item {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* Display utilities */
+.ideatr-hidden {
+  display: none !important;
+}
+
+.ideatr-visible {
+  display: block !important;
+  visibility: visible !important;
+}
+
+.ideatr-invisible {
+  visibility: hidden !important;
+}
+
+/* Cursor pointer utility */
+.ideatr-cursor-pointer {
+  cursor: pointer;
+}
+
+/* Spinner margin */
+.ideatr-loading-spinner {
+  margin-right: 6px;
+}
+
+/* Feature request modal styles */
+.ideatr-log-count {
+  margin-top: 5px;
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+
+.ideatr-preview-textarea {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+}
+
+/* Progress bar styles */
+.ideatr-progress-bar-fill {
+  transition: width 0.3s ease;
+}
+
+/* Model download modal styles */
+.ideatr-error-message {
+  margin-top: 10px;
+}
+
+.ideatr-error-message.ideatr-error-color {
+  color: var(--text-error);
+}
+
+.ideatr-error-message.ideatr-warning-color {
+  color: var(--text-warning, var(--text-warning-color, #d19a66));
+}
+
+.ideatr-link-accent {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.ideatr-icon-muted {
+  color: var(--text-muted);
 }

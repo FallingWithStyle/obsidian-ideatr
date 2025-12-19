@@ -1,20 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IdeaRepository } from '../../src/services/IdeaRepository';
 import { FrontmatterParser } from '../../src/services/FrontmatterParser';
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from '../mocks/obsidian';
 import type { IdeaFile } from '../../src/types/idea';
 import type { IdeaFilter } from '../../src/types/management';
+
+// Helper to create TFile instances
+function createTFile(path: string): TFile {
+    const file = new TFile();
+    file.path = path;
+    file.name = path.split('/').pop() || path;
+    return file;
+}
 
 // Mock Vault API
 function createMockVault(): Vault {
     const files = new Map<string, { file: TFile; content: string }>();
 
     const createFile = (path: string, content: string): TFile => {
-        const file = {
-            path,
-            name: path.split('/').pop() || path,
-            stat: { mtime: Date.now() }
-        } as TFile;
+        const file = createTFile(path);
         files.set(path, { file, content });
         return file;
     };
@@ -63,16 +68,8 @@ describe('IdeaRepository', () => {
         });
 
         it('should return all ideas from Ideas/ directory', async () => {
-            const file1 = {
-                path: 'Ideas/idea-1.md',
-                name: 'idea-1.md',
-                stat: { mtime: Date.now() }
-            } as TFile;
-            const file2 = {
-                path: 'Ideas/idea-2.md',
-                name: 'idea-2.md',
-                stat: { mtime: Date.now() }
-            } as TFile;
+            const file1 = createTFile('Ideas/idea-1.md');
+            const file2 = createTFile('Ideas/idea-2.md');
 
             vi.mocked(vault.getMarkdownFiles).mockReturnValue([file1, file2]);
             vi.mocked(vault.read)
@@ -111,16 +108,8 @@ Idea 2 body`);
         });
 
         it('should filter out files not in Ideas/ directory', async () => {
-            const ideaFile = {
-                path: 'Ideas/idea-1.md',
-                name: 'idea-1.md',
-                stat: { mtime: Date.now() }
-            } as TFile;
-            const otherFile = {
-                path: 'Other/note.md',
-                name: 'note.md',
-                stat: { mtime: Date.now() }
-            } as TFile;
+            const ideaFile = createTFile('Ideas/idea-1.md');
+            const otherFile = createTFile('Other/note.md');
 
             vi.mocked(vault.getMarkdownFiles).mockReturnValue([ideaFile, otherFile]);
             vi.mocked(vault.read).mockResolvedValueOnce(`---
@@ -143,11 +132,7 @@ Idea body`);
         });
 
         it('should handle files with invalid frontmatter gracefully', async () => {
-            const file = {
-                path: 'Ideas/invalid.md',
-                name: 'invalid.md',
-                stat: { mtime: Date.now() }
-            } as TFile;
+            const file = createTFile('Ideas/invalid.md');
 
             vi.mocked(vault.getMarkdownFiles).mockReturnValue([file]);
             vi.mocked(vault.read).mockResolvedValueOnce('Invalid content without frontmatter');
@@ -163,11 +148,7 @@ Idea body`);
 
     describe('getIdeaByPath', () => {
         it('should return idea when file exists', async () => {
-            const file = {
-                path: 'Ideas/idea-1.md',
-                name: 'idea-1.md',
-                stat: { mtime: Date.now() }
-            } as TFile;
+            const file = createTFile('Ideas/idea-1.md');
 
             vi.mocked(vault.getAbstractFileByPath).mockReturnValue(file);
             vi.mocked(vault.read).mockResolvedValueOnce(`---
@@ -199,11 +180,7 @@ Idea body`);
         });
 
         it('should return null when file is not in Ideas/ directory', async () => {
-            const file = {
-                path: 'Other/note.md',
-                name: 'note.md',
-                stat: { mtime: Date.now() }
-            } as TFile;
+            const file = createTFile('Other/note.md');
 
             vi.mocked(vault.getAbstractFileByPath).mockReturnValue(file);
 
@@ -217,21 +194,9 @@ Idea body`);
         beforeEach(async () => {
             // Setup test data
             const files = [
-                {
-                    path: 'Ideas/idea-1.md',
-                    name: 'idea-1.md',
-                    stat: { mtime: Date.now() }
-                } as TFile,
-                {
-                    path: 'Ideas/idea-2.md',
-                    name: 'idea-2.md',
-                    stat: { mtime: Date.now() }
-                } as TFile,
-                {
-                    path: 'Ideas/idea-3.md',
-                    name: 'idea-3.md',
-                    stat: { mtime: Date.now() }
-                } as TFile
+                createTFile('Ideas/idea-1.md'),
+                createTFile('Ideas/idea-2.md'),
+                createTFile('Ideas/idea-3.md')
             ];
 
             const contents = [
@@ -429,11 +394,7 @@ Uncategorized idea`
 
     describe('refresh', () => {
         it('should clear cache and reload ideas', async () => {
-            const file = {
-                path: 'Ideas/idea-1.md',
-                name: 'idea-1.md',
-                stat: { mtime: Date.now() }
-            } as TFile;
+            const file = createTFile('Ideas/idea-1.md');
 
             vi.mocked(vault.getMarkdownFiles).mockReturnValue([file]);
             vi.mocked(vault.read).mockResolvedValueOnce(`---

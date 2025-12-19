@@ -11,6 +11,7 @@ describe('Compatibility: Frontmatter Schema Validation', () => {
         expect(schema.required).toContain('type');
         expect(schema.required).toContain('status');
         expect(schema.required).toContain('created');
+        expect(schema.required).toContain('id');
     });
 
     it('should produce frontmatter that complies with the schema', () => {
@@ -18,6 +19,7 @@ describe('Compatibility: Frontmatter Schema Validation', () => {
 type: idea
 status: captured
 created: 2025-11-29
+id: 0
 category: Test
 tags: [a, b]
 related: []
@@ -36,6 +38,7 @@ Body content`;
             expect(result.type).toBe('idea');
             expect(['captured', 'elevated']).toContain(result.status);
             expect(result.created).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+            expect(typeof result.id).toBe('number');
 
             // Optional fields types
             if (result.category) expect(typeof result.category).toBe('string');
@@ -60,6 +63,7 @@ Body content`;
             type: 'idea',
             status: 'captured',
             created: '2025-11-29',
+            id: 0,
             category: 'Software',
             tags: ['test'],
             related: [],
@@ -71,5 +75,6 @@ Body content`;
         expect(validFrontmatter.type).toBe(schema.properties.type.const);
         expect(schema.properties.status.enum).toContain(validFrontmatter.status);
         expect(validFrontmatter.created).toMatch(new RegExp(schema.properties.created.pattern));
+        expect(typeof validFrontmatter.id).toBe('number');
     });
 });

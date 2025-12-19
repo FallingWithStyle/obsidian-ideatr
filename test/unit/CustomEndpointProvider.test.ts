@@ -2,8 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CustomEndpointProvider } from '../../src/services/providers/CustomEndpointProvider';
 import type { ClassificationResult } from '../../src/types/classification';
 
-// Mock fetch
-global.fetch = vi.fn();
+// Mock requestUrl from obsidian
+vi.mock('obsidian', () => ({
+    requestUrl: vi.fn()
+}));
+
+import { requestUrl } from 'obsidian';
+const mockRequestUrl = vi.mocked(requestUrl);
 
 describe('CustomEndpointProvider', () => {
     let provider: CustomEndpointProvider;
@@ -50,17 +55,18 @@ describe('CustomEndpointProvider', () => {
                 }
             };
 
-            vi.mocked(global.fetch).mockResolvedValue({
-                ok: true,
-                json: async () => mockResponse
-            } as Response);
+            mockRequestUrl.mockResolvedValue({
+                status: 200,
+                json: mockResponse,
+                statusText: 'OK'
+            });
 
             const result = await provider.classify('A productivity app');
 
             expect(result.category).toBe('saas');
             expect(result.tags).toContain('app');
             expect(result.tags).toContain('productivity');
-            expect(global.fetch).toHaveBeenCalled();
+            expect(mockRequestUrl).toHaveBeenCalled();
         });
 
         it('should classify text using custom endpoint (OpenAI format)', async () => {
@@ -73,10 +79,11 @@ describe('CustomEndpointProvider', () => {
                 }]
             };
 
-            vi.mocked(global.fetch).mockResolvedValue({
-                ok: true,
-                json: async () => mockResponse
-            } as Response);
+            mockRequestUrl.mockResolvedValue({
+                status: 200,
+                json: mockResponse,
+                statusText: 'OK'
+            });
 
             const result = await provider.classify('A productivity app');
 
@@ -85,11 +92,11 @@ describe('CustomEndpointProvider', () => {
         });
 
         it('should handle API errors', async () => {
-            vi.mocked(global.fetch).mockResolvedValue({
-                ok: false,
+            mockRequestUrl.mockResolvedValue({
                 status: 500,
-                json: async () => ({ error: 'Server error' })
-            } as Response);
+                json: { error: 'Server error' },
+                statusText: 'Internal Server Error'
+            });
 
             await expect(provider.classify('test')).rejects.toThrow();
         });

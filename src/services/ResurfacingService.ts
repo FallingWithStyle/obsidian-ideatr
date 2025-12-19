@@ -1,11 +1,13 @@
 import type { IResurfacingService } from '../types/management';
 import type { Digest } from '../types/management';
-import type { IdeaFile } from '../types/idea';
+import type { IdeaFile, IdeaFrontmatter } from '../types/idea';
 import type { IIdeaRepository } from '../types/management';
 import type { IdeatrSettings } from '../settings';
 import { FileManager } from '../storage/FileManager';
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from 'obsidian';
 import { ManagementError, ManagementErrorCode } from '../types/management';
+import { Logger } from '../utils/logger';
 
 /**
  * ResurfacingService - Identifies and resurfacing old ideas
@@ -23,7 +25,7 @@ export class ResurfacingService implements IResurfacingService {
      * @returns Array of old ideas
      */
     async identifyOldIdeas(thresholdDays?: number): Promise<IdeaFile[]> {
-        const threshold = thresholdDays || this.settings.resurfacingThresholdDays || 7;
+        const threshold = thresholdDays ?? this.settings.resurfacingThresholdDays ?? 7;
         const allIdeas = await this.ideaRepository.getAllIdeas();
         const now = new Date();
         const thresholdDate = new Date(now.getTime() - threshold * 24 * 60 * 60 * 1000);
@@ -39,7 +41,7 @@ export class ResurfacingService implements IResurfacingService {
                     `Failed to parse date for idea ${idea.filename}`,
                     ManagementErrorCode.DATE_PARSE_ERROR
                 );
-                console.warn(managementError.message, managementError);
+                Logger.warn(managementError.message, managementError);
                 continue;
             }
 
@@ -61,7 +63,7 @@ export class ResurfacingService implements IResurfacingService {
      * @returns Generated digest
      */
     async generateDigest(ideas?: IdeaFile[]): Promise<Digest> {
-        const oldIdeas = ideas || await this.identifyOldIdeas();
+        const oldIdeas = ideas ?? await this.identifyOldIdeas();
         
         // Sort by age (oldest first)
         oldIdeas.sort((a, b) => {
@@ -86,13 +88,14 @@ export class ResurfacingService implements IResurfacingService {
      */
     async markAsDismissed(ideaPath: string): Promise<void> {
         if (!this.vault) {
-            console.warn('Vault not available, cannot mark as dismissed');
+            Logger.warn('Vault not available, cannot mark as dismissed');
             return;
         }
 
-        const file = this.vault.getAbstractFileByPath(ideaPath) as TFile | null;
+        const fileAbstract = this.vault.getAbstractFileByPath(ideaPath);
+        const file = fileAbstract instanceof TFile ? fileAbstract : null;
         if (!file) {
-            console.warn(`File not found: ${ideaPath}`);
+            Logger.warn(`File not found: ${ideaPath}`);
             return;
         }
 
@@ -100,7 +103,7 @@ export class ResurfacingService implements IResurfacingService {
         await fileManager.updateIdeaFrontmatter(file, {
             dismissed: true,
             dismissedAt: new Date().toISOString().split('T')[0]
-        } as any);
+        } as Record<string, unknown>);
     }
 
     /**
@@ -109,13 +112,14 @@ export class ResurfacingService implements IResurfacingService {
      */
     async markAsActedUpon(ideaPath: string): Promise<void> {
         if (!this.vault) {
-            console.warn('Vault not available, cannot mark as acted upon');
+            Logger.warn('Vault not available, cannot mark as acted upon');
             return;
         }
 
-        const file = this.vault.getAbstractFileByPath(ideaPath) as TFile | null;
+        const fileAbstract = this.vault.getAbstractFileByPath(ideaPath);
+        const file = fileAbstract instanceof TFile ? fileAbstract : null;
         if (!file) {
-            console.warn(`File not found: ${ideaPath}`);
+            Logger.warn(`File not found: ${ideaPath}`);
             return;
         }
 
@@ -123,7 +127,7 @@ export class ResurfacingService implements IResurfacingService {
         await fileManager.updateIdeaFrontmatter(file, {
             actedUpon: true,
             actedUponAt: new Date().toISOString().split('T')[0]
-        } as any);
+        } as Record<string, unknown>);
     }
 
     /**
@@ -138,8 +142,9 @@ export class ResurfacingService implements IResurfacingService {
         }
 
         // Check frontmatter for dismissed or actedUpon flags
-        const frontmatter = idea.frontmatter as any;
-        return !!(frontmatter.dismissed || frontmatter.actedUpon);
+        // These are optional properties not in the base IdeaFrontmatter type
+        const frontmatter = idea.frontmatter as IdeaFrontmatter & { dismissed?: boolean; actedUpon?: boolean };
+        return !!((frontmatter.dismissed ?? false) || (frontmatter.actedUpon ?? false));
     }
 
     /**
@@ -166,7 +171,7 @@ export class ResurfacingService implements IResurfacingService {
 
             lines.push(`### ${idea.filename.replace('.md', '')}`);
             lines.push('');
-            lines.push(`**Category**: ${idea.frontmatter.category || 'Uncategorized'}`);
+            lines.push(`**Category**: ${idea.frontmatter.category ?? 'Uncategorized'}`);
             lines.push(`**Created**: ${idea.frontmatter.created}`);
             lines.push(`**Age**: ${age} days`);
             if (idea.frontmatter.tags.length > 0) {
@@ -188,8 +193,8 @@ export class ResurfacingService implements IResurfacingService {
         // Category breakdown
         const categoryCounts: Record<string, number> = {};
         for (const idea of ideas) {
-            const category = idea.frontmatter.category || 'Uncategorized';
-            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+            const category = idea.frontmatter.category ?? 'Uncategorized';
+            categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;
         }
         
         const categoryBreakdown = Object.entries(categoryCounts)

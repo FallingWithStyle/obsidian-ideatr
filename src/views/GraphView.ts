@@ -1,9 +1,12 @@
 import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
-import type { IClusteringService, IGraphLayoutService, IProjectElevationService } from '../types/management';
+import type { IClusteringService, IGraphLayoutService, IProjectElevationService, GraphLayout, GraphNode } from '../types/management';
 import type { IIdeaRepository } from '../types/management';
 import type { IdeaFile } from '../types/idea';
 import { ManagementError, getManagementErrorMessage } from '../types/management';
 import { renderGraphLayout } from './GraphRenderer';
+import { Logger } from '../utils/logger';
+import { createHelpIcon } from '../utils/HelpIcon';
+import { showConfirmation } from '../utils/confirmation';
 
 /**
  * GraphView - Displays idea clusters as an interactive graph
@@ -15,7 +18,7 @@ export class GraphView extends ItemView {
     private projectElevationService?: IProjectElevationService;
     private ideas: IdeaFile[] = [];
     private isLoading: boolean = false;
-    private currentLayout: any = null; // Store current layout for node lookups
+    private currentLayout: GraphLayout | null = null; // Store current layout for node lookups
 
     constructor(
         leaf: WorkspaceLeaf,
@@ -36,7 +39,7 @@ export class GraphView extends ItemView {
     }
 
     getDisplayText(): string {
-        return 'Ideatr Graph';
+        return 'Ideatr graph';
     }
 
     getIcon(): string {
@@ -49,11 +52,14 @@ export class GraphView extends ItemView {
 
         // Create header
         const header = container.createDiv('graph-header');
-        header.createEl('h2', { text: 'Idea Clusters' });
+        const headerTitle = header.createDiv({ cls: 'graph-title-container' });
+        headerTitle.createEl('h2', { text: 'Idea clusters' });
+        const graphHelpIcon = createHelpIcon(this.app, 'graph-view', 'Learn about Graph View');
+        headerTitle.appendChild(graphHelpIcon);
 
         const toolbar = header.createDiv('graph-toolbar');
         const refreshBtn = toolbar.createEl('button', { text: 'Refresh' });
-        refreshBtn.addEventListener('click', () => this.refresh());
+        refreshBtn.addEventListener('click', () => void this.refresh());
 
         // Create graph container
         const graphContainer = container.createDiv('graph-container');
@@ -99,7 +105,7 @@ export class GraphView extends ItemView {
 
         try {
             this.ideas = await this.ideaRepository.getAllIdeas();
-            
+
             if (this.ideas.length >= 2) {
                 // Generate clusters
                 const clusters = await this.clusteringService.clusterIdeas(this.ideas);
@@ -155,7 +161,7 @@ export class GraphView extends ItemView {
     private openIdea(idea: IdeaFile): void {
         const file = this.app.vault.getAbstractFileByPath(`Ideas/${idea.filename}`);
         if (file) {
-            this.app.workspace.openLinkText(`Ideas/${idea.filename}`, '', false);
+            void this.app.workspace.openLinkText(`Ideas/${idea.filename}`, '', false);
         }
     }
 
@@ -165,7 +171,7 @@ export class GraphView extends ItemView {
     private showNodeContextMenu(nodeId: string, event: MouseEvent): void {
         if (!this.currentLayout) return;
 
-        const node = this.currentLayout.nodes.find((n: any) => n.id === nodeId);
+        const node = this.currentLayout.nodes.find((n: GraphNode) => n.id === nodeId);
         if (!node) return;
 
         // Remove any existing context menu
@@ -177,49 +183,29 @@ export class GraphView extends ItemView {
         // Create context menu
         const menu = document.createElement('div');
         menu.classList.add('ideatr-graph-context-menu');
-        menu.style.position = 'fixed';
-        menu.style.left = `${event.clientX}px`;
-        menu.style.top = `${event.clientY}px`;
-        menu.style.zIndex = '10000';
-        menu.style.backgroundColor = 'var(--background-primary)';
-        menu.style.border = '1px solid var(--background-modifier-border)';
-        menu.style.borderRadius = '4px';
-        menu.style.padding = '4px';
-        menu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        menu.setCssProps({
+            left: `${event.clientX}px`,
+            top: `${event.clientY}px`
+        });
 
         // Add "Open Idea" option
         const openBtn = menu.createEl('button', {
-            text: 'Open Idea',
+            text: 'Open idea',
             cls: 'context-menu-item'
         });
-        openBtn.style.display = 'block';
-        openBtn.style.width = '100%';
-        openBtn.style.textAlign = 'left';
-        openBtn.style.padding = '6px 12px';
-        openBtn.style.border = 'none';
-        openBtn.style.background = 'transparent';
-        openBtn.style.cursor = 'pointer';
         openBtn.addEventListener('click', () => {
             this.openIdea(node.idea);
             menu.remove();
         });
 
         // Add "Elevate to Project" option (if service available and idea can be elevated)
-        if (this.projectElevationService && this.projectElevationService.canElevate(node.idea)) {
+        if (this.projectElevationService?.canElevate(node.idea)) {
             const elevateBtn = menu.createEl('button', {
-                text: 'Elevate to Project',
+                text: 'Elevate to project',
                 cls: 'context-menu-item'
             });
-            elevateBtn.style.display = 'block';
-            elevateBtn.style.width = '100%';
-            elevateBtn.style.textAlign = 'left';
-            elevateBtn.style.padding = '6px 12px';
-            elevateBtn.style.border = 'none';
-            elevateBtn.style.background = 'transparent';
-            elevateBtn.style.cursor = 'pointer';
-            elevateBtn.style.borderTop = '1px solid var(--background-modifier-border)';
             elevateBtn.addEventListener('click', () => {
-                this.elevateIdea(node.idea);
+                void this.elevateIdea(node.idea);
                 menu.remove();
             });
         }
@@ -257,7 +243,8 @@ export class GraphView extends ItemView {
         const projectName = this.projectElevationService.generateProjectName(idea);
 
         // Show confirmation dialog
-        const confirmed = confirm(
+        const confirmed = await showConfirmation(
+            this.app,
             `Elevate idea to project?\n\n` +
             `Project name: ${projectName}\n\n` +
             `The idea file will be moved to Projects/${projectName}/README.md\n` +
@@ -274,19 +261,19 @@ export class GraphView extends ItemView {
 
             if (result.success) {
                 new Notice(`Idea elevated to project: ${result.projectPath}`);
-                
+
                 // Refresh ideas and reload graph
                 await this.ideaRepository.refresh();
                 await this.loadGraph();
-                
+
                 // Show warnings if any
                 if (result.warnings && result.warnings.length > 0) {
-                    console.warn('Elevation warnings:', result.warnings);
+                    Logger.warn('Elevation warnings:', result.warnings);
                 }
             } else {
-                new Notice(`Failed to elevate idea: ${result.error || 'Unknown error'}`);
+                new Notice(`Failed to elevate idea: ${result.error ?? 'Unknown error'}`);
                 if (result.warnings && result.warnings.length > 0) {
-                    console.warn('Elevation warnings:', result.warnings);
+                    Logger.warn('Elevation warnings:', result.warnings);
                 }
             }
         } catch (error) {

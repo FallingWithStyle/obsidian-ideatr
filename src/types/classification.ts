@@ -79,6 +79,14 @@ export interface ILLMService {
     isAvailable(): boolean;
 
     /**
+     * Ensure the LLM service is ready to use (e.g., start server if needed)
+     * This abstracts away implementation details - callers don't need to know
+     * if it's a local server that needs starting or a cloud API that just needs verification
+     * @returns true if ready, false if not configured (but available)
+     */
+    ensureReady?(): Promise<boolean>;
+
+    /**
      * Generic completion method for non-classification tasks
      * @param prompt - The prompt to send to the LLM
      * @param options - Optional configuration (temperature, max tokens, stop tokens)
@@ -90,9 +98,10 @@ export interface ILLMService {
             temperature?: number;
             n_predict?: number;
             stop?: string[];
+            grammar?: string;
         }
     ): Promise<string>;
-    
+
     /**
      * Generate idea mutations (variations)
      * @param text - Idea text
@@ -103,7 +112,7 @@ export interface ILLMService {
         text: string,
         options?: import('./transformation').MutationOptions
     ): Promise<import('./transformation').Mutation[]>;
-    
+
     /**
      * Expand an idea with detailed description
      * @param text - Idea text
@@ -114,7 +123,7 @@ export interface ILLMService {
         text: string,
         options?: import('./transformation').ExpansionOptions
     ): Promise<import('./transformation').ExpansionResult>;
-    
+
     /**
      * Reorganize an idea into structured format
      * @param text - Idea text
@@ -133,8 +142,11 @@ export interface ILLMService {
 export interface ISearchService {
     /**
      * Find related notes based on idea text
+     * @param text - The idea text to search for related notes
+     * @param limit - Maximum number of results to return
+     * @param excludePath - Optional path to exclude from results (e.g., current file path)
      */
-    findRelatedNotes(text: string, limit?: number): Promise<RelatedNote[]>;
+    findRelatedNotes(text: string, limit?: number, excludePath?: string): Promise<RelatedNote[]>;
 
     /**
      * Calculate similarity between two texts
@@ -158,8 +170,10 @@ export interface IDuplicateDetector {
 export interface IClassificationService {
     /**
      * Classify an idea (category, tags, related notes)
+     * @param text - The idea text to classify
+     * @param excludePath - Optional path to exclude from related notes (e.g., current file path)
      */
-    classifyIdea(text: string): Promise<IdeaClassification>;
+    classifyIdea(text: string, excludePath?: string): Promise<IdeaClassification>;
 }
 
 /**

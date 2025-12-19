@@ -1,9 +1,9 @@
 import type { IProspectrService, DomainCheckResult } from '../types/domain';
 
 /**
- * ProspectrService - Stubbed implementation for Prospectr integration
+ * ProspectrService - Stubbed implementation for domain checking service integration
  * 
- * This service will be implemented when Prospectr is available.
+ * This service will be implemented when the domain checking service is available.
  * For now, it provides a stubbed interface that returns placeholder results.
  */
 export class ProspectrService implements IProspectrService {
@@ -14,15 +14,15 @@ export class ProspectrService implements IProspectrService {
     constructor(prospectrUrl: string = 'http://localhost:3000', timeout: number = 10000) {
         this.prospectrUrl = prospectrUrl;
         this.timeout = timeout;
-        // Stubbed: Prospectr is not yet available, so service is disabled
+        // Stubbed: Domain checking service is not yet available, so service is disabled
         this.isEnabled = false;
     }
 
     /**
-     * Check if Prospectr service is available
+     * Check if domain checking service is available
      */
     isAvailable(): boolean {
-        // Stubbed: Always returns false until Prospectr is implemented
+        // Stubbed: Always returns false until domain checking service is implemented
         // Note: prospectrUrl and timeout are stored for future implementation
         void this.prospectrUrl;
         void this.timeout;
@@ -34,19 +34,21 @@ export class ProspectrService implements IProspectrService {
      * 
      * Stubbed implementation - returns placeholder result
      * When implemented, will use timeout for API calls
+     * Note: This method is async to satisfy the IProspectrService interface,
+     * even though it doesn't contain any await expressions
      */
-    async checkDomainAvailability(domain: string): Promise<DomainCheckResult> {
+    checkDomainAvailability(domain: string): Promise<DomainCheckResult> {
         if (!this.isAvailable()) {
             // Return stubbed result indicating service is not available
-            return {
+            return Promise.resolve({
                 domain,
                 available: false,
-                error: 'Prospectr service is not yet available',
+                error: 'Prospectr service is not available',
                 checkedAt: new Date().toISOString()
-            };
+            });
         }
 
-        // TODO: Implement actual Prospectr API call when service is available
+        // TODO: Implement actual domain checking API call when service is available
         // Example implementation with timeout:
         // const controller = new AbortController();
         // const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -85,12 +87,12 @@ export class ProspectrService implements IProspectrService {
         // }
 
         // Stubbed return for now
-        return {
+        return Promise.resolve({
             domain,
             available: false,
-            error: 'Prospectr service is not yet implemented',
+            error: 'Domain checking service is not yet implemented',
             checkedAt: new Date().toISOString()
-        };
+        });
     }
 
     /**

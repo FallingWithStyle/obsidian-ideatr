@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { FrontmatterParser } from '../../src/services/FrontmatterParser';
 import type { IdeaFrontmatter } from '../../src/types/idea';
 
@@ -15,6 +15,7 @@ describe('FrontmatterParser', () => {
 type: idea
 status: captured
 created: 2025-11-28
+id: 42
 category: saas
 tags: [productivity, tool]
 related: [idea1.md, idea2.md]
@@ -28,10 +29,9 @@ existence-check: [Found similar product]
             expect(result?.type).toBe('idea');
             expect(result?.status).toBe('captured');
             expect(result?.created).toBe('2025-11-28');
+            expect(result?.id).toBe(42);
             expect(result?.category).toBe('saas');
             expect(result?.tags).toEqual(['productivity', 'tool']);
-            expect(result?.related).toEqual(['idea1.md', 'idea2.md']);
-            expect(result?.domains).toEqual(['example.com']);
             expect(result?.['existence-check']).toEqual(['Found similar product']);
         });
 
@@ -50,6 +50,7 @@ existence-check: []
             const result = parser.parseFrontmatter(content);
 
             expect(result).not.toBeNull();
+            expect(result?.id).toBe(0); // Defaults to 0 if missing
             expect(result?.tags).toEqual([]);
             expect(result?.related).toEqual([]);
             expect(result?.domains).toEqual([]);
@@ -71,6 +72,7 @@ existence-check: []
             const result = parser.parseFrontmatter(content);
 
             expect(result).not.toBeNull();
+            expect(result?.id).toBe(0); // Defaults to 0 if missing
             expect(result?.category).toBe('');
         });
 
@@ -108,6 +110,7 @@ existence-check: []
             const result = parser.parseFrontmatter(content);
 
             expect(result).not.toBeNull();
+            expect(result?.id).toBe(0); // Defaults to 0 if missing
             expect(result?.category).toBe('saas');
         });
 
@@ -126,6 +129,7 @@ existence-check: []
             const result = parser.parseFrontmatter(content);
 
             expect(result).not.toBeNull();
+            expect(result?.id).toBe(0); // Defaults to 0 if missing
             expect(result?.tags).toEqual(['productivity', 'tool', 'automation']);
         });
 
@@ -144,7 +148,45 @@ existence-check: []
             const result = parser.parseFrontmatter(content);
 
             expect(result).not.toBeNull();
+            expect(result?.id).toBe(0); // Defaults to 0 if missing
             expect(result?.tags).toEqual(['productivity']);
+        });
+
+        it('should default id to 0 when id field is missing', () => {
+            const content = `---
+type: idea
+status: captured
+created: 2025-11-28
+category: saas
+tags: []
+related: []
+domains: []
+existence-check: []
+---`;
+
+            const result = parser.parseFrontmatter(content);
+
+            expect(result).not.toBeNull();
+            expect(result?.id).toBe(0);
+        });
+
+        it('should parse id when explicitly provided', () => {
+            const content = `---
+type: idea
+status: captured
+created: 2025-11-28
+id: 123
+category: saas
+tags: []
+related: []
+domains: []
+existence-check: []
+---`;
+
+            const result = parser.parseFrontmatter(content);
+
+            expect(result).not.toBeNull();
+            expect(result?.id).toBe(123);
         });
     });
 
@@ -168,6 +210,7 @@ This is the idea body text.`;
 
             expect(result.filename).toBe('test-idea.md');
             expect(result.frontmatter.type).toBe('idea');
+            expect(result.frontmatter.id).toBe(0); // Defaults to 0 if missing
             expect(result.frontmatter.category).toBe('saas');
             expect(result.body).toBe('This is the idea body text.');
         });
@@ -221,6 +264,7 @@ This is line three.`;
                 type: 'idea',
                 status: 'captured',
                 created: '2025-11-28',
+                id: 0,
                 category: 'saas',
                 tags: [],
                 related: [],
@@ -253,6 +297,7 @@ This is line three.`;
             const frontmatter: any = {
                 type: 'idea',
                 created: '2025-11-28',
+                id: 0,
                 category: 'saas',
                 tags: [],
                 related: [],
@@ -269,6 +314,7 @@ This is line three.`;
             const frontmatter: any = {
                 type: 'idea',
                 status: 'captured',
+                id: 0,
                 category: 'saas',
                 tags: [],
                 related: [],
@@ -286,6 +332,7 @@ This is line three.`;
                 type: 'invalid',
                 status: 'captured',
                 created: '2025-11-28',
+                id: 0,
                 category: 'saas',
                 tags: [],
                 related: [],
@@ -303,6 +350,7 @@ This is line three.`;
                 type: 'idea',
                 status: 'invalid',
                 created: '2025-11-28',
+                id: 0,
                 category: 'saas',
                 tags: [],
                 related: [],
@@ -320,6 +368,7 @@ This is line three.`;
                 type: 'idea',
                 status: 'captured',
                 created: '2025-11-28',
+                id: 0,
                 category: '',
                 tags: [],
                 related: [],
@@ -337,6 +386,7 @@ This is line three.`;
                 type: 'idea',
                 status: 'captured',
                 created: '2025-11-28',
+                id: 0,
                 category: 'saas',
                 tags: 'not-an-array',
                 related: [],

@@ -22,7 +22,7 @@ export class SearchQueryGenerator implements ISearchQueryGenerator {
         let keyTerms = this.extractKeyTerms(trimmed);
 
         // If project name is provided or can be extracted, prioritize it in the query
-        const nameToUse = projectName || extractIdeaNameRuleBased(text);
+        const nameToUse = projectName ?? extractIdeaNameRuleBased(text);
         if (nameToUse && nameToUse.trim().length > 0 && nameToUse.length >= 3) {
             // Use project name as primary search term, with key terms as context
             const cleanName = nameToUse.trim();
@@ -75,7 +75,7 @@ export class SearchQueryGenerator implements ISearchQueryGenerator {
         let keyTerms = this.extractKeyTerms(trimmed);
         
         // If project name is provided or can be extracted, prioritize it
-        const nameToUse = projectName || extractIdeaNameRuleBased(text);
+        const nameToUse = projectName ?? extractIdeaNameRuleBased(text);
         if (nameToUse && nameToUse.trim().length > 0 && nameToUse.length >= 3) {
             const cleanName = nameToUse.trim();
             if (!keyTerms.toLowerCase().includes(cleanName.toLowerCase())) {

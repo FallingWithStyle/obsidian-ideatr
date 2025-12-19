@@ -5,8 +5,8 @@
 import type { EmbeddingService } from './EmbeddingService';
 import type { ILLMService } from '../types/classification';
 import type { Vault, TFile } from 'obsidian';
-// PROMPTS reserved for future use
-// import { PROMPTS } from './prompts';
+import { extractAndRepairJSON } from '../utils/jsonRepair';
+import { Logger } from '../utils/logger';
 
 export interface TenuousLink {
     idea: {
@@ -83,7 +83,7 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
 
                 // Calculate similarity using EmbeddingService
                 // Note: EmbeddingService uses keyword-based similarity, not true embeddings
-                const similarity = await this.calculateSimilarity(ideaText, body);
+                const similarity = this.calculateSimilarity(ideaText, body);
 
                 // Check if in tenuous range (0.3-0.5)
                 if (similarity >= this.MIN_SIMILARITY && similarity <= this.MAX_SIMILARITY) {
@@ -103,7 +103,7 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
                     }
                 }
             } catch (error) {
-                console.warn(`Failed to process ${file.path} for tenuous links:`, error);
+                Logger.warn(`Failed to process ${file.path} for tenuous links:`, error);
                 // Continue with other files
             }
         }
@@ -135,7 +135,7 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
                     });
                 }
             } catch (error) {
-                console.warn(`Failed to analyze connection with ${candidate.file.path}:`, error);
+                Logger.warn(`Failed to analyze connection with ${candidate.file.path}:`, error);
                 // Continue with other candidates
             }
         }
@@ -150,10 +150,10 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
      * Calculate similarity between two texts
      * Uses EmbeddingService's similarity calculation
      */
-    private async calculateSimilarity(text1: string, text2: string): Promise<number> {
+    private calculateSimilarity(text1: string, text2: string): number {
         // Use EmbeddingService to generate embeddings and calculate similarity
-        const embedding1 = await this.embeddingService.generateEmbedding(text1);
-        const embedding2 = await this.embeddingService.generateEmbedding(text2);
+        const embedding1 = this.embeddingService.generateEmbedding(text1);
+        const embedding2 = this.embeddingService.generateEmbedding(text2);
         
         // Calculate cosine similarity
         return this.cosineSimilarity(embedding1, embedding2);
@@ -195,28 +195,51 @@ export class TenuousLinkServiceImpl implements TenuousLinkService {
         relatedIdeaText: string,
         similarity: number
     ): Promise<{ explanation: string; synergy?: string; relevance: number }> {
-        const prompt = `Analyze the following ideas and identify unexpected connections or synergies.
+        const prompt = `Analyze the connection between these two ideas, focusing on unexpected or creative connections.
 
 Original Idea:
 ${ideaText}
 Category: ${ideaCategory}
 Tags: ${ideaTags.join(', ')}
 
-Potential Connection:
+Related Idea:
 ${relatedIdeaText}
 Similarity: ${similarity.toFixed(2)}
 
-Analyze:
-1. What unexpected connection exists between these ideas?
-2. How could these ideas be combined or synergized?
-3. What new possibilities emerge from this connection?
+CRITICAL REQUIREMENTS:
+- Look beyond surface-level similarities to find deeper, more interesting connections
+- Focus on unexpected or creative connections that might not be immediately obvious
+- Consider how these ideas could enhance or transform each other
+- Think about novel applications or combinations
 
-Return JSON:
+Analyze and identify:
+
+1. Unexpected Connection
+   - What is the non-obvious link between these ideas?
+   - What hidden relationships exist beyond the similarity score?
+   - How do they relate in ways that might not be immediately apparent?
+   - What shared principles, approaches, or underlying concepts connect them?
+
+2. Combination Potential
+   - How could these ideas be meaningfully combined?
+   - What would a merged or hybrid version look like?
+   - How could elements from one idea enhance the other?
+   - What complementary strengths do they have?
+
+3. New Possibilities
+   - What novel applications emerge from this connection?
+   - What new ideas or directions does this relationship suggest?
+   - How could combining these ideas solve problems neither could solve alone?
+   - What unique value would a combination create?
+
+Output format (JSON only, no markdown, no code blocks):
 {
-  "explanation": "Brief explanation of the connection...",
-  "synergy": "How these could be combined...",
+  "explanation": "Clear explanation of the unexpected connection between these ideas...",
+  "synergy": "Specific description of how these ideas could be combined and what the result would be...",
   "relevance": 0.0-1.0
-}`;
+}
+
+Response:`;
 
         if (!this.llmService.complete) {
             // Fallback if LLM doesn't support complete
@@ -233,17 +256,19 @@ Return JSON:
             });
 
             // Parse JSON response
-            const jsonMatch = response.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const analysis = JSON.parse(jsonMatch[0]);
-                return {
-                    explanation: analysis.explanation || '',
-                    synergy: analysis.synergy,
-                    relevance: analysis.relevance || 0.5
-                };
-            }
+            const repaired = extractAndRepairJSON(response, false);
+            const analysis = JSON.parse(repaired) as {
+                explanation?: string;
+                synergy?: string;
+                relevance?: number;
+            };
+            return {
+                explanation: typeof analysis.explanation === 'string' ? analysis.explanation : '',
+                synergy: typeof analysis.synergy === 'string' ? analysis.synergy : undefined,
+                relevance: typeof analysis.relevance === 'number' ? analysis.relevance : 0.5
+            };
         } catch (error) {
-            console.warn('Failed to parse LLM analysis:', error);
+            Logger.warn('Failed to parse LLM analysis:', error);
         }
 
         // Fallback

@@ -1,24 +1,27 @@
-import type { Vault, TFile } from 'obsidian';
+import type { Vault } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { IIdeaRepository } from '../types/management';
 import type { IdeaFile } from '../types/idea';
 import type { IdeaFilter } from '../types/management';
 import { ManagementError, ManagementErrorCode } from '../types/management';
 import { FrontmatterParser } from './FrontmatterParser';
 import type { IFrontmatterParser } from '../types/management';
+import { Logger } from '../utils/logger';
 
 /**
  * IdeaRepository - Manages reading and caching of idea files from vault
  */
 export class IdeaRepository implements IIdeaRepository {
     private cache: Map<string, IdeaFile> = new Map();
-    private watchers: Set<any> = new Set();
+    private watchers: Set<() => void> = new Set();
     private parser: IFrontmatterParser;
+    private readonly MAX_CACHE_SIZE = 10000; // Prevent unbounded cache growth
 
     constructor(
         private vault: Vault,
         parser?: IFrontmatterParser
     ) {
-        this.parser = parser || new FrontmatterParser();
+        this.parser = parser ?? new FrontmatterParser();
     }
 
     /**
@@ -39,15 +42,22 @@ export class IdeaRepository implements IIdeaRepository {
                 const content = await this.vault.read(file);
                 const idea = this.parser.parseIdeaFile(file, content);
                 ideas.push(idea);
-                // Update cache
+                // Update cache with size limit to prevent unbounded growth
                 this.cache.set(file.path, idea);
-            } catch (error) {
+                // If cache exceeds limit, remove oldest entries (LRU-like, but simple FIFO)
+                if (this.cache.size > this.MAX_CACHE_SIZE) {
+                    const firstKey = this.cache.keys().next().value as string | undefined;
+                    if (firstKey && typeof firstKey === 'string') {
+                        this.cache.delete(firstKey);
+                    }
+                }
+            } catch {
                 // Wrap underlying error in a typed ManagementError for better diagnostics (QA 4.6)
                 const managementError = new ManagementError(
                     `Failed to read idea file: ${file.path}`,
                     ManagementErrorCode.FILE_READ_ERROR
                 );
-                console.warn(managementError.message, managementError);
+                Logger.warn(managementError.message, managementError);
                 // Continue with other files
             }
         }
@@ -126,7 +136,8 @@ export class IdeaRepository implements IIdeaRepository {
             return null;
         }
 
-        const file = this.vault.getAbstractFileByPath(path) as TFile | null;
+        const fileAbstract = this.vault.getAbstractFileByPath(path);
+        const file = fileAbstract instanceof TFile ? fileAbstract : null;
         if (!file) {
             return null;
         }
@@ -134,11 +145,18 @@ export class IdeaRepository implements IIdeaRepository {
         try {
             const content = await this.vault.read(file);
             const idea = this.parser.parseIdeaFile(file, content);
-            // Update cache
+            // Update cache with size limit
             this.cache.set(path, idea);
+            // If cache exceeds limit, remove oldest entries
+            if (this.cache.size > this.MAX_CACHE_SIZE) {
+                const firstKey = this.cache.keys().next().value as string | undefined;
+                if (firstKey && typeof firstKey === 'string') {
+                    this.cache.delete(firstKey);
+                }
+            }
             return idea;
         } catch (error) {
-            console.warn(`Failed to read idea file: ${path}`, error);
+            Logger.warn(`Failed to read idea file: ${path}`, error);
             return null;
         }
     }
@@ -149,21 +167,23 @@ export class IdeaRepository implements IIdeaRepository {
      * @returns Unsubscribe function
      */
     watchIdeas(callback: (ideas: IdeaFile[]) => void): () => void {
-        const onFileChange = async (file: TFile) => {
+        const onFileChange = (file: TFile) => {
             if (file.path.startsWith('Ideas/')) {
-                // Refresh cache for this file
-                try {
-                    const content = await this.vault.read(file);
-                    const idea = this.parser.parseIdeaFile(file, content);
-                    this.cache.set(file.path, idea);
-                } catch (error) {
-                    // File might have been deleted
-                    this.cache.delete(file.path);
-                }
+                void (async () => {
+                    // Refresh cache for this file
+                    try {
+                        const content = await this.vault.read(file);
+                        const idea = this.parser.parseIdeaFile(file, content);
+                        this.cache.set(file.path, idea);
+                    } catch {
+                        // File might have been deleted
+                        this.cache.delete(file.path);
+                    }
 
-                // Notify callback with all ideas
-                const allIdeas = Array.from(this.cache.values());
-                callback(allIdeas);
+                    // Notify callback with all ideas
+                    const allIdeas = Array.from(this.cache.values());
+                    callback(allIdeas);
+                })();
             }
         };
 
@@ -176,9 +196,15 @@ export class IdeaRepository implements IIdeaRepository {
         };
 
         // Register watchers for modify/create/delete and track their unregister functions (QA 4.5)
-        const unregisterModify = (this.vault.on as any)('modify', onFileChange);
-        const unregisterCreate = (this.vault.on as any)('create', onFileChange);
-        const unregisterDelete = (this.vault.on as any)('delete', onDelete);
+        // vault.on() returns a function that can be called to unsubscribe
+        const vaultOn = this.vault.on.bind(this.vault) as unknown as {
+            (event: 'modify', callback: (file: TFile) => void): () => void;
+            (event: 'create', callback: (file: TFile) => void): () => void;
+            (event: 'delete', callback: (file: TFile) => void): () => void;
+        };
+        const unregisterModify = vaultOn('modify', onFileChange);
+        const unregisterCreate = vaultOn('create', onFileChange);
+        const unregisterDelete = vaultOn('delete', onDelete);
 
         this.watchers.add(unregisterModify);
         this.watchers.add(unregisterCreate);
@@ -186,10 +212,9 @@ export class IdeaRepository implements IIdeaRepository {
 
         // Return unsubscribe function that cleans up all listeners
         return () => {
-            // EventRef is callable in Obsidian, but TypeScript doesn't know that
-            (unregisterModify as any)();
-            (unregisterCreate as any)();
-            (unregisterDelete as any)();
+            unregisterModify();
+            unregisterCreate();
+            unregisterDelete();
             this.watchers.delete(unregisterModify);
             this.watchers.delete(unregisterCreate);
             this.watchers.delete(unregisterDelete);

@@ -2,8 +2,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { WebSearchService } from '../../src/services/WebSearchService';
 import type { IdeatrSettings } from '../../src/settings';
 
-// Mock fetch
-global.fetch = vi.fn();
+// Mock requestUrl from obsidian
+vi.mock('obsidian', () => ({
+    requestUrl: vi.fn()
+}));
+
+import { requestUrl } from 'obsidian';
+const mockRequestUrl = vi.mocked(requestUrl);
 
 describe('WebSearchService', () => {
     let service: WebSearchService;
@@ -89,14 +94,15 @@ describe('WebSearchService', () => {
                 ]
             };
 
-            (global.fetch as any).mockResolvedValueOnce({
-                ok: true,
-                json: async () => mockResponse
+            mockRequestUrl.mockResolvedValueOnce({
+                status: 200,
+                json: mockResponse,
+                statusText: 'OK'
             });
 
             const results = await service.search('test query', undefined, 5);
 
-            expect(global.fetch).toHaveBeenCalled();
+            expect(mockRequestUrl).toHaveBeenCalled();
             expect(results.length).toBeGreaterThan(0);
             expect(results[0].title).toBe('Test Result');
             expect(results[0].url).toBe('https://example.com');
@@ -118,9 +124,10 @@ describe('WebSearchService', () => {
                 ]
             };
 
-            (global.fetch as any).mockResolvedValueOnce({
-                ok: true,
-                json: async () => mockResponse
+            mockRequestUrl.mockResolvedValueOnce({
+                status: 200,
+                json: mockResponse,
+                statusText: 'OK'
             });
 
             const results = await service.search('test', undefined, 5);
@@ -139,9 +146,10 @@ describe('WebSearchService', () => {
                 }))
             };
 
-            (global.fetch as any).mockResolvedValueOnce({
-                ok: true,
-                json: async () => mockResponse
+            mockRequestUrl.mockResolvedValueOnce({
+                status: 200,
+                json: mockResponse,
+                statusText: 'OK'
             });
 
             const results = await service.search('test', undefined, 5);
@@ -150,16 +158,16 @@ describe('WebSearchService', () => {
         });
 
         it('should handle API errors gracefully', async () => {
-            (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+            mockRequestUrl.mockRejectedValueOnce(new Error('Network error'));
 
             const results = await service.search('test');
             expect(results).toEqual([]);
         });
 
         it('should handle HTTP errors gracefully', async () => {
-            (global.fetch as any).mockResolvedValueOnce({
-                ok: false,
+            mockRequestUrl.mockResolvedValueOnce({
                 status: 429,
+                json: {},
                 statusText: 'Rate Limited'
             });
 
@@ -171,10 +179,9 @@ describe('WebSearchService', () => {
             const settings = { ...mockSettings, webSearchTimeout: 100 };
             const svc = new WebSearchService(settings);
 
-            // Mock fetch to reject with AbortError (simulating timeout)
-            const abortError = new Error('The operation was aborted');
-            abortError.name = 'AbortError';
-            (global.fetch as any).mockRejectedValueOnce(abortError);
+            // Mock requestUrl to reject with timeout error
+            const timeoutError = new Error('Timeout: Request exceeded 100ms');
+            mockRequestUrl.mockRejectedValueOnce(timeoutError);
 
             const results = await svc.search('test');
             expect(results).toEqual([]);
@@ -191,9 +198,10 @@ describe('WebSearchService', () => {
                 ]
             };
 
-            (global.fetch as any).mockResolvedValueOnce({
-                ok: true,
-                json: async () => mockResponse
+            mockRequestUrl.mockResolvedValueOnce({
+                status: 200,
+                json: mockResponse,
+                statusText: 'OK'
             });
 
             const results = await service.search('test', undefined, 5);

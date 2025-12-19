@@ -28,7 +28,7 @@ export interface ILLMProvider {
 /**
  * Cloud provider type
  */
-export type CloudProviderType = 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter' | 'custom' | 'none';
+export type CloudProviderType = 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter' | 'custom' | 'custom-model' | 'none';
 
 /**
  * Provider-specific settings
@@ -36,5 +36,7 @@ export type CloudProviderType = 'anthropic' | 'openai' | 'gemini' | 'groq' | 'op
 export interface ProviderSettings {
     openRouterModel?: string;
     customEndpointUrl?: string;
+    customModel?: string; // Custom model ID for custom-model provider
+    customModelProvider?: 'anthropic' | 'openai' | 'gemini' | 'groq'; // Provider for custom model
 }
 

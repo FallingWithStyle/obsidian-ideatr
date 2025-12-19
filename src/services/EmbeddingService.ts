@@ -20,7 +20,7 @@ export class EmbeddingService implements IEmbeddingService {
      * @param text - Text to embed
      * @returns Embedding vector (simplified representation)
      */
-    async generateEmbedding(text: string): Promise<Embedding> {
+    generateEmbedding(text: string): Embedding {
         // For v1, create a simple embedding based on word frequencies
         // This is a simplified approach - in v2, we'd use actual LLM embeddings
         const words = this.tokenize(text);
@@ -51,8 +51,8 @@ export class EmbeddingService implements IEmbeddingService {
      * @param texts - Array of texts to embed
      * @returns Array of embedding vectors
      */
-    async generateEmbeddings(texts: string[]): Promise<Embedding[]> {
-        return Promise.all(texts.map(text => this.generateEmbedding(text)));
+    generateEmbeddings(texts: string[]): Embedding[] {
+        return texts.map(text => this.generateEmbedding(text));
     }
 
     /**
@@ -60,7 +60,7 @@ export class EmbeddingService implements IEmbeddingService {
      * @param ideas - Array of ideas
      * @returns 2D matrix where matrix[i][j] is similarity between idea i and j
      */
-    async calculateSimilarityMatrix(ideas: IdeaFile[]): Promise<number[][]> {
+    calculateSimilarityMatrix(ideas: IdeaFile[]): number[][] {
         const matrix: number[][] = [];
         
         for (let i = 0; i < ideas.length; i++) {

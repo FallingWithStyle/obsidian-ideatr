@@ -2,7 +2,7 @@
  * Modal for selecting mutations to save or append
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { Mutation } from '../types/transformation';
 
 export class MutationSelectionModal extends Modal {
@@ -11,7 +11,7 @@ export class MutationSelectionModal extends Modal {
     private selected: Set<number> = new Set();
 
     constructor(
-        app: any,
+        app: App,
         mutations: Mutation[],
         onSelect?: (selected: Mutation[], action: 'save' | 'append') => void
     ) {
@@ -27,7 +27,7 @@ export class MutationSelectionModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Idea Mutations' });
+        contentEl.createEl('h2', { text: 'Idea mutations' });
 
         const description = contentEl.createEl('p', {
             text: `Generated ${this.mutations.length} mutation${this.mutations.length > 1 ? 's' : ''}. Select which ones to save:`
@@ -70,7 +70,7 @@ export class MutationSelectionModal extends Modal {
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         
         const saveButton = buttonContainer.createEl('button', {
-            text: 'Save as New Ideas',
+            text: 'Save as new ideas',
             cls: 'mod-cta'
         });
         saveButton.addEventListener('click', () => {
@@ -82,7 +82,7 @@ export class MutationSelectionModal extends Modal {
         });
 
         const appendButton = buttonContainer.createEl('button', {
-            text: 'Append to Current Note'
+            text: 'Append to current note'
         });
         appendButton.addEventListener('click', () => {
             const selected = this.mutations.filter((_, index) => this.selected.has(index));

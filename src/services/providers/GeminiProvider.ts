@@ -1,17 +1,21 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ILLMProvider } from '../../types/llm-provider';
-import type { ClassificationResult, IdeaCategory } from '../../types/classification';
+import type { ClassificationResult } from '../../types/classification';
+import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
- * Gemini Provider - Gemini 1.5 Flash
+ * Gemini Provider - Supports multiple Gemini models
  */
 export class GeminiProvider implements ILLMProvider {
     name = 'Gemini';
     private client: GoogleGenerativeAI | null = null;
     private apiKey: string;
+    private model: string;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
+        this.model = model ?? 'gemini-1.5-flash';
     }
 
     private getClient(): GoogleGenerativeAI {
@@ -19,7 +23,7 @@ export class GeminiProvider implements ILLMProvider {
             try {
                 this.client = new GoogleGenerativeAI(this.apiKey);
             } catch (error) {
-                console.warn('Failed to initialize Gemini client:', error);
+                Logger.warn('Failed to initialize Gemini client:', error);
                 throw new Error('Failed to initialize Gemini client');
             }
         }
@@ -29,8 +33,8 @@ export class GeminiProvider implements ILLMProvider {
         return this.client;
     }
 
-    async authenticate(apiKey: string): Promise<boolean> {
-        return apiKey.trim().length > 0;
+    authenticate(apiKey: string): Promise<boolean> {
+        return Promise.resolve(apiKey.trim().length > 0);
     }
 
     isAvailable(): boolean {
@@ -46,14 +50,14 @@ export class GeminiProvider implements ILLMProvider {
 
         try {
             const client = this.getClient();
-            const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
+            const genModel = client.getGenerativeModel({ model: this.model });
+            const result = await genModel.generateContent(prompt);
+            const response = result.response;
             const content = response.text();
 
             return this.parseResponse(content);
         } catch (error: unknown) {
-            const err = error as any;
+            const err = error as { status?: number; response?: { status?: number } };
             if (err?.status === 429 || err?.response?.status === 429) {
                 throw new Error('Rate limit exceeded. Please try again later.');
             }
@@ -61,7 +65,7 @@ export class GeminiProvider implements ILLMProvider {
                 throw new Error('Invalid API key. Please check your Gemini API key.');
             }
             if (error instanceof Error) {
-                const message = error.message || 'Unknown error';
+                const message = error.message ?? 'Unknown error';
                 throw new Error(`Gemini API error: ${message}`);
             }
             throw new Error('Gemini API error: Request failed');
@@ -69,16 +73,21 @@ export class GeminiProvider implements ILLMProvider {
     }
 
     private constructPrompt(text: string): string {
-        return `You are an AI assistant that classifies ideas into categories and tags.
-Valid categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal.
+        return `Classify this idea into one category and suggest 2-4 relevant tags.
 
 Idea: "${text}"
 
-Respond with valid JSON only.
-Example:
+Categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal
+
+Rules:
+- Choose the single best category
+- Tags should be specific and relevant (2-4 tags)
+- Use lowercase for category and tags
+
+Example response:
 {
   "category": "game",
-  "tags": ["rpg", "fantasy"]
+  "tags": ["rpg", "fantasy", "multiplayer"]
 }
 
 Response:`;
@@ -86,20 +95,21 @@ Response:`;
 
     private parseResponse(content: string): ClassificationResult {
         try {
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('No JSON found in response');
-            }
-
-            const parsed = JSON.parse(jsonMatch[0]);
+            // Extract and repair JSON from response
+            const repaired = extractAndRepairJSON(content, false);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category),
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse Gemini response:', content, error);
+            Logger.warn('Failed to parse Gemini response:', content, error);
             return {
                 category: '',
                 tags: [],
@@ -108,14 +118,14 @@ Response:`;
         }
     }
 
-    private validateCategory(category: string): IdeaCategory {
-        const validCategories: IdeaCategory[] = [
+    private validateCategory(category: string): string {
+        const validCategories = [
             'game', 'saas', 'tool', 'story', 'mechanic',
             'hardware', 'ip', 'brand', 'ux', 'personal'
         ];
 
         const normalized = category?.toLowerCase().trim();
-        return (validCategories.includes(normalized as IdeaCategory)) ? (normalized as IdeaCategory) : '';
+        return validCategories.includes(normalized) ? normalized : '';
     }
 }
 

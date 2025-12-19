@@ -5,21 +5,54 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Notice, TFile, Vault, App, Workspace } from '../../../test/mocks/obsidian';
-import IdeatrPlugin from '../../../src/main';
+import { MutationCommand } from '../../../src/commands/transformation/MutationCommand';
+import { ExpandCommand } from '../../../src/commands/transformation/ExpandCommand';
+import { ReorganizeCommand } from '../../../src/commands/transformation/ReorganizeCommand';
+import { CommandContext } from '../../../src/commands/base/CommandContext';
 import { FrontmatterParser } from '../../../src/services/FrontmatterParser';
+import { FileOrganizer } from '../../../src/utils/fileOrganization';
 import { DEFAULT_SETTINGS } from '../../../src/settings';
 import type { Mutation, ExpansionResult, ReorganizationResult } from '../../../src/types/transformation';
+// Modals are mocked below
 
 // Mock Obsidian globals
 global.Notice = Notice;
 
+// Mock modals
+const MockMutationSelectionModal = vi.hoisted(() => vi.fn().mockImplementation((app, mutations, callback) => ({
+    open: vi.fn()
+})));
+
+const MockReorganizationPreviewModal = vi.hoisted(() => vi.fn().mockImplementation((app, original, reorganized, callback) => ({
+    open: vi.fn()
+})));
+
+const MockExpansionPreviewModal = vi.hoisted(() => vi.fn().mockImplementation((app, expansion, callback) => ({
+    open: vi.fn()
+})));
+
+vi.mock('../../../src/views/MutationSelectionModal', () => ({
+    MutationSelectionModal: MockMutationSelectionModal
+}));
+
+vi.mock('../../../src/views/ReorganizationPreviewModal', () => ({
+    ReorganizationPreviewModal: MockReorganizationPreviewModal
+}));
+
+vi.mock('../../../src/views/ExpansionPreviewModal', () => ({
+    ExpansionPreviewModal: MockExpansionPreviewModal
+}));
+
 describe('Idea Transformation Commands', () => {
-    let plugin: IdeatrPlugin;
+    let mutationCommand: MutationCommand;
+    let expandCommand: ExpandCommand;
+    let reorganizeCommand: ReorganizeCommand;
     let mockApp: App;
     let mockVault: Vault;
     let mockWorkspace: Workspace;
     let mockFile: TFile;
     let mockLLMService: any;
+    let context: CommandContext;
 
     beforeEach(() => {
         // Create mock app
@@ -37,10 +70,9 @@ describe('Idea Transformation Commands', () => {
         mockFile.path = 'Ideas/2025-01-15-test-idea.md';
         mockFile.name = '2025-01-15-test-idea.md';
 
-        // Create plugin instance
-        plugin = new IdeatrPlugin();
-        plugin.app = mockApp;
-        plugin.settings = { ...DEFAULT_SETTINGS };
+        const settings = { ...DEFAULT_SETTINGS };
+        const fileOrganizer = new FileOrganizer(mockVault, settings);
+        const frontmatterParser = new FrontmatterParser();
 
         // Mock LLM service
         mockLLMService = {
@@ -52,12 +84,43 @@ describe('Idea Transformation Commands', () => {
             reorganizeIdea: vi.fn(),
         };
 
-        plugin.llmService = mockLLMService;
-        plugin.frontmatterParser = new FrontmatterParser();
+        // Create command context
+        context = new CommandContext(
+            mockApp,
+            {} as any, // plugin
+            settings,
+            { appendToFileBody: vi.fn().mockResolvedValue(undefined) } as any, // fileManager
+            {} as any, // classificationService
+            {} as any, // duplicateDetector
+            {} as any, // domainService
+            {} as any, // webSearchService
+            {} as any, // nameVariantService
+            {} as any, // scaffoldService
+            frontmatterParser,
+            {} as any, // ideaRepository
+            {} as any, // embeddingService
+            {} as any, // clusteringService
+            {} as any, // graphLayoutService
+            {} as any, // resurfacingService
+            {} as any, // projectElevationService
+            {} as any, // tenuousLinkService
+            {} as any, // exportService
+            {} as any, // importService
+            {} as any, // searchService
+            mockLLMService,
+            { logError: vi.fn() } as any, // errorLogService
+            fileOrganizer
+        );
+
+        // Create command instances
+        mutationCommand = new MutationCommand(context);
+        expandCommand = new ExpandCommand(context);
+        reorganizeCommand = new ReorganizeCommand(context);
         
         // Mock vault methods as spies
         vi.spyOn(mockVault, 'read');
         vi.spyOn(mockVault, 'modify');
+        vi.spyOn(mockVault, 'create');
     });
 
     describe('Command: generate-mutations', () => {
@@ -96,11 +159,12 @@ A mobile app for task management
             mockLLMService.generateMutations.mockResolvedValue(mutations);
 
             // Act
-            await (plugin as any).generateMutations();
+            await mutationCommand.execute();
 
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
             expect(mockLLMService.generateMutations).toHaveBeenCalled();
+            expect(MockMutationSelectionModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {
@@ -108,7 +172,7 @@ A mobile app for task management
             mockWorkspace.getActiveFile = vi.fn().mockReturnValue(null);
 
             // Act
-            await (plugin as any).generateMutations();
+            await mutationCommand.execute();
 
             // Assert
             expect(mockVault.read).not.toHaveBeenCalled();
@@ -130,7 +194,7 @@ Test idea
             mockLLMService.isAvailable.mockReturnValue(false);
 
             // Act
-            await (plugin as any).generateMutations();
+            await mutationCommand.execute();
 
             // Assert
             expect(mockLLMService.generateMutations).not.toHaveBeenCalled();
@@ -168,11 +232,12 @@ A mobile app for task management
             mockLLMService.expandIdea.mockResolvedValue(expansion);
 
             // Act
-            await (plugin as any).expandIdea();
+            await expandCommand.execute();
 
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
             expect(mockLLMService.expandIdea).toHaveBeenCalled();
+            expect(MockExpansionPreviewModal).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {
@@ -180,7 +245,7 @@ A mobile app for task management
             mockWorkspace.getActiveFile = vi.fn().mockReturnValue(null);
 
             // Act
-            await (plugin as any).expandIdea();
+            await expandCommand.execute();
 
             // Assert
             expect(mockVault.read).not.toHaveBeenCalled();
@@ -222,11 +287,13 @@ Some chaotic idea text with no structure. More text here. Even more text.
             mockLLMService.reorganizeIdea.mockResolvedValue(reorganization);
 
             // Act
-            await (plugin as any).reorganizeIdea();
+            await reorganizeCommand.execute();
 
             // Assert
             expect(mockVault.read).toHaveBeenCalledWith(mockFile);
             expect(mockLLMService.reorganizeIdea).toHaveBeenCalled();
+            expect(MockReorganizationPreviewModal).toHaveBeenCalled();
+            expect(mockVault.create).toHaveBeenCalled(); // Backup file
         });
 
         it('should create backup file before reorganization', async () => {
@@ -254,7 +321,7 @@ Test idea
             mockLLMService.reorganizeIdea.mockResolvedValue(reorganization);
 
             // Act
-            await (plugin as any).reorganizeIdea();
+            await reorganizeCommand.execute();
 
             // Assert
             // Note: Backup creation would be tested here if implemented
@@ -266,7 +333,7 @@ Test idea
             mockWorkspace.getActiveFile = vi.fn().mockReturnValue(null);
 
             // Act
-            await (plugin as any).reorganizeIdea();
+            await reorganizeCommand.execute();
 
             // Assert
             expect(mockVault.read).not.toHaveBeenCalled();

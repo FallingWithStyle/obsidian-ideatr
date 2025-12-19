@@ -219,7 +219,7 @@ export const templates: ScaffoldTemplate[] = [
  * Select template based on category
  */
 export function selectTemplate(category: IdeaCategory): ScaffoldTemplate {
-    const templateId = categoryToTemplateMap[category] || 'generic-idea';
-    return templates.find(t => t.id === templateId) || genericIdeaTemplate;
+    const templateId = categoryToTemplateMap[category] ?? 'generic-idea';
+    return templates.find(t => t.id === templateId) ?? genericIdeaTemplate;
 }
 

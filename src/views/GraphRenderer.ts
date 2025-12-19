@@ -57,10 +57,12 @@ export function renderGraphLayout(
     // Create tooltip element (will be positioned dynamically)
     const tooltip = document.createElement('div');
     tooltip.classList.add('ideatr-graph-tooltip');
-    tooltip.style.display = 'none';
-    tooltip.style.position = 'absolute';
-    tooltip.style.pointerEvents = 'none';
-    tooltip.style.zIndex = '1000';
+    tooltip.setCssProps({
+        'display': 'none',
+        'position': 'absolute',
+        'pointer-events': 'none',
+        'z-index': '1000'
+    });
     wrapper.appendChild(tooltip);
 
     // Track current hovered node for cleanup
@@ -89,7 +91,7 @@ export function renderGraphLayout(
         }
 
         if (options.onNodeClick) {
-            group.style.cursor = 'pointer';
+            group.classList.add('ideatr-graph-node-clickable');
             group.addEventListener('click', () => {
                 options.onNodeClick?.(node.id);
             });
@@ -115,7 +117,9 @@ export function renderGraphLayout(
                 }
                 
                 // Show tooltip
-                tooltip.style.display = 'block';
+                tooltip.setCssProps({
+                    'display': 'block'
+                });
                 updateTooltipContent(tooltip, node.idea);
                 positionTooltip(tooltip, e, wrapper);
             });
@@ -128,7 +132,9 @@ export function renderGraphLayout(
 
             group.addEventListener('mouseleave', () => {
                 hoveredNodeId = null;
-                tooltip.style.display = 'none';
+                tooltip.setCssProps({
+                    'display': 'none'
+                });
                 options.onNodeHover?.(null);
             });
         }
@@ -151,21 +157,21 @@ function updateTooltipContent(tooltip: HTMLElement, idea: GraphNode['idea']): vo
         : idea.body;
     const created = idea.frontmatter.created;
 
-    tooltip.innerHTML = `
-        <div class="ideatr-tooltip-header">
-            <strong>${filename}</strong>
-        </div>
-        <div class="ideatr-tooltip-meta">
-            <span>Category: ${category}</span>
-            <span>Created: ${created}</span>
-        </div>
-        <div class="ideatr-tooltip-tags">
-            Tags: ${tags}
-        </div>
-        <div class="ideatr-tooltip-preview">
-            ${preview || '(No content)'}
-        </div>
-    `;
+    // Clear and rebuild tooltip content safely (prevents XSS)
+    tooltip.empty();
+    
+    const header = tooltip.createDiv('ideatr-tooltip-header');
+    header.createEl('strong', { text: filename });
+    
+    const meta = tooltip.createDiv('ideatr-tooltip-meta');
+    meta.createEl('span', { text: `Category: ${category}` });
+    meta.createEl('span', { text: `Created: ${created}` });
+    
+    const tagsDiv = tooltip.createDiv('ideatr-tooltip-tags');
+    tagsDiv.textContent = `Tags: ${tags}`;
+    
+    const previewDiv = tooltip.createDiv('ideatr-tooltip-preview');
+    previewDiv.textContent = preview || '(No content)';
 }
 
 /**
@@ -183,8 +189,10 @@ function positionTooltip(tooltip: HTMLElement, event: MouseEvent, container: HTM
     const maxX = rect.width - tooltipRect.width - 10;
     const maxY = rect.height - tooltipRect.height - 10;
     
-    tooltip.style.left = `${Math.min(x, maxX)}px`;
-    tooltip.style.top = `${Math.max(10, Math.min(y, maxY))}px`;
+    tooltip.setCssProps({
+        'left': `${Math.min(x, maxX)}px`,
+        'top': `${Math.max(10, Math.min(y, maxY))}px`
+    });
 }
 
 

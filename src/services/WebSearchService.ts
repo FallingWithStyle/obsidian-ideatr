@@ -1,6 +1,24 @@
 import type { IWebSearchService, SearchResult } from '../types/search';
 import type { IdeatrSettings } from '../settings';
 import type { IdeaCategory } from '../types/classification';
+import { requestUrl } from 'obsidian';
+import { Logger } from '../utils/logger';
+
+/**
+ * Google Custom Search API response types
+ */
+interface GoogleSearchItem {
+    title?: string;
+    link?: string;
+    snippet?: string;
+    pagemap?: {
+        metatags?: Array<Record<string, string>>;
+    };
+}
+
+interface GoogleSearchResponse {
+    items?: GoogleSearchItem[];
+}
 
 /**
  * WebSearchService - Provides web search functionality using Google Custom Search API
@@ -43,13 +61,13 @@ export class WebSearchService implements IWebSearchService {
             return [];
         }
 
-        const limit = maxResults || this.settings.maxSearchResults || 5;
+        const limit = maxResults ?? this.settings.maxSearchResults ?? 5;
 
         try {
             const results = await this.performSearch(query, limit);
             return this.processResults(results, query);
         } catch (error) {
-            console.warn('Web search failed:', error);
+            Logger.warn('Web search failed:', error);
             return [];
         }
     }
@@ -57,7 +75,7 @@ export class WebSearchService implements IWebSearchService {
     /**
      * Perform actual API call to Google Custom Search
      */
-    private async performSearch(query: string, maxResults: number): Promise<any> {
+    private async performSearch(query: string, maxResults: number): Promise<GoogleSearchItem[]> {
         if (this.settings.webSearchProvider !== 'google') {
             throw new Error('Only Google Custom Search is currently supported');
         }
@@ -66,42 +84,43 @@ export class WebSearchService implements IWebSearchService {
         const engineId = this.settings.googleSearchEngineId;
         const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${engineId}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 10)}`;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(
-            () => controller.abort(),
-            this.settings.webSearchTimeout
-        );
+        // Use Promise.race for timeout handling with requestUrl
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error(`Timeout: Request exceeded ${this.settings.webSearchTimeout}ms`)), this.settings.webSearchTimeout);
+        });
 
         try {
-            const response = await fetch(url, {
-                signal: controller.signal,
-                method: 'GET'
-            });
+            const response = await Promise.race([
+                requestUrl({
+                    url: url,
+                    method: 'GET',
+                    throw: false
+                }),
+                timeoutPromise
+            ]);
 
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
+            if (response.status < 200 || response.status >= 300) {
                 if (response.status === 429) {
                     throw new Error('API rate limit exceeded');
                 }
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error(`HTTP ${response.status}: Request failed`);
             }
 
-            const data = await response.json();
-            return data.items || [];
+            const jsonData: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+            const data = jsonData as GoogleSearchResponse;
+            return data.items ?? [];
         } catch (error) {
-            clearTimeout(timeoutId);
-            if (error instanceof Error && error.name === 'AbortError') {
-                throw new Error(`Timeout: Request exceeded ${this.settings.webSearchTimeout}ms`);
+            if (error instanceof Error && error.message.includes('Timeout')) {
+                throw error;
             }
-            throw error;
+            throw error instanceof Error ? error : new Error(String(error));
         }
     }
 
     /**
      * Process and score search results
      */
-    private processResults(items: any[], query: string): SearchResult[] {
+    private processResults(items: GoogleSearchItem[], query: string): SearchResult[] {
         if (!items || items.length === 0) {
             return [];
         }
@@ -109,10 +128,10 @@ export class WebSearchService implements IWebSearchService {
         const queryLower = query.toLowerCase();
         const queryWords = queryLower.split(/\s+/);
 
-        const results: SearchResult[] = items.map((item: any) => {
-            const title = item.title || '';
-            const snippet = item.snippet || '';
-            const url = item.link || '';
+        const results: SearchResult[] = items.map((item: GoogleSearchItem) => {
+            const title = item.title ?? '';
+            const snippet = item.snippet ?? '';
+            const url = item.link ?? '';
             
             // Extract date if available
             let date: string | undefined;
@@ -138,10 +157,10 @@ export class WebSearchService implements IWebSearchService {
         });
 
         // Sort by relevance (descending)
-        results.sort((a, b) => (b.relevance || 0) - (a.relevance || 0));
+        results.sort((a, b) => (b.relevance ?? 0) - (a.relevance ?? 0));
 
         // Filter low-relevance results (score < 0.3)
-        return results.filter(r => (r.relevance || 0) >= 0.3);
+        return results.filter(r => (r.relevance ?? 0) >= 0.3);
     }
 
     /**

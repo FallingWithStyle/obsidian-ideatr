@@ -2,7 +2,7 @@
  * Modal for previewing expanded idea content
  */
 
-import { Modal } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import type { ExpansionResult } from '../types/transformation';
 
 export class ExpansionPreviewModal extends Modal {
@@ -10,7 +10,7 @@ export class ExpansionPreviewModal extends Modal {
     private onAction?: (action: 'append' | 'replace') => void;
 
     constructor(
-        app: any,
+        app: App,
         expansion: ExpansionResult,
         onAction?: (action: 'append' | 'replace') => void
     ) {
@@ -23,7 +23,7 @@ export class ExpansionPreviewModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: 'Expanded Idea Preview' });
+        contentEl.createEl('h2', { text: 'Expanded idea preview' });
 
         const description = contentEl.createEl('p', {
             text: 'Review the expanded idea content below. Choose to append or replace the current content:'
@@ -31,20 +31,26 @@ export class ExpansionPreviewModal extends Modal {
         description.addClass('ideatr-modal-description');
 
         const previewContainer = contentEl.createDiv('ideatr-expansion-preview');
-        previewContainer.style.maxHeight = '400px';
-        previewContainer.style.overflowY = 'auto';
-        previewContainer.style.padding = '10px';
-        previewContainer.style.border = '1px solid var(--background-modifier-border)';
-        previewContainer.style.borderRadius = '4px';
+        (previewContainer as HTMLElement).setCssProps({
+            'max-height': '400px',
+            'overflow-y': 'auto',
+            'padding': '10px',
+            'border': '1px solid var(--background-modifier-border)',
+            'border-radius': '4px'
+        });
         
         // Render markdown preview (simplified - in production would use Obsidian's markdown renderer)
         const preview = previewContainer.createDiv('ideatr-expansion-content');
-        preview.innerHTML = this.expansion.expandedText.replace(/\n/g, '<br>');
+        // Use textContent and CSS to preserve line breaks safely (prevents XSS)
+        preview.textContent = this.expansion.expandedText;
+        (preview as HTMLElement).setCssProps({
+            'white-space': 'pre-wrap'
+        });
 
         const buttonContainer = contentEl.createDiv('ideatr-modal-buttons');
         
         const appendButton = buttonContainer.createEl('button', {
-            text: 'Append to Note',
+            text: 'Append to note',
             cls: 'mod-cta'
         });
         appendButton.addEventListener('click', () => {
@@ -55,7 +61,7 @@ export class ExpansionPreviewModal extends Modal {
         });
 
         const replaceButton = buttonContainer.createEl('button', {
-            text: 'Replace Content'
+            text: 'Replace content'
         });
         replaceButton.addEventListener('click', () => {
             if (this.onAction) {

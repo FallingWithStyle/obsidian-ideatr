@@ -1,6 +1,9 @@
 import type { ILLMService, ClassificationResult } from '../types/classification';
 import type { Mutation, MutationOptions, ExpansionResult, ExpansionOptions, ReorganizationResult, ReorganizationOptions } from '../types/transformation';
 import { PROMPTS } from './prompts';
+import { extractAndRepairJSON } from '../utils/jsonRepair';
+import { GRAMMARS } from '../utils/grammars';
+import { Logger } from '../utils/logger';
 
 /**
  * HybridLLM - Manages both local and cloud LLM providers with intelligent routing
@@ -27,10 +30,11 @@ export class HybridLLM implements ILLMService {
             try {
                 const result = await this.cloudLLM.classify(text);
                 this.lastProvider = 'cloud';
-                console.log(`[HybridLLM] Used cloud provider: ${(this.cloudLLM as any).name || 'cloud'}`);
+                const providerName = (this.cloudLLM as ILLMService & { name?: string }).name ?? 'cloud';
+                Logger.debug('Used cloud provider:', providerName);
                 return result;
             } catch (error) {
-                console.warn('[HybridLLM] Cloud provider failed, falling back to local:', error);
+                Logger.warn('Cloud provider failed, falling back to local:', error);
                 // Fall through to local
             }
         }
@@ -38,7 +42,7 @@ export class HybridLLM implements ILLMService {
         // Use local AI
         const result = await this.localLLM.classify(text);
         this.lastProvider = 'local';
-        console.log('[HybridLLM] Used local provider');
+        Logger.debug('Used local provider');
         return result;
     }
 
@@ -47,10 +51,48 @@ export class HybridLLM implements ILLMService {
     }
 
     /**
+     * Ensure the LLM service is ready - delegates to the appropriate provider
+     */
+    async ensureReady(): Promise<boolean> {
+        // Try to ensure cloud is ready first if preferred and available
+        if (this.preferCloud && this.cloudLLM?.isAvailable() && this.cloudLLM.ensureReady) {
+            try {
+                const ready = await this.cloudLLM.ensureReady();
+                if (ready) {
+                    return true;
+                }
+            } catch (error) {
+                Logger.warn('Cloud provider ensureReady failed, falling back to local:', error);
+            }
+        }
+
+        // Ensure local LLM is ready (only if available)
+        if (this.localLLM.isAvailable() && this.localLLM.ensureReady) {
+            return await this.localLLM.ensureReady();
+        }
+
+        return false;
+    }
+
+    /**
      * Get the last provider that was used for classification
      */
     getLastProvider(): 'local' | 'cloud' | null {
         return this.lastProvider;
+    }
+
+    /**
+     * Get the underlying local LLM service (for status checking)
+     */
+    getLocalLLM(): ILLMService {
+        return this.localLLM;
+    }
+
+    /**
+     * Get the underlying cloud LLM service (for status checking)
+     */
+    getCloudLLM(): ILLMService | null {
+        return this.cloudLLM;
     }
 
     /**
@@ -86,7 +128,7 @@ export class HybridLLM implements ILLMService {
                 this.lastProvider = 'cloud';
                 return result;
             } catch (error) {
-                console.warn('[HybridLLM] Cloud provider failed, falling back to local:', error);
+                Logger.warn('Cloud provider failed, falling back to local:', error);
                 // Fall through to local
             }
         }
@@ -104,6 +146,13 @@ export class HybridLLM implements ILLMService {
     /**
      * Generate idea mutations
      */
+    private shouldUseLocalLLM(): boolean {
+        return !(this.preferCloud && this.cloudLLM?.isAvailable());
+    }
+
+    /**
+     * Generate idea mutations
+     */
     async generateMutations(
         text: string,
         options?: MutationOptions
@@ -116,21 +165,59 @@ export class HybridLLM implements ILLMService {
             focus: options?.focus,
         });
 
-        const response = await this.complete(prompt, {
+        const isLocal = this.shouldUseLocalLLM();
+        const llmOptions: {
+            temperature?: number;
+            n_predict?: number;
+            stop?: string[];
+            grammar?: string;
+        } = {
             temperature: 0.8, // Higher creativity for mutations
-            n_predict: 2000,
-        });
+            n_predict: 4000, // Increased to handle longer JSON responses
+            stop: ['\n]', ']'], // Stop at end of JSON array
+        };
+
+        if (isLocal) {
+            llmOptions.grammar = GRAMMARS.mutations;
+        }
+
+        const response = await this.complete(prompt, llmOptions);
+
+        // Check for empty response
+        if (!response || response.trim().length === 0) {
+            throw new Error('LLM returned an empty response. The model may have stopped generating or encountered an error. Please try again.');
+        }
 
         // Parse JSON response
         try {
-            // Extract JSON from response (handle markdown code blocks)
-            const jsonMatch = response.match(/\[[\s\S]*\]/);
-            const jsonText = jsonMatch ? jsonMatch[0] : response;
-            const mutations = JSON.parse(jsonText) as Mutation[];
-            return mutations;
+            const repaired = extractAndRepairJSON(response, true);
+            const mutations = JSON.parse(repaired) as Mutation[];
+
+            // Validate mutations array
+            if (!Array.isArray(mutations)) {
+                throw new Error('Response is not an array');
+            }
+
+            // Filter and validate each mutation
+            const validMutations = mutations
+                .filter((m: unknown): m is { text?: unknown; title?: unknown; description?: unknown; differences?: unknown } => 
+                    typeof m === 'object' && m !== null && (('text' in m) || ('title' in m) || ('description' in m))
+                )
+                .map((m) => ({
+                    title: m.title ?? (m as { text?: unknown }).text ?? '',
+                    description: m.description ?? '',
+                    differences: Array.isArray(m.differences) ? m.differences : [],
+                } as Mutation));
+
+            if (validMutations.length > 0) {
+                return validMutations;
+            }
+
+            throw new Error('No valid mutations found in response');
         } catch (error) {
-            console.error('Failed to parse mutations JSON:', error);
-            throw new Error('Failed to parse mutations from LLM response');
+            Logger.warn('JSON parsing failed:', error);
+            Logger.debug('Raw response:', response);
+            throw new Error('Failed to parse mutations from AI response. Please try again.');
         }
     }
 
@@ -246,8 +333,8 @@ export class HybridLLM implements ILLMService {
             s => !reorganizedSections.includes(s)
         );
         const sectionsReorganized = originalSections.filter(
-            s => reorganizedSections.includes(s) && 
-                 reorganizedSections.indexOf(s) !== originalSections.indexOf(s)
+            s => reorganizedSections.includes(s) &&
+                reorganizedSections.indexOf(s) !== originalSections.indexOf(s)
         );
 
         return {
@@ -268,6 +355,23 @@ export class HybridLLM implements ILLMService {
             sections.push(match[1].trim());
         }
         return sections;
+    }
+
+    /**
+     * Cleanup both local and cloud providers
+     * Called on plugin unload
+     */
+    cleanup(): void {
+        Logger.debug('HybridLLM cleanup started');
+
+        // Local LLM cleanup is handled by singleton destroy
+        // Just cleanup cloud provider if it has cleanup method
+        if (this.cloudLLM) {
+            const cloudLLM = this.cloudLLM as ILLMService & { cleanup?: () => void };
+            cloudLLM.cleanup?.();
+        }
+
+        Logger.debug('HybridLLM cleanup completed');
     }
 }
 

@@ -4,6 +4,9 @@
 
 import type { Vault } from 'obsidian';
 import { FrontmatterParser } from './FrontmatterParser';
+import { Logger } from '../utils/logger';
+import type { IIdeaRepository } from '../types/management';
+import { RelatedIdConverter } from '../utils/RelatedIdConverter';
 
 export type ExportFormat = 'json' | 'csv' | 'markdown';
 
@@ -34,10 +37,12 @@ export interface IdeaExport {
 export class ExportService {
     private vault: Vault;
     private frontmatterParser: FrontmatterParser;
+    private ideaRepository: IIdeaRepository;
 
-    constructor(vault: Vault) {
+    constructor(vault: Vault, ideaRepository: IIdeaRepository) {
         this.vault = vault;
         this.frontmatterParser = new FrontmatterParser();
+        this.ideaRepository = ideaRepository;
     }
 
     /**
@@ -52,6 +57,8 @@ export class ExportService {
 
         const ideas: IdeaExportItem[] = [];
 
+        const idConverter = new RelatedIdConverter(this.ideaRepository);
+        
         for (const file of ideaFiles) {
             try {
                 const content = await this.vault.read(file);
@@ -60,15 +67,22 @@ export class ExportService {
                 // Extract title from filename or first line
                 const title = file.basename.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/-/g, ' ');
 
+                // Convert related IDs to paths for export
+                const relatedIds = Array.isArray(parsed.frontmatter.related)
+                    ? parsed.frontmatter.related.filter((id): id is number => typeof id === 'number' && id !== 0)
+                    : [];
+                const relatedPaths = await idConverter.idsToPaths(relatedIds);
+
                 ideas.push({
                     ...parsed.frontmatter,
+                    related: relatedPaths, // Override with paths for export
                     title,
                     body: parsed.body,
                     filename: file.name,
                     path: file.path
                 });
             } catch (error) {
-                console.warn(`Failed to export ${file.path}:`, error);
+                Logger.warn(`Failed to export ${file.path}:`, error);
             }
         }
 
@@ -87,7 +101,7 @@ export class ExportService {
             case 'markdown':
                 return this.exportMarkdown(exportData);
             default:
-                throw new Error(`Unsupported export format: ${format}`);
+                throw new Error(`Unsupported export format: ${String(format)}`);
         }
     }
 

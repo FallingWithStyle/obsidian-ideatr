@@ -5,19 +5,22 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Notice, TFile, Vault, App, Workspace } from '../../../test/mocks/obsidian';
-import IdeatrPlugin from '../../../src/main';
+import { RefreshIdeaCommand } from '../../../src/commands/management/RefreshIdeaCommand';
+import { CommandContext } from '../../../src/commands/base/CommandContext';
 import { FrontmatterParser } from '../../../src/services/FrontmatterParser';
+import { FileOrganizer } from '../../../src/utils/fileOrganization';
 import { DEFAULT_SETTINGS } from '../../../src/settings';
 
 // Mock Obsidian globals
 global.Notice = Notice;
 
 describe('Quick Actions Commands', () => {
-    let plugin: IdeatrPlugin;
+    let refreshIdeaCommand: RefreshIdeaCommand;
     let mockApp: App;
     let mockVault: Vault;
     let mockWorkspace: Workspace;
     let mockFile: TFile;
+    let context: CommandContext;
 
     beforeEach(() => {
         // Create mock app
@@ -35,12 +38,40 @@ describe('Quick Actions Commands', () => {
         mockFile.path = 'Ideas/2025-01-15-test-idea.md';
         mockFile.name = '2025-01-15-test-idea.md';
 
-        // Create plugin instance
-        plugin = new IdeatrPlugin();
-        plugin.app = mockApp;
-        plugin.settings = { ...DEFAULT_SETTINGS };
+        const settings = { ...DEFAULT_SETTINGS };
+        const fileOrganizer = new FileOrganizer(mockVault, settings);
+        const frontmatterParser = new FrontmatterParser();
 
-        plugin.frontmatterParser = new FrontmatterParser();
+        // Create command context
+        context = new CommandContext(
+            mockApp,
+            {} as any, // plugin
+            settings,
+            { appendToFileBody: vi.fn().mockResolvedValue(undefined) } as any, // fileManager
+            { isAvailable: vi.fn().mockReturnValue(true), classifyIdea: vi.fn() } as any, // classificationService
+            {} as any, // duplicateDetector
+            {} as any, // domainService
+            {} as any, // webSearchService
+            { isAvailable: vi.fn().mockReturnValue(true), generateVariants: vi.fn(), formatVariantsForMarkdown: vi.fn() } as any, // nameVariantService
+            {} as any, // scaffoldService
+            frontmatterParser,
+            {} as any, // ideaRepository
+            {} as any, // embeddingService
+            {} as any, // clusteringService
+            {} as any, // graphLayoutService
+            {} as any, // resurfacingService
+            {} as any, // projectElevationService
+            {} as any, // tenuousLinkService
+            {} as any, // exportService
+            {} as any, // importService
+            { findRelatedNotes: vi.fn() } as any, // searchService
+            {} as any, // llmService
+            { logError: vi.fn() } as any, // errorLogService
+            fileOrganizer
+        );
+
+        // Create command instance
+        refreshIdeaCommand = new RefreshIdeaCommand(context);
         
         // Mock vault methods
         vi.spyOn(mockVault, 'read');
@@ -69,7 +100,7 @@ Test idea content
             (mockVault.modify as any).mockResolvedValue(undefined);
 
             // Mock services
-            plugin.classificationService = {
+            context.classificationService = {
                 classifyIdea: vi.fn().mockResolvedValue({
                     category: 'app',
                     tags: ['test'],
@@ -78,24 +109,25 @@ Test idea content
                 isAvailable: vi.fn().mockReturnValue(true)
             } as any;
 
-            plugin.searchService = {
+            context.searchService = {
                 findRelatedNotes: vi.fn().mockResolvedValue([
                     { path: 'Ideas/related.md', title: 'related', similarity: 0.8 }
                 ])
             } as any;
 
-            plugin.nameVariantService = {
+            context.nameVariantService = {
                 generateVariants: vi.fn().mockResolvedValue([]),
-                isAvailable: vi.fn().mockReturnValue(true)
+                isAvailable: vi.fn().mockReturnValue(true),
+                formatVariantsForMarkdown: vi.fn().mockReturnValue('')
             } as any;
 
             // Act
-            await (plugin as any).refreshIdea();
+            await refreshIdeaCommand.execute();
 
             // Assert
             expect(mockVault.read).toHaveBeenCalled();
-            expect(plugin.classificationService.classifyIdea).toHaveBeenCalled();
-            expect(plugin.searchService.findRelatedNotes).toHaveBeenCalled();
+            expect(context.classificationService.classifyIdea).toHaveBeenCalled();
+            expect(context.searchService.findRelatedNotes).toHaveBeenCalled();
         });
 
         it('should handle no active file gracefully', async () => {
@@ -103,7 +135,7 @@ Test idea content
             mockWorkspace.getActiveFile = vi.fn().mockReturnValue(null);
 
             // Act
-            await (plugin as any).refreshIdea();
+            await refreshIdeaCommand.execute();
 
             // Assert
             expect(mockVault.read).not.toHaveBeenCalled();

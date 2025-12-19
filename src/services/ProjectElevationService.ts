@@ -1,21 +1,25 @@
-import type { Vault, TFile } from 'obsidian';
+import type { Vault, App } from 'obsidian';
+import { TFile } from 'obsidian';
 import type { IdeaFile, IdeaFrontmatter } from '../types/idea';
 import type { IProjectElevationService, ElevationResult } from '../types/management';
 import type { IdeatrSettings } from '../settings';
 import { FrontmatterParser } from './FrontmatterParser';
 import { extractIdeaNameRuleBased } from '../utils/ideaNameExtractor';
 import { frontmatterToYAML } from '../metadata/FrontmatterBuilder';
+import { Logger } from '../utils/logger';
 
 /**
  * ProjectElevationService - Handles elevation of ideas to projects
  */
 export class ProjectElevationService implements IProjectElevationService {
     private vault: Vault;
+    private app?: App;
     private frontmatterParser: FrontmatterParser;
     private settings: IdeatrSettings;
 
-    constructor(vault: Vault, frontmatterParser: FrontmatterParser, settings: IdeatrSettings) {
+    constructor(vault: Vault, frontmatterParser: FrontmatterParser, settings: IdeatrSettings, app?: App) {
         this.vault = vault;
+        this.app = app;
         this.frontmatterParser = frontmatterParser;
         this.settings = settings;
     }
@@ -24,14 +28,14 @@ export class ProjectElevationService implements IProjectElevationService {
      * Get projects directory from settings
      */
     private getProjectsDirectory(): string {
-        return this.settings.elevationProjectsDirectory || 'Projects';
+        return this.settings.elevationProjectsDirectory ?? 'Projects';
     }
 
     /**
      * Get default folders from settings
      */
     private getDefaultFolders(): string[] {
-        const foldersStr = this.settings.elevationDefaultFolders || 'docs,notes,assets';
+        const foldersStr = this.settings.elevationDefaultFolders ?? 'docs,notes,assets';
         return foldersStr
             .split(',')
             .map(f => f.trim())
@@ -43,7 +47,7 @@ export class ProjectElevationService implements IProjectElevationService {
      */
     canElevate(ideaFile: IdeaFile): boolean {
         // Check if idea has required frontmatter
-        if (!ideaFile.frontmatter || !ideaFile.frontmatter.type || !ideaFile.frontmatter.status) {
+        if (!ideaFile.frontmatter?.type || !ideaFile.frontmatter.status) {
             return false;
         }
 
@@ -69,11 +73,13 @@ export class ProjectElevationService implements IProjectElevationService {
 
         // If body extraction failed, try filename
         if (!name || name.trim().length === 0) {
-            // Remove date prefix and extension from filename
+            // Remove extension from filename
             const filenameWithoutExt = ideaFile.filename.replace(/\.md$/, '');
-            const datePrefixMatch = filenameWithoutExt.match(/^\d{4}-\d{2}-\d{2}-(.+)$/);
-            if (datePrefixMatch) {
-                name = datePrefixMatch[1];
+            
+            // Try format: YYYY-MM-DD Title
+            const formatMatch = filenameWithoutExt.match(/^\d{4}-\d{2}-\d{2}\s+(.+)$/);
+            if (formatMatch) {
+                name = formatMatch[1];
             } else {
                 name = filenameWithoutExt;
             }
@@ -117,7 +123,7 @@ export class ProjectElevationService implements IProjectElevationService {
     /**
      * Check if project name is available
      */
-    async isProjectNameAvailable(projectName: string): Promise<boolean> {
+    isProjectNameAvailable(projectName: string): boolean {
         const projectPath = `${this.getProjectsDirectory()}/${projectName}`;
         const existing = this.vault.getAbstractFileByPath(projectPath);
         return existing === null;
@@ -137,7 +143,8 @@ export class ProjectElevationService implements IProjectElevationService {
 
         // Find original file in vault
         const originalPath = `Ideas/${ideaFile.filename}`;
-        const originalFile = this.vault.getAbstractFileByPath(originalPath) as TFile | null;
+        const originalFileAbstract = this.vault.getAbstractFileByPath(originalPath);
+        const originalFile = originalFileAbstract instanceof TFile ? originalFileAbstract : null;
 
         if (!originalFile) {
             return {
@@ -147,7 +154,7 @@ export class ProjectElevationService implements IProjectElevationService {
         }
 
         // Generate or use provided project name
-        const baseProjectName = projectName || this.generateProjectName(ideaFile);
+        const baseProjectName = projectName ?? this.generateProjectName(ideaFile);
         const finalProjectName = await this.resolveProjectNameCollision(baseProjectName);
         const projectPath = `${this.getProjectsDirectory()}/${finalProjectName}`;
 
@@ -165,25 +172,30 @@ export class ProjectElevationService implements IProjectElevationService {
             await this.createProjectStructure(projectPath, createdPaths);
 
             // Create README.md with updated content
-            const updatedContent = await this.prepareElevatedContent(originalContent, projectPath);
+            const updatedContent = this.prepareElevatedContent(originalContent, projectPath);
             await this.vault.create(`${projectPath}/README.md`, updatedContent);
             createdPaths.push(`${projectPath}/README.md`);
 
-            // Create Devra metadata file
+            // Create project metadata file
             try {
                 await this.handleDevraIntegration(projectPath, ideaFile);
                 createdPaths.push(`${projectPath}/.devra.json`);
             } catch (error) {
-                warnings.push('Failed to create Devra metadata file (non-fatal)');
-                console.warn('Devra integration failed:', error);
+                warnings.push('Failed to create project metadata file (non-fatal)');
+                Logger.warn('Project metadata integration failed:', error);
             }
 
             // Delete original file (last step)
             try {
-                await this.vault.delete(originalFile);
+                if (this.app) {
+                    await this.app.fileManager.trashFile(originalFile);
+                } else {
+                    warnings.push('App not available to move original idea file to trash (project created successfully)');
+                    Logger.warn('App not available to trash original idea file.');
+                }
             } catch (error) {
                 warnings.push('Failed to delete original idea file (project created successfully)');
-                console.warn('Failed to delete original file:', error);
+                Logger.warn('Failed to delete original file:', error);
             }
 
             return {
@@ -204,17 +216,18 @@ export class ProjectElevationService implements IProjectElevationService {
 
     /**
      * Resolve project name collision by adding numeric suffix
+     * Note: This method is async to match the calling context, even though it doesn't contain await expressions
      */
-    private async resolveProjectNameCollision(baseName: string): Promise<string> {
+    private resolveProjectNameCollision(baseName: string): Promise<string> {
         let projectName = baseName;
         let suffix = 2;
 
-        while (!(await this.isProjectNameAvailable(projectName))) {
+        while (!this.isProjectNameAvailable(projectName)) {
             projectName = `${baseName}-${suffix}`;
             suffix++;
         }
 
-        return projectName;
+        return Promise.resolve(projectName);
     }
 
     /**
@@ -249,7 +262,7 @@ export class ProjectElevationService implements IProjectElevationService {
     /**
      * Prepare content for elevated project (update frontmatter)
      */
-    private async prepareElevatedContent(originalContent: string, projectPath: string): Promise<string> {
+    private prepareElevatedContent(originalContent: string, projectPath: string): string {
         // Parse existing frontmatter
         const frontmatter = this.frontmatterParser.parseFrontmatter(originalContent);
         if (!frontmatter) {
@@ -276,10 +289,10 @@ export class ProjectElevationService implements IProjectElevationService {
     }
 
     /**
-     * Handle Devra integration (stubbed)
+     * Handle project metadata integration (stubbed)
      */
     private async handleDevraIntegration(projectPath: string, ideaFile: IdeaFile): Promise<void> {
-        // Only create Devra metadata if enabled in settings
+        // Only create project metadata if enabled in settings
         if (!this.settings.elevationCreateDevraMetadata) {
             return;
         }
@@ -290,8 +303,8 @@ export class ProjectElevationService implements IProjectElevationService {
             source: 'ideatr',
             elevated: new Date().toISOString().split('T')[0],
             ideaPath: ideaFile.filename,
-            ideaCategory: ideaFile.frontmatter.category || '',
-            ideaTags: ideaFile.frontmatter.tags || [],
+            ideaCategory: ideaFile.frontmatter.category ?? '',
+            ideaTags: ideaFile.frontmatter.tags ?? [],
             devraReady: false,
             devraProjectPath: null
         };
@@ -310,16 +323,20 @@ export class ProjectElevationService implements IProjectElevationService {
                 const file = this.vault.getAbstractFileByPath(path);
                 if (file) {
                     // Check if it's a file (TFile) or folder
-                    if ('extension' in file) {
+                    if (file instanceof TFile) {
                         // It's a file
-                        await this.vault.delete(file as TFile);
+                        if (this.app) {
+                            await this.app.fileManager.trashFile(file);
+                        } else {
+                            Logger.warn(`App not available to trash file during rollback: ${path}`);
+                        }
                     } else {
                         // It's a folder
                         await this.vault.adapter.rmdir(path, true);
                     }
                 }
             } catch (error) {
-                console.warn(`Failed to rollback ${path}:`, error);
+                Logger.warn(`Failed to rollback ${path}:`, error);
             }
         }
     }

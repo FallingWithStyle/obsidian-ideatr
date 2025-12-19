@@ -3,27 +3,19 @@ import type { IdeaInput } from '../types/idea';
 import { generateFilename, addCollisionSuffix } from './FilenameGenerator';
 import { buildFrontmatter, frontmatterToYAML } from '../metadata/FrontmatterBuilder';
 import type { IdeaFrontmatter } from '../types/idea';
-// Import core adapter (will be available after linking core package)
-// import { ObsidianAdapter } from '@ideatr/core';
-// import type { FileSystemAdapter } from '@ideatr/core';
+import { Logger } from '../utils/logger';
 
 /**
  * FileManager - Handles file creation and management for ideas
- * 
- * Note: This will be migrated to use @ideatr/core's IdeaManager in Phase 3.
- * For now, it uses Vault directly but is prepared for adapter migration.
  */
 
 const IDEAS_DIRECTORY = 'Ideas';
 
 export class FileManager {
     private vault: Vault;
-    // private adapter: FileSystemAdapter; // Will be used in Phase 3
 
     constructor(vault: Vault) {
         this.vault = vault;
-        // TODO: Phase 3 - Initialize ObsidianAdapter
-        // this.adapter = new ObsidianAdapter(vault);
     }
 
     /**
@@ -39,7 +31,7 @@ export class FileManager {
         let filepath = `${IDEAS_DIRECTORY}/${filename}`;
 
         // Handle collisions
-        filepath = await this.resolveCollision(filepath);
+        filepath = this.resolveCollision(filepath);
 
         // Build frontmatter
         const frontmatter = buildFrontmatter(idea);
@@ -67,12 +59,12 @@ export class FileManager {
     /**
      * Resolve filename collisions by adding numeric suffix
      */
-    private async resolveCollision(filepath: string): Promise<string> {
+    private resolveCollision(filepath: string): string {
         let currentPath = filepath;
         let suffix = 2;
 
         while (this.vault.getAbstractFileByPath(currentPath)) {
-            const filename = filepath.split('/').pop() || '';
+            const filename = filepath.split('/').pop() ?? '';
             const suffixedFilename = addCollisionSuffix(filename, suffix);
             currentPath = `${IDEAS_DIRECTORY}/${suffixedFilename}`;
             suffix++;
@@ -97,7 +89,7 @@ export class FileManager {
             const match = content.match(frontmatterRegex);
 
             if (!match) {
-                console.warn('No frontmatter found in file:', file.path);
+                Logger.warn('No frontmatter found in file:', file.path);
                 return content;
             }
 
@@ -108,7 +100,7 @@ export class FileManager {
             let newFrontmatter = match[1];
 
             // Helper to replace or append field
-            const updateField = (key: keyof IdeaFrontmatter, value: any) => {
+            const updateField = (key: keyof IdeaFrontmatter, value: IdeaFrontmatter[keyof IdeaFrontmatter]) => {
                 const stringValue = Array.isArray(value)
                     ? `[${value.join(', ')}]`
                     : value;
@@ -180,7 +172,7 @@ export class FileManager {
         const headerPattern = new RegExp(`^##\\s+${escaped}\\s*$`, 'im');
         const match = content.match(headerPattern);
         
-        if (!match || match.index === undefined) {
+        if (match?.index === undefined) {
             return null;
         }
         
@@ -192,7 +184,7 @@ export class FileManager {
         
         // First, check for next ## header
         const nextHeaderMatch = afterHeader.match(/^##\s+/m);
-        if (nextHeaderMatch && nextHeaderMatch.index !== undefined) {
+        if (nextHeaderMatch?.index !== undefined) {
             return { start, end: headerEnd + nextHeaderMatch.index };
         }
         
@@ -200,7 +192,7 @@ export class FileManager {
         // This handles cases like "More content" after a section
         const blankLinePattern = /\n\n(?![\s]*[-*|])/;
         const blankLineMatch = afterHeader.match(blankLinePattern);
-        if (blankLineMatch && blankLineMatch.index !== undefined) {
+        if (blankLineMatch?.index !== undefined) {
             // Check if content after blank line is not a list item
             const afterBlankLine = afterHeader.substring(blankLineMatch.index + 2);
             if (afterBlankLine.trim() && !afterBlankLine.match(/^\s*[-*|]/)) {

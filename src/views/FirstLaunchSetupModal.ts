@@ -1,24 +1,20 @@
 import { Modal, App, Notice } from 'obsidian';
-import type { IModelManager } from '../services/ModelManager';
 import type { IdeatrSettings } from '../settings';
-import { ModelDownloadModal } from './ModelDownloadModal';
 
 /**
  * FirstLaunchSetupModal - Modal for first-launch AI setup
  */
 export class FirstLaunchSetupModal extends Modal {
-    private modelManager: IModelManager;
     private settings: IdeatrSettings;
     private onComplete: () => void;
 
     constructor(
         app: App,
-        modelManager: IModelManager,
+        _modelManager: null,
         settings: IdeatrSettings,
         onComplete: () => void
     ) {
         super(app);
-        this.modelManager = modelManager;
         this.settings = settings;
         this.onComplete = onComplete;
     }
@@ -29,102 +25,43 @@ export class FirstLaunchSetupModal extends Modal {
         contentEl.addClass('ideatr-setup-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Welcome to Ideatr AI' });
+        contentEl.createEl('h2', { text: 'Manage AI models' });
+
         contentEl.createEl('p', {
-            text: 'Choose how you want to use AI for idea classification:',
+            text: 'Choose how you want to use AI for idea enhancement:',
             cls: 'ideatr-setup-description'
         });
 
-        // Option 1: Download AI Model
-        const downloadOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
-        downloadOption.createEl('h3', { text: 'Download AI Model' });
-        const modelInfo = this.modelManager.getModelInfo();
-        downloadOption.createEl('p', {
-            text: `Download Llama 3.2 3B model (${(modelInfo.sizeMB / 1024).toFixed(2)} GB) for offline, free AI classification.`
-        });
-        downloadOption.createEl('ul', {
-            cls: 'ideatr-setup-features'
-        }).innerHTML = `
-            <li>✅ Works offline</li>
-            <li>✅ Free to use</li>
-            <li>✅ No API keys needed</li>
-            <li>⚠️ Requires ~2.3 GB download</li>
-        `;
-        const downloadButton = downloadOption.createEl('button', {
-            text: 'Download Model',
-            cls: 'mod-cta'
-        });
-        downloadButton.addEventListener('click', () => this.handleDownloadOption());
-
-        // Option 2: Use API Key
+        // Option 1: Use API Key
         const apiKeyOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
-        apiKeyOption.createEl('h3', { text: 'Use My API Key' });
+        apiKeyOption.createEl('h3', { text: 'Use my API key' });
         apiKeyOption.createEl('p', {
             text: 'Use a cloud AI provider (Anthropic, OpenAI, etc.) for better quality and faster responses.'
         });
-        apiKeyOption.createEl('ul', {
+        const apiFeaturesList = apiKeyOption.createEl('ul', {
             cls: 'ideatr-setup-features'
-        }).innerHTML = `
-            <li>✅ Better quality results</li>
-            <li>✅ Faster responses</li>
-            <li>✅ No local storage needed</li>
-            <li>⚠️ Requires API key (paid)</li>
-        `;
+        });
+        apiFeaturesList.createEl('li', { text: '✅ better quality results' });
+        apiFeaturesList.createEl('li', { text: '✅ faster responses' });
+        apiFeaturesList.createEl('li', { text: '✅ no local storage needed' });
+        apiFeaturesList.createEl('li', { text: '⚠️ requires API key (paid)' });
         const apiKeyButton = apiKeyOption.createEl('button', {
-            text: 'Enter API Key',
+            text: 'Enter API key',
             cls: 'mod-cta'
         });
-        apiKeyButton.addEventListener('click', () => this.handleApiKeyOption());
+        apiKeyButton.addEventListener('click', () => void this.handleApiKeyOption());
 
-        // Option 3: Skip
+        // Option 2: Skip
         const skipOption = contentEl.createEl('div', { cls: 'ideatr-setup-option' });
-        skipOption.createEl('h3', { text: 'Skip for Now' });
+        skipOption.createEl('h3', { text: 'Skip for now' });
         skipOption.createEl('p', {
             text: 'Continue without AI. You can set up AI later in settings.'
         });
         const skipButton = skipOption.createEl('button', {
-            text: 'Skip Setup',
+            text: 'Skip setup',
             cls: 'mod-cancel'
         });
-        skipButton.addEventListener('click', () => this.handleSkipOption());
-    }
-
-    private async handleDownloadOption(): Promise<void> {
-        // Check if model is already downloaded
-        const isDownloaded = await this.modelManager.isModelDownloaded();
-        
-        if (isDownloaded) {
-            // Model already exists, just mark setup as complete
-            this.settings.setupCompleted = true;
-            this.settings.modelDownloaded = true;
-            this.settings.llmProvider = 'llama';
-            this.onComplete();
-            this.close();
-            new Notice('Model already downloaded. Setup complete!');
-            return;
-        }
-
-        // Open download modal
-        const downloadModal = new ModelDownloadModal(this.app, this.modelManager);
-        
-        // Override close to mark setup as complete
-        const originalClose = downloadModal.close.bind(downloadModal);
-        downloadModal.close = () => {
-            originalClose();
-            // Check if download was successful
-            this.modelManager.isModelDownloaded().then(downloaded => {
-                if (downloaded) {
-                    this.settings.setupCompleted = true;
-                    this.settings.modelDownloaded = true;
-                    this.settings.llmProvider = 'llama';
-                    this.settings.modelPath = this.modelManager.getModelPath();
-                    this.onComplete();
-                    this.close();
-                }
-            });
-        };
-
-        downloadModal.open();
+        skipButton.addEventListener('click', () => void this.handleSkipOption());
     }
 
     private handleApiKeyOption(): void {
@@ -133,7 +70,7 @@ export class FirstLaunchSetupModal extends Modal {
         contentEl.addClass('ideatr-setup-modal');
 
         // Title
-        contentEl.createEl('h2', { text: 'Enter API Key' });
+        contentEl.createEl('h2', { text: 'Enter API key' });
         contentEl.createEl('p', {
             text: 'Enter your API key for a cloud AI provider. You can configure this later in settings.',
             cls: 'ideatr-setup-description'
@@ -145,20 +82,74 @@ export class FirstLaunchSetupModal extends Modal {
         const providerSelect = providerContainer.createEl('select', {
             attr: { id: 'ideatr-provider-select' }
         });
-        providerSelect.createEl('option', { text: 'Anthropic (Claude)', attr: { value: 'anthropic' } });
-        providerSelect.createEl('option', { text: 'OpenAI (GPT)', attr: { value: 'openai' } });
+        providerSelect.createEl('option', { text: 'Anthropic (Claude 3.5 Haiku)', attr: { value: 'anthropic' } });
+        providerSelect.createEl('option', { text: 'OpenAI (GPT-4o Mini)', attr: { value: 'openai' } });
+        providerSelect.createEl('option', { text: 'Google Gemini (Gemini 1.5 Flash)', attr: { value: 'gemini' } });
+        providerSelect.createEl('option', { text: 'Groq (Llama 3.3 70B)', attr: { value: 'groq' } });
+        providerSelect.createEl('option', { text: 'OpenRouter (multiple models)', attr: { value: 'openrouter' } });
+        providerSelect.createEl('option', { text: 'Custom endpoint (Ollama/LM Studio)', attr: { value: 'custom' } });
         providerSelect.createEl('option', { text: 'Skip for now', attr: { value: 'none' } });
 
-        // API key input
+        // API key input (or endpoint URL for custom)
         const keyContainer = contentEl.createEl('div', { cls: 'ideatr-setting-item' });
-        keyContainer.createEl('label', { text: 'API Key:', attr: { for: 'ideatr-api-key-input' } });
-        const apiKeyInput = keyContainer.createEl('input', {
+        const isCustomProvider = () => providerSelect.value === 'custom';
+        let showApiKey = false;
+        
+        keyContainer.createEl('label', { 
+            text: 'API key:', 
+            attr: { for: 'ideatr-api-key-input' } 
+        });
+        const inputWrapper = keyContainer.createDiv({ cls: 'ideatr-api-key-input-wrapper' });
+        inputWrapper.setCssProps({
+            'display': 'flex',
+            'gap': '0.5em',
+            'align-items': 'center'
+        });
+        const apiKeyInput = inputWrapper.createEl('input', {
             attr: {
                 id: 'ideatr-api-key-input',
                 type: 'password',
                 placeholder: 'Enter your API key'
             }
         });
+        apiKeyInput.setCssProps({
+            'flex': '1'
+        });
+        
+        const toggleButton = inputWrapper.createEl('button', {
+            text: 'Show',
+            attr: { type: 'button' }
+        });
+        toggleButton.setCssProps({
+            'padding': '0.25em 0.75em',
+            'font-size': '0.9em'
+        });
+        toggleButton.addEventListener('click', () => {
+            showApiKey = !showApiKey;
+            if (!isCustomProvider()) {
+                apiKeyInput.setAttribute('type', showApiKey ? 'text' : 'password');
+            }
+            toggleButton.textContent = showApiKey ? 'Hide' : 'Show';
+        });
+
+        const updateInputLabel = () => {
+            const label = keyContainer.querySelector('label');
+            if (label) {
+                label.textContent = isCustomProvider() ? 'Endpoint URL:' : 'API key:';
+            }
+            if (isCustomProvider()) {
+                apiKeyInput.setAttribute('placeholder', 'Enter endpoint URL (e.g., http://localhost:11434/api/chat)');
+                apiKeyInput.setAttribute('type', 'text');
+                toggleButton.setCssProps({ 'display': 'none' });
+            } else {
+                apiKeyInput.setAttribute('placeholder', 'Enter your API key');
+                apiKeyInput.setAttribute('type', showApiKey ? 'text' : 'password');
+                toggleButton.setCssProps({ 'display': 'block' });
+            }
+        };
+
+        // Update input when provider changes
+        providerSelect.addEventListener('change', updateInputLabel);
 
         // Help text
         contentEl.createEl('p', {
@@ -181,12 +172,21 @@ export class FirstLaunchSetupModal extends Modal {
                 return;
             }
 
+            if (provider === 'custom') {
+                if (!apiKey.trim()) {
+                    new Notice('Please enter an endpoint URL');
+                    return;
+                }
+                this.handleCustomEndpointSubmit(apiKey);
+                return;
+            }
+
             if (!apiKey.trim()) {
                 new Notice('Please enter an API key');
                 return;
             }
 
-            this.handleApiKeySubmit(apiKey, provider as 'anthropic' | 'openai');
+            this.handleApiKeySubmit(apiKey, provider as 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter');
         });
 
         const backButton = buttonContainer.createEl('button', {
@@ -205,9 +205,20 @@ export class FirstLaunchSetupModal extends Modal {
         });
     }
 
-    private async handleApiKeySubmit(apiKey: string, provider: 'anthropic' | 'openai'): Promise<void> {
-        // Store API key and provider
-        this.settings.cloudApiKey = apiKey;
+    private handleApiKeySubmit(apiKey: string, provider: 'anthropic' | 'openai' | 'gemini' | 'groq' | 'openrouter'): void {
+        // Ensure cloudApiKeys exists
+        if (!this.settings.cloudApiKeys) {
+            this.settings.cloudApiKeys = {
+                anthropic: '',
+                openai: '',
+                gemini: '',
+                groq: '',
+                openrouter: ''
+            };
+        }
+
+        // Store API key for the specific provider
+        this.settings.cloudApiKeys[provider] = apiKey;
         this.settings.cloudProvider = provider;
         this.settings.preferCloud = true;
         this.settings.llmProvider = provider;
@@ -216,6 +227,20 @@ export class FirstLaunchSetupModal extends Modal {
         // TODO: Test API key connection
         // For now, just mark as complete
         new Notice('API key saved. Cloud AI setup complete!');
+        this.onComplete();
+        this.close();
+    }
+
+    private handleCustomEndpointSubmit(endpointUrl: string): void {
+        this.settings.customEndpointUrl = endpointUrl;
+        this.settings.cloudProvider = 'custom';
+        this.settings.preferCloud = true;
+        this.settings.llmProvider = 'custom';
+        this.settings.setupCompleted = true;
+
+        // TODO: Test endpoint connection
+        // For now, just mark as complete
+        new Notice('Custom endpoint saved. Cloud AI setup complete!');
         this.onComplete();
         this.close();
     }
@@ -238,8 +263,12 @@ export class FirstLaunchSetupModal extends Modal {
  * Check if this is the first launch
  */
 export function isFirstLaunch(settings: IdeatrSettings): boolean {
-    return !settings.setupCompleted && 
-           !settings.modelDownloaded && 
-           !settings.cloudApiKey;
+    const hasAnyApiKey = settings.cloudApiKeys &&
+        Object.values(settings.cloudApiKeys).some(key => key && key.length > 0);
+    const hasLegacyApiKey = settings.cloudApiKey && settings.cloudApiKey.length > 0;
+
+    return !settings.setupCompleted &&
+        !hasAnyApiKey &&
+        !hasLegacyApiKey;
 }
 

@@ -12,9 +12,12 @@ const mocks = vi.hoisted(() => {
             }
         }
     };
-    const MockGroq = vi.fn((config: any) => {
-        return mockGroqInstance;
-    });
+    // Use a class-based mock for proper constructor support
+    class MockGroq {
+        constructor(config: any) {
+            return mockGroqInstance;
+        }
+    }
     return {
         default: MockGroq,
         mockGroqInstance,

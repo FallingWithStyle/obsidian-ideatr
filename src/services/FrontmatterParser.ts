@@ -17,7 +17,7 @@ export class FrontmatterParser implements IFrontmatterParser {
         const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
         const match = content.match(frontmatterRegex);
 
-        if (!match || !match[1]) {
+        if (!match?.[1]) {
             return null;
         }
 
@@ -31,6 +31,7 @@ export class FrontmatterParser implements IFrontmatterParser {
         let type: string | null = null;
         let status: string | null = null;
         let created: string | null = null;
+        let id: number = 0;
         let category = '';
 
         for (const line of lines) {
@@ -41,6 +42,12 @@ export class FrontmatterParser implements IFrontmatterParser {
                 status = trimmed.substring(7).trim();
             } else if (trimmed.startsWith('created:')) {
                 created = trimmed.substring(8).trim();
+            } else if (trimmed.startsWith('id:')) {
+                const idValue = trimmed.substring(3).trim();
+                const parsedId = parseInt(idValue, 10);
+                if (!isNaN(parsedId)) {
+                    id = parsedId;
+                }
             } else if (trimmed.startsWith('category:')) {
                 category = trimmed.substring(9).trim();
             }
@@ -51,34 +58,40 @@ export class FrontmatterParser implements IFrontmatterParser {
         }
 
         frontmatter.type = type as 'idea';
-        frontmatter.status = status as 'captured' | 'elevated';
+        frontmatter.status = status as 'captured' | 'elevated' | 'archived' | 'validated' | 'promoted';
         frontmatter.created = created;
+        frontmatter.id = id;
         frontmatter.category = category;
 
         // Array fields
         frontmatter.tags = this.parseArrayField(frontmatterBlock, 'tags');
-        frontmatter.related = this.parseArrayField(frontmatterBlock, 'related');
+        frontmatter.related = this.parseNumberArrayField(frontmatterBlock, 'related');
         frontmatter.domains = this.parseArrayField(frontmatterBlock, 'domains');
         frontmatter['existence-check'] = this.parseArrayField(frontmatterBlock, 'existence-check');
 
         // Parse optional fields (for elevation)
         const elevatedMatch = frontmatterBlock.match(/^elevated:\s*(.+)$/m);
         const projectPathMatch = frontmatterBlock.match(/^projectPath:\s*(.+)$/m);
+        const codenameMatch = frontmatterBlock.match(/^codename:\s*(.+)$/m);
         if (elevatedMatch) {
             frontmatter.elevated = elevatedMatch[1].trim();
         }
         if (projectPathMatch) {
             frontmatter.projectPath = projectPathMatch[1].trim();
         }
+        if (codenameMatch) {
+            frontmatter.codename = codenameMatch[1].trim();
+        }
 
         // Parse optional fields (for resurfacing)
+        // These are stored in frontmatter but not part of IdeaFrontmatter interface
         const dismissedMatch = frontmatterBlock.match(/^dismissed:\s*(.+)$/m);
         const actedUponMatch = frontmatterBlock.match(/^actedUpon:\s*(.+)$/m);
         if (dismissedMatch) {
-            (frontmatter as any).dismissed = dismissedMatch[1].trim().toLowerCase() === 'true';
+            (frontmatter as Record<string, unknown>).dismissed = dismissedMatch[1].trim().toLowerCase() === 'true';
         }
         if (actedUponMatch) {
-            (frontmatter as any).actedUpon = actedUponMatch[1].trim().toLowerCase() === 'true';
+            (frontmatter as Record<string, unknown>).actedUpon = actedUponMatch[1].trim().toLowerCase() === 'true';
         }
 
         // Validate parsed frontmatter
@@ -122,6 +135,46 @@ export class FrontmatterParser implements IFrontmatterParser {
     }
 
     /**
+     * Parse number array field from frontmatter block (for related IDs)
+     * Handles formats: [] or [1, 2, 3] or ["1", "2", "3"] (legacy string format)
+     * Also handles legacy file path format and converts them (migration support)
+     */
+    private parseNumberArrayField(block: string, fieldName: string): number[] {
+        const regex = new RegExp(`^${fieldName}:\\s*(.+)$`, 'm');
+        const match = block.match(regex);
+
+        if (!match) {
+            return [];
+        }
+
+        const value = match[1].trim();
+
+        // Empty array
+        if (value === '[]') {
+            return [];
+        }
+
+        // Array with items: [1, 2, 3] or ["1", "2", "3"]
+        const arrayMatch = value.match(/^\[(.+)\]$/);
+        if (arrayMatch) {
+            const items = arrayMatch[1]
+                .split(',')
+                .map(item => {
+                    // Remove quotes if present
+                    const trimmed = item.trim().replace(/^["']|["']$/g, '');
+                    // Try to parse as number
+                    const num = parseInt(trimmed, 10);
+                    // If not a number, it might be a legacy file path - return 0 to mark for migration
+                    return isNaN(num) ? 0 : num;
+                })
+                .filter(item => item !== 0); // Filter out invalid entries (0 means needs migration)
+            return items;
+        }
+
+        return [];
+    }
+
+    /**
      * Parse complete idea file from file and content
      * @param file - File object with path and name
      * @param content - File content
@@ -136,6 +189,7 @@ export class FrontmatterParser implements IFrontmatterParser {
                 type: 'idea',
                 status: 'captured',
                 created: new Date().toISOString().split('T')[0],
+                id: 0,
                 category: '',
                 tags: [],
                 related: [],
@@ -171,6 +225,7 @@ export class FrontmatterParser implements IFrontmatterParser {
                 type: 'idea',
                 status: 'captured',
                 created: new Date().toISOString().split('T')[0],
+                id: 0,
                 category: '',
                 tags: [],
                 related: [],
@@ -208,13 +263,14 @@ export class FrontmatterParser implements IFrontmatterParser {
      * @param frontmatter - Frontmatter object to validate
      * @returns True if valid, false otherwise
      */
-    validateFrontmatter(frontmatter: any): boolean {
+    validateFrontmatter(frontmatter: Record<string, unknown>): boolean {
         // Check required fields
         if (!frontmatter.type || frontmatter.type !== 'idea') {
             return false;
         }
 
-        if (!frontmatter.status || (frontmatter.status !== 'captured' && frontmatter.status !== 'elevated')) {
+        const validStatuses = ['captured', 'elevated', 'archived', 'validated', 'promoted'];
+        if (!frontmatter.status || !validStatuses.includes(frontmatter.status as string)) {
             return false;
         }
 
@@ -226,6 +282,11 @@ export class FrontmatterParser implements IFrontmatterParser {
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (!dateRegex.test(frontmatter.created)) {
             return false;
+        }
+
+        // Check id is number (defaults to 0 if missing)
+        if (frontmatter.id === undefined || typeof frontmatter.id !== 'number') {
+            frontmatter.id = 0;
         }
 
         // Check category is string (can be empty)

@@ -1,25 +1,32 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ILLMProvider } from '../../types/llm-provider';
-import type { ClassificationResult, IdeaCategory } from '../../types/classification';
+import type { ClassificationResult } from '../../types/classification';
+import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
- * Anthropic Provider - Claude 3.5 Haiku
+ * Anthropic Provider - Supports multiple Claude models
  */
 export class AnthropicProvider implements ILLMProvider {
     name = 'Anthropic';
     private client: Anthropic | null = null;
     private apiKey: string;
+    private model: string;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
+        this.model = model ?? 'claude-3-5-haiku-20241022';
     }
 
     private getClient(): Anthropic {
         if (!this.client && this.apiKey && this.apiKey.trim().length > 0) {
             try {
-                this.client = new Anthropic({ apiKey: this.apiKey });
+                this.client = new Anthropic({ 
+                    apiKey: this.apiKey,
+                    dangerouslyAllowBrowser: true // Required for Obsidian's Electron environment
+                });
             } catch (error) {
-                console.warn('Failed to initialize Anthropic client:', error);
+                Logger.warn('Failed to initialize Anthropic client:', error);
                 throw new Error('Failed to initialize Anthropic client');
             }
         }
@@ -29,9 +36,9 @@ export class AnthropicProvider implements ILLMProvider {
         return this.client;
     }
 
-    async authenticate(apiKey: string): Promise<boolean> {
+    authenticate(apiKey: string): Promise<boolean> {
         // Basic validation: Anthropic API keys start with 'sk-'
-        return apiKey.trim().length > 0 && apiKey.startsWith('sk-');
+        return Promise.resolve(apiKey.trim().length > 0 && apiKey.startsWith('sk-'));
     }
 
     isAvailable(): boolean {
@@ -48,7 +55,7 @@ export class AnthropicProvider implements ILLMProvider {
         try {
             const client = this.getClient();
             const response = await client.messages.create({
-                model: 'claude-3-5-haiku-20241022',
+                model: this.model,
                 max_tokens: 256,
                 messages: [{
                     role: 'user',
@@ -64,7 +71,8 @@ export class AnthropicProvider implements ILLMProvider {
             return this.parseResponse(content.text);
         } catch (error: unknown) {
             // Handle rate limiting
-            const err = error as any;
+            // Error may have status property from API responses
+            const err = error as { status?: number; response?: { status?: number }; message?: string; name?: string };
             if (err?.status === 429 || err?.response?.status === 429) {
                 throw new Error('Rate limit exceeded. Please try again later.');
             }
@@ -90,16 +98,21 @@ export class AnthropicProvider implements ILLMProvider {
     }
 
     private constructPrompt(text: string): string {
-        return `You are an AI assistant that classifies ideas into categories and tags.
-Valid categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal.
+        return `Classify this idea into one category and suggest 2-4 relevant tags.
 
 Idea: "${text}"
 
-Respond with valid JSON only.
-Example:
+Categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal
+
+Rules:
+- Choose the single best category
+- Tags should be specific and relevant (2-4 tags)
+- Use lowercase for category and tags
+
+Example response:
 {
   "category": "game",
-  "tags": ["rpg", "fantasy"]
+  "tags": ["rpg", "fantasy", "multiplayer"]
 }
 
 Response:`;
@@ -107,21 +120,21 @@ Response:`;
 
     private parseResponse(content: string): ClassificationResult {
         try {
-            // Extract JSON from response (may have markdown code blocks)
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('No JSON found in response');
-            }
-
-            const parsed = JSON.parse(jsonMatch[0]);
+            // Extract and repair JSON from response
+            const repaired = extractAndRepairJSON(content, false);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category),
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse Anthropic response:', content, error);
+            Logger.warn('Failed to parse Anthropic response:', content, error);
             return {
                 category: '',
                 tags: [],
@@ -130,14 +143,14 @@ Response:`;
         }
     }
 
-    private validateCategory(category: string): IdeaCategory {
-        const validCategories: IdeaCategory[] = [
+    private validateCategory(category: string): string {
+        const validCategories = [
             'game', 'saas', 'tool', 'story', 'mechanic',
-            'hardware', 'ip', 'brand', 'ux', 'personal', ''
+            'hardware', 'ip', 'brand', 'ux', 'personal'
         ];
 
         const normalized = category?.toLowerCase().trim();
-        return (validCategories.includes(normalized as IdeaCategory)) ? (normalized as IdeaCategory) : '';
+        return validCategories.includes(normalized) ? normalized : '';
     }
 }
 

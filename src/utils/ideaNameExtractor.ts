@@ -1,3 +1,6 @@
+import { Logger } from './logger';
+import type { ILLMService } from '../types/classification';
+
 /**
  * Enhanced idea name extraction utilities
  * Supports both rule-based and LLM-based extraction
@@ -35,7 +38,7 @@ export function extractIdeaNameRuleBased(ideaText: string): string {
  */
 export async function extractIdeaNameWithLLM(
     ideaText: string,
-    llmService?: { complete?: (prompt: string, options?: any) => Promise<string>; isAvailable?: () => boolean }
+    llmService?: Pick<ILLMService, 'complete' | 'isAvailable'>
 ): Promise<string> {
     // Fallback to rule-based if no LLM service
     if (!llmService?.complete) {
@@ -49,9 +52,26 @@ export async function extractIdeaNameWithLLM(
 
     try {
         // Construct prompt for name extraction
-        const prompt = `Extract the name or title from this idea. Return only the name, nothing else.
+        const prompt = `Extract a concise, descriptive name or title for this idea.
 
 Idea: "${ideaText}"
+
+CRITICAL REQUIREMENTS:
+- Extract the CORE CONCEPT, not just the first words
+- Focus on what makes this idea unique or identifiable
+- Create a title that someone could use to quickly understand what this is about
+
+Rules:
+- Return ONLY the name/title (3-50 characters)
+- No quotes, no explanation, no prefixes like "Title:" or "Name:"
+- If the idea is a long description, extract the key concept (e.g., "AI puzzle game with monkeys" → "Monkey Puzzle Game" or "AI Monkey Puzzle")
+- If the first line is already a good title, use it
+- Make it descriptive but concise - should capture the essence in a few words
+
+Examples:
+- "AI generated puzzle full of interlinked monkeys that look similar, sort of a where's waldo of monkeys" → "Monkey Puzzle Game" or "AI Monkey Find"
+- "notification app that sends alerts" → "Notification App" or "Alert System"
+- "task manager for teams" → "Team Task Manager"
 
 Name:`;
 
@@ -82,7 +102,7 @@ Name:`;
         return extractedName;
     } catch (error) {
         // If LLM extraction fails, fallback to rule-based
-        console.warn('LLM name extraction failed, using rule-based fallback:', error);
+        Logger.warn('LLM name extraction failed, using rule-based fallback:', error);
         return extractIdeaNameRuleBased(ideaText);
     }
 }

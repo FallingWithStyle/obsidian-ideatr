@@ -2,8 +2,9 @@ import type { IScaffoldService, ScaffoldTemplate } from '../types/transformation
 import type { IdeaCategory } from '../types/classification';
 import { templates as defaultTemplates, selectTemplate as selectDefaultTemplate } from './templates';
 import { extractIdeaNameSync } from './NameVariantService';
-import type { Vault } from 'obsidian';
+import type { Vault, App } from 'obsidian';
 import { TFile } from 'obsidian';
+import { Logger } from '../utils/logger';
 
 const TEMPLATES_DIR = '.ideatr/templates';
 
@@ -13,15 +14,17 @@ const TEMPLATES_DIR = '.ideatr/templates';
  */
 export class ScaffoldService implements IScaffoldService {
     private vault?: Vault;
+    private app?: App;
     private customTemplates: ScaffoldTemplate[] = [];
     private allTemplates: ScaffoldTemplate[] = [];
 
-    constructor(vault?: Vault) {
+    constructor(vault?: Vault, app?: App) {
         this.vault = vault;
+        this.app = app;
         this.allTemplates = [...defaultTemplates];
         if (vault) {
             this.loadCustomTemplates().catch(err => {
-                console.warn('Failed to load custom templates:', err);
+                Logger.warn('Failed to load custom templates:', err);
             });
         }
     }
@@ -55,17 +58,17 @@ export class ScaffoldService implements IScaffoldService {
                     if (this.validateTemplate(template)) {
                         loadedTemplates.push(template);
                     } else {
-                        console.warn(`Invalid template structure in ${file.path}`);
+                        Logger.warn(`Invalid template structure in ${file.path}`);
                     }
                 } catch (error) {
-                    console.warn(`Failed to load template from ${file.path}:`, error);
+                    Logger.warn(`Failed to load template from ${file.path}:`, error);
                 }
             }
 
             this.customTemplates = loadedTemplates;
             this.updateAllTemplates();
         } catch (error) {
-            console.warn('Failed to load custom templates:', error);
+            Logger.warn('Failed to load custom templates:', error);
             this.updateAllTemplates();
         }
     }
@@ -92,16 +95,21 @@ export class ScaffoldService implements IScaffoldService {
     /**
      * Validate template structure
      */
-    private validateTemplate(template: any): template is ScaffoldTemplate {
+    private validateTemplate(template: unknown): template is ScaffoldTemplate {
+        if (!template || typeof template !== 'object') {
+            return false;
+        }
+        const t = template as Record<string, unknown>;
         return (
-            template &&
-            typeof template.id === 'string' &&
-            typeof template.name === 'string' &&
-            Array.isArray(template.categories) &&
-            Array.isArray(template.sections) &&
-            template.sections.every((s: any) => 
-                typeof s.title === 'string' && typeof s.content === 'string'
-            )
+            typeof t.id === 'string' &&
+            typeof t.name === 'string' &&
+            Array.isArray(t.categories) &&
+            Array.isArray(t.sections) &&
+            t.sections.every((s: unknown) => {
+                if (!s || typeof s !== 'object') return false;
+                const section = s as Record<string, unknown>;
+                return typeof section.title === 'string' && typeof section.content === 'string';
+            })
         );
     }
 
@@ -147,7 +155,11 @@ export class ScaffoldService implements IScaffoldService {
         const file = this.vault.getAbstractFileByPath(filepath);
         
         if (file && file instanceof TFile) {
-            await this.vault.delete(file);
+            if (this.app) {
+                await this.app.fileManager.trashFile(file);
+            } else {
+                throw new Error('App not available to trash template file');
+            }
             await this.loadCustomTemplates();
         }
     }
@@ -160,13 +172,13 @@ export class ScaffoldService implements IScaffoldService {
         return true; // Service is always available
     }
 
-    async generateScaffold(
+    generateScaffold(
         ideaText: string,
         category: IdeaCategory,
         ideaName?: string
-    ): Promise<string> {
+    ): string {
         // Extract idea name if not provided (use sync version for scaffolds - fast enough)
-        const name = ideaName || extractIdeaNameSync(ideaText);
+        const name = ideaName ?? extractIdeaNameSync(ideaText);
         
         // Select template based on category (use custom templates if available)
         const template = this.selectTemplate(category);
@@ -203,8 +215,8 @@ export class ScaffoldService implements IScaffoldService {
     private selectTemplate(category: IdeaCategory): ScaffoldTemplate {
         // Use default selection logic but with custom templates
         const templateId = selectDefaultTemplate(category).id;
-        return this.allTemplates.find(t => t.id === templateId) || 
-               this.allTemplates.find(t => t.id === 'generic-idea') || 
+        return this.allTemplates.find(t => t.id === templateId) ?? 
+               this.allTemplates.find(t => t.id === 'generic-idea') ?? 
                this.allTemplates[0];
     }
 

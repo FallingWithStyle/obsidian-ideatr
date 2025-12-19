@@ -18,18 +18,20 @@ export class ClusteringService implements IClusteringService {
      * @param ideas - Ideas to cluster
      * @param embeddings - Optional embeddings for each idea (if not provided, will generate)
      * @returns Array of clusters
+     * Note: This method is async to satisfy the IClusteringService interface,
+     * even though it doesn't contain any await expressions (generateEmbeddings is synchronous)
      */
-    async clusterIdeas(ideas: IdeaFile[], embeddings?: Embedding[]): Promise<Cluster[]> {
+    clusterIdeas(ideas: IdeaFile[], embeddings?: Embedding[]): Promise<Cluster[]> {
         if (ideas.length === 0) {
-            return [];
+            return Promise.resolve([]);
         }
 
         if (ideas.length === 1) {
-            return [{
+            return Promise.resolve([{
                 id: 'cluster-0',
                 ideas: [ideas[0]],
                 label: 'Single Idea'
-            }];
+            }]);
         }
 
         // Generate similarity matrix
@@ -40,11 +42,11 @@ export class ClusteringService implements IClusteringService {
         } else {
             // Use embedding service to calculate similarity matrix
             if (this.embeddingService instanceof EmbeddingService) {
-                similarityMatrix = await (this.embeddingService as EmbeddingService).calculateSimilarityMatrix(ideas);
+                similarityMatrix = this.embeddingService.calculateSimilarityMatrix(ideas);
             } else {
                 // Fallback: generate embeddings first
                 const texts = ideas.map(idea => this.getIdeaText(idea));
-                const generatedEmbeddings = await this.embeddingService.generateEmbeddings(texts);
+                const generatedEmbeddings = this.embeddingService.generateEmbeddings(texts);
                 similarityMatrix = this.calculateSimilarityMatrixFromEmbeddings(generatedEmbeddings);
             }
         }
@@ -52,7 +54,7 @@ export class ClusteringService implements IClusteringService {
         // Perform hierarchical clustering
         const clusters = this.hierarchicalClustering(ideas, similarityMatrix);
 
-        return clusters;
+        return Promise.resolve(clusters);
     }
 
     /**

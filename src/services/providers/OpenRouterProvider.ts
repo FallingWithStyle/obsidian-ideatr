@@ -1,5 +1,8 @@
 import type { ILLMProvider } from '../../types/llm-provider';
-import type { ClassificationResult, IdeaCategory } from '../../types/classification';
+import type { ClassificationResult } from '../../types/classification';
+import { requestUrl } from 'obsidian';
+import { extractAndRepairJSON } from '../../utils/jsonRepair';
+import { Logger } from '../../utils/logger';
 
 /**
  * OpenRouter Provider - Multiple models via OpenRouter API
@@ -12,11 +15,11 @@ export class OpenRouterProvider implements ILLMProvider {
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
-        this.model = model || 'openai/gpt-4o-mini';
+        this.model = model ?? 'openai/gpt-4o-mini';
     }
 
-    async authenticate(apiKey: string): Promise<boolean> {
-        return apiKey.trim().length > 0;
+    authenticate(apiKey: string): Promise<boolean> {
+        return Promise.resolve(apiKey.trim().length > 0);
     }
 
     isAvailable(): boolean {
@@ -31,12 +34,13 @@ export class OpenRouterProvider implements ILLMProvider {
         const prompt = this.constructPrompt(text);
 
         try {
-            const response = await fetch(this.baseUrl, {
+            const response = await requestUrl({
+                url: this.baseUrl,
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.apiKey}`,
                     'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://github.com/FallingWithStyle/ideatr',
+                    'HTTP-Referer': 'https://github.com/FallingWithStyle/obsidian-ideatr',
                     'X-Title': 'Ideatr'
                 },
                 body: JSON.stringify({
@@ -47,21 +51,24 @@ export class OpenRouterProvider implements ILLMProvider {
                     }],
                     max_tokens: 256,
                     temperature: 0.1
-                })
+                }),
+                throw: false
             });
 
-            if (!response.ok) {
+            if (response.status < 200 || response.status >= 300) {
                 if (response.status === 429) {
                     throw new Error('Rate limit exceeded. Please try again later.');
                 }
                 if (response.status === 401) {
                     throw new Error('Invalid API key. Please check your OpenRouter API key.');
                 }
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(`OpenRouter API error: ${errorData.error || response.statusText}`);
+                const errorJson: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+                const errorData = (errorJson as { error?: string } | null) ?? {};
+                throw new Error(`OpenRouter API error: ${typeof errorData.error === 'string' ? errorData.error : 'Request failed'}`);
             }
 
-            const data = await response.json();
+            const jsonData: unknown = typeof response.json === 'function' ? await (response.json as () => Promise<unknown>)() : response.json;
+            const data = jsonData as { choices?: Array<{ message?: { content?: string } }> };
             const content = data.choices?.[0]?.message?.content;
             if (!content) {
                 throw new Error('No content in OpenRouter response');
@@ -83,16 +90,21 @@ export class OpenRouterProvider implements ILLMProvider {
     }
 
     private constructPrompt(text: string): string {
-        return `You are an AI assistant that classifies ideas into categories and tags.
-Valid categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal.
+        return `Classify this idea into one category and suggest 2-4 relevant tags.
 
 Idea: "${text}"
 
-Respond with valid JSON only.
-Example:
+Categories: game, saas, tool, story, mechanic, hardware, ip, brand, ux, personal
+
+Rules:
+- Choose the single best category
+- Tags should be specific and relevant (2-4 tags)
+- Use lowercase for category and tags
+
+Example response:
 {
   "category": "game",
-  "tags": ["rpg", "fantasy"]
+  "tags": ["rpg", "fantasy", "multiplayer"]
 }
 
 Response:`;
@@ -100,20 +112,21 @@ Response:`;
 
     private parseResponse(content: string): ClassificationResult {
         try {
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('No JSON found in response');
-            }
-
-            const parsed = JSON.parse(jsonMatch[0]);
+            // Extract and repair JSON from response
+            const repaired = extractAndRepairJSON(content, false);
+            const parsed = JSON.parse(repaired) as {
+                category?: string;
+                tags?: unknown[];
+                confidence?: number;
+            };
 
             return {
-                category: this.validateCategory(parsed.category),
-                tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-                confidence: parsed.confidence || 0.8
+                category: this.validateCategory(typeof parsed.category === 'string' ? parsed.category : '') as import('../../types/classification').IdeaCategory,
+                tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]).slice(0, 5) : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.8
             };
         } catch (error) {
-            console.warn('Failed to parse OpenRouter response:', content, error);
+            Logger.warn('Failed to parse OpenRouter response:', content, error);
             return {
                 category: '',
                 tags: [],
@@ -122,14 +135,14 @@ Response:`;
         }
     }
 
-    private validateCategory(category: string): IdeaCategory {
-        const validCategories: IdeaCategory[] = [
+    private validateCategory(category: string): string {
+        const validCategories = [
             'game', 'saas', 'tool', 'story', 'mechanic',
             'hardware', 'ip', 'brand', 'ux', 'personal'
         ];
 
         const normalized = category?.toLowerCase().trim();
-        return (validCategories.includes(normalized as IdeaCategory)) ? (normalized as IdeaCategory) : '';
+        return validCategories.includes(normalized) ? normalized : '';
     }
 }
 

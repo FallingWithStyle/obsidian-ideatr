@@ -38,6 +38,17 @@ describe('FrontmatterBuilder', () => {
             expect(frontmatter.category).toBe('');
         });
 
+        it('should initialize id as a number', () => {
+            const idea = {
+                text: 'Test idea',
+                timestamp: new Date('2025-11-28T17:00:00Z')
+            };
+            const frontmatter = buildFrontmatter(idea);
+
+            expect(typeof frontmatter.id).toBe('number');
+            expect(frontmatter.id).toBeGreaterThan(0);
+        });
+
         it('should initialize all arrays as empty', () => {
             const idea = {
                 text: 'Test idea',
@@ -58,6 +69,7 @@ describe('FrontmatterBuilder', () => {
                 type: 'idea' as const,
                 status: 'captured' as const,
                 created: '2025-11-28',
+                id: 0,
                 category: '',
                 tags: [],
                 related: [],
@@ -75,6 +87,7 @@ describe('FrontmatterBuilder', () => {
                 type: 'idea' as const,
                 status: 'captured' as const,
                 created: '2025-11-28',
+                id: 0,
                 category: '',
                 tags: [],
                 related: [],
@@ -86,6 +99,7 @@ describe('FrontmatterBuilder', () => {
             expect(yaml).toContain('type: idea');
             expect(yaml).toContain('status: captured');
             expect(yaml).toContain('created: 2025-11-28');
+            expect(yaml).toContain('id: 0');
             expect(yaml).toContain('category:');
             expect(yaml).toContain('tags:');
             expect(yaml).toContain('related:');
@@ -98,6 +112,7 @@ describe('FrontmatterBuilder', () => {
                 type: 'idea' as const,
                 status: 'captured' as const,
                 created: '2025-11-28',
+                id: 0,
                 category: '',
                 tags: [],
                 related: [],
@@ -117,6 +132,7 @@ describe('FrontmatterBuilder', () => {
                 type: 'idea' as const,
                 status: 'captured' as const,
                 created: '2025-11-28',
+                id: 0,
                 category: 'saas',
                 tags: ['productivity', 'tool'],
                 related: [],
@@ -134,6 +150,7 @@ describe('FrontmatterBuilder', () => {
                 type: 'idea' as const,
                 status: 'captured' as const,
                 created: '2025-11-28',
+                id: 0,
                 category: 'game',
                 tags: [],
                 related: [],
